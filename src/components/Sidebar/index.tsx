@@ -286,7 +286,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                 pathname === "/operaciones/revision-stock" && "text-white"
                               }`}
                             >
-                              Revisión Stock
+                              Revisión de Stock
                             </Link>
                           </li>
                           <li>
