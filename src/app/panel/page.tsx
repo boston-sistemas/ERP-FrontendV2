@@ -1,4 +1,4 @@
-import ECommerce from "@/components/Dashboard/E-commerce";
+import Panel from "@/components/Dashboard/Panel";
 import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 
@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <>
       <DefaultLayout>
-        <ECommerce />
+        <Panel />
       </DefaultLayout>
     </>
   );
