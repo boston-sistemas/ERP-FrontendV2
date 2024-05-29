@@ -1,13 +1,11 @@
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import Tabla1 from "@/components/Tables/Tejeduria/ReporteStock/Tabla1";
+import Tabla1 from "@/components/Tejeduria/ReporteStock/Tablas/Tabla1";
 
 import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 
 export const metadata: Metadata = {
-  title: "Next.js Tables | TailAdmin - Next.js Dashboard Template",
-  description:
-    "This is Next.js Tables page for TailAdmin - Next.js Tailwind CSS Admin Dashboard Template",
+  title: "Reporte de Stock ERP",
 };
 
 const TablesPage = () => {

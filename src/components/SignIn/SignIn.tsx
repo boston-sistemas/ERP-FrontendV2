@@ -28,7 +28,7 @@ const SignIn: React.FC = () => {
       <div className="md:w-1/2 w-full bg-blue-900 p-4 md:order-1 flex items-center justify-center">
         <div className="flex flex-col items-start max-w-md">
           {/* Logo */}
-          <div style={{ width: 150, height: 150, position: 'relative' }}>
+          <div style={{width: 150, height: 30, position: 'relative' }}>
             <Image 
               src="/images/boston/logo-boston-color.png" 
               alt="Logo de Boston" 
@@ -36,10 +36,7 @@ const SignIn: React.FC = () => {
               priority
               placeholder="blur"
               blurDataURL="/images/boston/logo-boston-color.png" 
-              sizes="(max-width: 768px) 100vw,
-                     (max-width: 1200px) 50vw,
-                     33vw"
-              style={{ objectFit: 'contain' }}
+              
             />
           </div>
           <p className="text-white mt-4 text-xl">
