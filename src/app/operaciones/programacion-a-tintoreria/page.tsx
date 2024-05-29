@@ -1,6 +1,6 @@
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import Tabla1 from "@/components/Operaciones/Ept/Tabla1";
-import Tabla2 from "@/components/Operaciones/Ept/Tabla2";
+import Tabla1 from "@/components/Operaciones/ProgramacionATintoreria/Tabla1";
+import Tabla2 from "@/components/Operaciones/ProgramacionATintoreria/Tabla2";
 import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 
