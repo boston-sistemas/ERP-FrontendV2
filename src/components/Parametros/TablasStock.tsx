@@ -40,3 +40,5 @@ export const minWidths1 = [
   ];
 
   export const TIMEOUT = 1000;
+
+  export const TIMEOUTFETCH = 7000;

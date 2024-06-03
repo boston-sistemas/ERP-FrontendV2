@@ -84,26 +84,27 @@ const RevisionStock: React.FC = () => {
   const [cerradaData, setCerradaData] = useState<Orden[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchData = async () => {
+    try {
+      const response = await instance.get('/operations/v1/revision-stock');
+      const data = response.data;
+      const pendienteData = processOrderData(data.ordenes_pendientes);
+      const cerradaData = processOrderData(data.ordenes_cerradas);
+      setPendienteData(pendienteData);
+      setCerradaData(cerradaData);
+    } catch (error) {
+      console.error('Error fetching data', error);
+    }
+    setTimeout(() => setLoading(false), TIMEOUT);
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await instance.get('/operations/v1/revision-stock');
-        const data = response.data;
-        const pendienteData = processOrderData(data.ordenes_pendientes);
-        const cerradaData = processOrderData(data.ordenes_cerradas);
-        setPendienteData(pendienteData);
-        setCerradaData(cerradaData);
-      } catch (error) {
-        console.error('Error fetching data', error);
-      }
-      setTimeout(() => setLoading(false), TIMEOUT); 
-    };
     fetchData();
   }, []);
 
   return (
     <div className="space-y-10">
-      <Tabla1 data={pendienteData} loading={loading} />
+      <Tabla1 data={pendienteData} loading={loading} fetchData={fetchData} />
       <Tabla2 data={cerradaData} loading={loading} />
     </div>
   );

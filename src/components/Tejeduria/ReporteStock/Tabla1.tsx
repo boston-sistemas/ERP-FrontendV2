@@ -5,7 +5,7 @@ import instance from "@/config/AxiosConfig";
 import { TablePagination } from "@mui/material";
 import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
 import { Suborden } from "./ReporteStock";
-import { MAX_HEIGHT, minWidths3 } from "@/components/Parametros/TablasStock";
+import { MAX_HEIGHT, minWidths3, TIMEOUTFETCH } from "@/components/Parametros/TablasStock";
 import "@/css/checkbox.css";
 
 const columns = [
@@ -123,7 +123,7 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
       setMensajeError(`Error enviando los datos. Conflictos: ${detallesOrden}`);
     }
 
-    setEnviando(false);
+    setTimeout(() => setEnviando(false), TIMEOUTFETCH);
   };
 
   return (
