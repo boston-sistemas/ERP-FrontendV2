@@ -1,16 +1,19 @@
 import React, { useState } from "react";
 import { TablePagination } from "@mui/material";
 import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
-import { Suborden } from "./ReporteStock"; // Asegúrate que la importación de la interfaz sea correcta
+import { Suborden } from "./ReporteStock"; 
 import { MAX_HEIGHT, minWidths3 } from "@/components/Parametros/TablasStock";
 import "@/css/checkbox.css";
 
 const columns = [
-  "Suborden",
+  "OS",
+  "Tejido",
+  "Ancho",
   "Programado (kg)",
   "Consumido (kg)",
   "Restante (kg)",
-  "Merma",
+  "Rollos",
+  "Peso",
   "Progreso",
   "Estado",
 ];
@@ -25,7 +28,8 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading }) => {
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [filasSeleccionadas, setFilasSeleccionadas] = useState<boolean[]>(new Array(data.length).fill(false));
   const [selectAll, setSelectAll] = useState<boolean>(false);
-  
+  const [rollos, setRollos] = useState<number[]>(new Array(data.length).fill(0));
+  const [peso, setPeso] = useState<number[]>(new Array(data.length).fill(0));
 
   const handleCambiarPagina = (event: any, newPage: any) => {
     setPagina(newPage);
@@ -47,6 +51,18 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading }) => {
     newfilasSeleccionadas[index] = !newfilasSeleccionadas[index];
     setFilasSeleccionadas(newfilasSeleccionadas);
     setSelectAll(newfilasSeleccionadas.every(row => row));
+  };
+
+  const handleRollosCambio = (index: number, value: number) => {
+    const newRollos = [...rollos];
+    newRollos[index] = value;
+    setRollos(newRollos);
+  };
+
+  const handlePesoCambio = (index: number, value: number) => {
+    const newPeso = [...peso];
+    newPeso[index] = value;
+    setPeso(newPeso);
   };
 
   return (
@@ -76,13 +92,13 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading }) => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={columns.length} className="pt-5 pb-5 text-center text-black dark:text-white">
+                <td colSpan={columns.length + 1} className="pt-5 pb-5 text-center text-black dark:text-white">
                   Cargando...
                 </td>
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="pt-5 pb-5 text-center text-black dark:text-white">
+                <td colSpan={columns.length + 1} className="pt-5 pb-5 text-center text-black dark:text-white">
                   No existen datos para esta consulta
                 </td>
               </tr>
@@ -100,11 +116,28 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading }) => {
                         onChange={() => handleSelectFila(index)}
                       />
                     </td>
-                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.suborden}</td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.os}</td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.tejido}</td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.ancho}</td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.programado} kg</td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.consumido} kg</td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.restante} kg</td>
-                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.merma}</td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      <input
+                        type="number"
+                        value={rollos[index]}
+                        onChange={(e) => handleRollosCambio(index, parseInt(e.target.value))}
+                        className="w-full rounded-lg border-[1.5px] border-stroke bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-blue-800"
+                      />
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      <input
+                        type="number"
+                        value={peso[index]}
+                        onChange={(e) => handlePesoCambio(index, parseFloat(e.target.value))}
+                        className="w-full rounded-lg border-[1.5px] border-stroke bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-blue-800"
+                      />
+                    </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.progreso}</td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <p className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(item.estado)}`}>

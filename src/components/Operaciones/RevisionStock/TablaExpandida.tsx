@@ -6,7 +6,8 @@ interface ExpandidaProps {
 }
 
 const columnsExpandida = [
-  "Suborden",
+  "Tejido",
+  "Ancho",
   "Programado (kg)",
   "Consumido (kg)",
   "Restante (kg)",
@@ -16,7 +17,8 @@ const columnsExpandida = [
 ];
 
 const minWidthsExpandida = [
-  "min-w-[110px]", // Suborden
+  "min-w-[110px]", // Tejido
+  "min-w-[50px]",  // Ancho
   "min-w-[110px]", // Programado (kg)
   "min-w-[110px]", // Consumido (kg)
   "min-w-[110px]", // Restante (kg)
@@ -39,25 +41,24 @@ const TablaExpandida = ({ data }: ExpandidaProps) => {
           </tr>
         </thead>
         <tbody>
-          {data.map((suborden: any, index: any) => (
-            <tr key={index} className="text-center">
-              <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.suborden}</td>
-              <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.programado}</td>
-              <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.consumido}</td>
-              <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.restante}</td>
-              <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.merma}</td>
-              <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.progreso}</td>
-              <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">
-                <p
-                  className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(
-                    suborden.estado
-                  )}`}
-                >
-                  {suborden.estado}
-                </p>
-              </td>
-            </tr>
-          ))}
+          {data.map((suborden: any, index: any) => {
+            return (
+              <tr key={index} className="text-center">
+                <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.tejido}</td>
+                <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.ancho}</td>
+                <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.programado}</td>
+                <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.consumido}</td>
+                <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.restante}</td>
+                <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.merma}</td>
+                <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.progreso}</td>
+                <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">
+                  <p className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(suborden.estado)}`}>
+                    {suborden.estado}
+                  </p>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

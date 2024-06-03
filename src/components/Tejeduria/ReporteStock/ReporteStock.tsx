@@ -4,12 +4,16 @@ import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
 import Tabla1 from "./Tabla1";
 import { TIMEOUT } from "@/components/Parametros/TablasStock"
+
 export interface Suborden {
-  suborden: string;
+  os: string;
+  tejido: string;
+  ancho: string;
   programado: number;
   consumido: number;
   restante: number;
-  merma: string;
+  rollos: number;  
+  peso: number;    
   progreso: string;
   estado: string;
 }
@@ -21,15 +25,19 @@ const processOrderData = (subordenes: any[]): Suborden[] => {
     const programado = roundToTwo(parseFloat(suborden.cantidad_kg));
     const consumido = roundToTwo(parseFloat(suborden.reporte_tejeduria_cantidad_kg));
     const restante = roundToTwo(programado - consumido);
-    const merma = ((restante / programado) * 100).toFixed(2) + "%";
     const progreso = ((consumido / programado) * 100).toFixed(2) + "%";
+    const tejido = suborden.crudo_id.slice(0, -2);
+    const ancho = suborden.crudo_id.slice(-2);
 
     return {
-      suborden: suborden.crudo_id,
+      os: suborden.orden_servicio_tejeduria_id,
+      tejido: tejido,
+      ancho: ancho,
       programado: programado,
       consumido: consumido,
+      rollos: 0,
+      peso: 0,
       restante: restante,
-      merma: merma,
       progreso: progreso,
       estado: suborden.estado
     };

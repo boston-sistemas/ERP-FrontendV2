@@ -27,11 +27,14 @@ export const minWidths1 = [
   ];
 
   export const minWidths3 = [
-    "min-w-[110px]",  // Suborden
+    "min-w-[110px]",  // OS
+    "min-w-[110px]",  // Tejido
+    "min-w-[110px]",  // Ancho
     "min-w-[110px]",  // Programado (kg)
     "min-w-[110px]",  // Consumido (kg)
     "min-w-[110px]",  // Restante (kg)
-    "min-w-[110px]",  // Merma
+    "min-w-[50px]",  // Rollos
+    "min-w-[50px]",  // Peso
     "min-w-[110px]",  // Progreso
     "min-w-[110px]",  // Estado
   ];

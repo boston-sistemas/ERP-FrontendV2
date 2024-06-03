@@ -7,7 +7,8 @@ import Tabla2 from "./Tabla2";
 import { TIMEOUT } from "@/components/Parametros/TablasStock";
 
 interface Detalle {
-  suborden: string;
+  tejido: string;
+  ancho: string;
   programado: number;
   consumido: number;
   restante: number;
@@ -65,7 +66,8 @@ const processOrderData = (orders: any[]): Orden[] => {
       progreso: totalProgreso,
       estado: estado,
       expandida: order.detalles.map((detalle: { crudo_id: any; cantidad_kg: any; reporte_tejeduria_cantidad_kg: any; estado: any; }) => ({
-        suborden: detalle.crudo_id,
+        tejido: detalle.crudo_id.slice(0, -2),
+        ancho: detalle.crudo_id.slice(-2),
         programado: roundToTwo(parseFloat(detalle.cantidad_kg)),
         consumido: roundToTwo(parseFloat(detalle.reporte_tejeduria_cantidad_kg)),
         restante: roundToTwo(parseFloat(detalle.cantidad_kg) - parseFloat(detalle.reporte_tejeduria_cantidad_kg)),
