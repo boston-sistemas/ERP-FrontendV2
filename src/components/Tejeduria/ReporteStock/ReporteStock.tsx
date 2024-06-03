@@ -48,24 +48,26 @@ const ReporteStock: React.FC = () => {
   const [data, setData] = useState<Suborden[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchData = async () => {
+    try {
+      console.log("fetching");
+      const response = await instance.get('/operations/v1/reporte-stock');
+      const subordenes = response.data.subordenes;
+      const processedData = processOrderData(subordenes);
+      setData(processedData);
+    } catch (error) {
+      console.error('Error fetching data', error);
+    }
+    setTimeout(() => setLoading(false), TIMEOUT); 
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await instance.get('/operations/v1/reporte-stock');
-        const subordenes = response.data.subordenes;
-        const processedData = processOrderData(subordenes);
-        setData(processedData);
-      } catch (error) {
-        console.error('Error fetching data', error);
-      }
-      setTimeout(() => setLoading(false), TIMEOUT); 
-    };
     fetchData();
   }, []);
 
   return (
     <div className="space-y-10">
-      <Tabla1 data={data} loading={loading} />
+      <Tabla1 data={data} loading={loading} fetchData={fetchData} />
     </div>
   );
 };

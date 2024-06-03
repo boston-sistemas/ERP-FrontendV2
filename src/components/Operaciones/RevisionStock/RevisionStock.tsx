@@ -57,7 +57,7 @@ const processOrderData = (orders: any[]): Orden[] => {
 
     return {
       orden: order.orden_servicio_tejeduria_id,
-      fecha: "2024-05-28",
+      fecha: order.fecha.slice(0,-9),
       tejeduria: order.tejeduria_id,
       programado: roundToTwo(totalProgramado),
       consumido: roundToTwo(totalConsumido),
