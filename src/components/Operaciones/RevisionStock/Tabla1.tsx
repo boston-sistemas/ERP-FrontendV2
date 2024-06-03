@@ -1,13 +1,12 @@
 "use client"
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { IconButton, Collapse } from "@mui/material";
 import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
-import { pendienteData, fetchDataAndCalculate } from "./Datos";
 import TablaExpandida from "./TablaExpandida";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { Orden } from "./Datos";
+import { Orden } from "./Vista";
 import "@/css/checkbox.css";
 
 const columns = [
@@ -35,20 +34,15 @@ const minWidths = [
   "min-w-[110px]",  // Estado
 ];
 
-const Tabla1 = () => {
-  const [data, setData] = useState<Orden[]>([]);
-  const [filasSeleccionadas, setFilasSeleccionadas] = useState<boolean[]>([]);
+interface Tabla1Props {
+  data: Orden[];
+  loading: boolean;
+}
+
+const Tabla1: React.FC<Tabla1Props> = ({ data, loading }) => {
+  const [filasSeleccionadas, setFilasSeleccionadas] = useState<boolean[]>(new Array(data.length).fill(false));
   const [selectAll, setSelectAll] = useState<boolean>(false);
   const [expandedRows, setExpandedRows] = useState<number[]>([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      await fetchDataAndCalculate();
-      setData(pendienteData);
-      setFilasSeleccionadas(new Array(pendienteData.length).fill(false));
-    };
-    fetchData();
-  }, []);
 
   const handleSelectAll = () => {
     const newSelectAll = !selectAll;
@@ -74,7 +68,7 @@ const Tabla1 = () => {
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
       <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
-        Avance de Ordenes de Servicio - Pendientes
+        Ordenes de Servicio - Pendientes
       </h4>
       <div className="max-w-full overflow-x-auto">
         <table className="w-full table-auto">
@@ -97,7 +91,13 @@ const Tabla1 = () => {
             </tr>
           </thead>
           <tbody>
-            {data.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan={columns.length + 2} className="pt-5 pb-5 text-center text-black dark:text-white">
+                  cargando...
+                </td>
+              </tr>
+            ) : data.length === 0 ? (
               <tr>
                 <td colSpan={columns.length + 2} className="pt-5 pb-5 text-center text-black dark:text-white">
                   No existen datos para esta consulta

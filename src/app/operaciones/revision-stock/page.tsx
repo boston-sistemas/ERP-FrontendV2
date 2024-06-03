@@ -1,10 +1,7 @@
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import Tabla1 from "@/components/Operaciones/RevisionStock/Tabla1";
-import Tabla2 from "@/components/Operaciones/RevisionStock/Tabla2";
-
-
-import { Metadata } from "next";
+import Vista from "@/components/Operaciones/RevisionStock/Vista";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Revision de Stock ERP",
@@ -14,10 +11,8 @@ const TablesPage = () => {
   return (
     <DefaultLayout>
       <Breadcrumb pageName="Revisión de Stock" />
-
       <div className="flex flex-col gap-10">
-        <Tabla1 />
-        <Tabla2 />
+        <Vista/>
       </div>
     </DefaultLayout>
   );

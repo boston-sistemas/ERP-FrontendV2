@@ -1,4 +1,9 @@
-import { RevisionStock } from "@/services/operaciones/routing";
+"use client"
+
+import React, { useState, useEffect } from "react";
+import instance from "@/config/AxiosConfig";
+import Tabla1 from "@/components/Operaciones/RevisionStock/Tabla1";
+import Tabla2 from "./Tabla2";
 
 interface Detalle {
   suborden: string;
@@ -21,11 +26,6 @@ export interface Orden {
   progreso: string;
   estado: string;
   expandida: Detalle[];
-}
-
-interface FetchData {
-  ordenes_pendientes: any[];
-  ordenes_cerradas: any[];
 }
 
 const roundToTwo = (num: number) => Math.round(num * 100) / 100;
@@ -76,11 +76,34 @@ const processOrderData = (orders: any[]): Orden[] => {
   });
 };
 
-export let pendienteData: Orden[] = [];
-export let cerradaData: Orden[] = [];
+const Vista: React.FC = () => {
+  const [pendienteData, setPendienteData] = useState<Orden[]>([]);
+  const [cerradaData, setCerradaData] = useState<Orden[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export const fetchDataAndCalculate = async () => {
-  const data: FetchData = await RevisionStock();
-  pendienteData = processOrderData(data.ordenes_pendientes);
-  cerradaData = processOrderData(data.ordenes_cerradas);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await instance.get('/api/v1/modulo1/revision-stock/');
+        const data = response.data;
+        const pendienteData = processOrderData(data.ordenes_pendientes);
+        const cerradaData = processOrderData(data.ordenes_cerradas);
+        setPendienteData(pendienteData);
+        setCerradaData(cerradaData);
+      } catch (error) {
+        console.error('Error fetching data', error);
+      }
+      setTimeout(() => setLoading(false), 500); // Simula una carga de 2 segundos
+    };
+    fetchData();
+  }, []);
+
+  return (
+    <div>
+      <Tabla1 data={pendienteData} loading={loading} />
+      <Tabla2 data={cerradaData} loading={loading} />
+    </div>
+  );
 };
+
+export default Vista;
