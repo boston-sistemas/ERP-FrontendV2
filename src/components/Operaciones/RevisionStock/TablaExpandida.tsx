@@ -6,27 +6,23 @@ interface ExpandidaProps {
 }
 
 const columnsExpandida = [
-  "Tejido",
-  "Ancho",
-  "Hilandería",
+  "Suborden",
   "Programado (kg)",
   "Consumido (kg)",
   "Restante (kg)",
-  "Rollos",
-  "Peso (kg)",
+  "Merma",
+  "Progreso",
   "Estado"
 ];
 
 const minWidthsExpandida = [
-  "min-w-[110px]", // Tejido
-  "min-w-[110px]", // Ancho
-  "min-w-[110px]", // Hilandería
+  "min-w-[110px]", // Suborden
   "min-w-[110px]", // Programado (kg)
   "min-w-[110px]", // Consumido (kg)
   "min-w-[110px]", // Restante (kg)
-  "min-w-[110px]", // Rollos
-  "min-w-[110px]", // Peso (kg)
-  "min-w-[110px]"  // Estado
+  "min-w-[110px]", // Merma
+  "min-w-[110px]", // Progreso
+  "min-w-[110px]", // Estado
 ];
 
 const TablaExpandida = ({ data }: ExpandidaProps) => {
@@ -43,25 +39,25 @@ const TablaExpandida = ({ data }: ExpandidaProps) => {
           </tr>
         </thead>
         <tbody>
-          <tr className="text-center">
-            <td className="text-sm font-normal border-b border-[#eee] px-4 py-2 dark:border-strokedark">{data.tejido}</td>
-            <td className="text-sm font-normal border-b border-[#eee] px-4 py-2 dark:border-strokedark">{data.ancho}</td>
-            <td className="text-sm font-normal border-b border-[#eee] px-4 py-2 dark:border-strokedark">{data.hilanderia}</td>
-            <td className="text-sm font-normal border-b border-[#eee] px-4 py-2 dark:border-strokedark">{data.programado}</td>
-            <td className="text-sm font-normal border-b border-[#eee] px-4 py-2 dark:border-strokedark">{data.consumido}</td>
-            <td className="text-sm font-normal border-b border-[#eee] px-4 py-2 dark:border-strokedark">{data.restante}</td>
-            <td className="text-sm font-normal border-b border-[#eee] px-4 py-2 dark:border-strokedark">{data.rollos}</td>
-            <td className="text-sm font-normal border-b border-[#eee] px-4 py-2 dark:border-strokedark">{data.peso}</td>
-            <td className="text-sm font-normal border-b border-[#eee] px-4 py-2 dark:border-strokedark">
+          {data.map((suborden: any, index: any) => (
+            <tr key={index} className="text-center">
+              <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.suborden}</td>
+              <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.programado}</td>
+              <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.consumido}</td>
+              <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.restante}</td>
+              <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.merma}</td>
+              <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.progreso}</td>
+              <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">
                 <p
-                    className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(
-                    data.estado
-                    )}`}
+                  className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(
+                    suborden.estado
+                  )}`}
                 >
-                    {data.estado}
+                  {suborden.estado}
                 </p>
-            </td>
-          </tr>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
