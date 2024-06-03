@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
-import Tabla1 from "@/components/Operaciones/RevisionStock/Tabla1";
+import Tabla1 from "./Tabla1";
 import Tabla2 from "./Tabla2";
+import { TIMEOUT } from "@/components/Parametros/TablasStock";
 
 interface Detalle {
   suborden: string;
@@ -76,7 +77,7 @@ const processOrderData = (orders: any[]): Orden[] => {
   });
 };
 
-const Vista: React.FC = () => {
+const RevisionStock: React.FC = () => {
   const [pendienteData, setPendienteData] = useState<Orden[]>([]);
   const [cerradaData, setCerradaData] = useState<Orden[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,7 +85,7 @@ const Vista: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await instance.get('/api/v1/modulo1/revision-stock/');
+        const response = await instance.get('/operations/v1/revision-stock');
         const data = response.data;
         const pendienteData = processOrderData(data.ordenes_pendientes);
         const cerradaData = processOrderData(data.ordenes_cerradas);
@@ -93,17 +94,17 @@ const Vista: React.FC = () => {
       } catch (error) {
         console.error('Error fetching data', error);
       }
-      setTimeout(() => setLoading(false), 500); // Simula una carga de 2 segundos
+      setTimeout(() => setLoading(false), TIMEOUT); 
     };
     fetchData();
   }, []);
 
   return (
-    <div>
+    <div className="space-y-10">
       <Tabla1 data={pendienteData} loading={loading} />
       <Tabla2 data={cerradaData} loading={loading} />
     </div>
   );
 };
 
-export default Vista;
+export default RevisionStock;

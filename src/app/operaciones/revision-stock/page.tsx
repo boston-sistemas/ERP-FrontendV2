@@ -1,5 +1,5 @@
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import Vista from "@/components/Operaciones/RevisionStock/Vista";
+import RevisionStock from "@/components/Operaciones/RevisionStock/RevisionStock";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { Metadata } from "next";
 
@@ -12,7 +12,7 @@ const TablesPage = () => {
     <DefaultLayout>
       <Breadcrumb pageName="Revisión de Stock" />
       <div className="flex flex-col gap-10">
-        <Vista/>
+        <RevisionStock/>
       </div>
     </DefaultLayout>
   );

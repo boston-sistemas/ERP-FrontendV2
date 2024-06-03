@@ -1,8 +1,7 @@
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import Tabla1 from "@/components/Tejeduria/ReporteStock/Tablas/Tabla1";
-
-import { Metadata } from "next";
+import Vista from "@/components/Tejeduria/ReporteStock/ReporteStock";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Reporte de Stock ERP",
@@ -11,10 +10,9 @@ export const metadata: Metadata = {
 const TablesPage = () => {
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="Reporte Stock" />
-
+      <Breadcrumb pageName="Reporte de Stock" />
       <div className="flex flex-col gap-10">
-        <Tabla1 />
+        <Vista/>
       </div>
     </DefaultLayout>
   );
