@@ -96,7 +96,7 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
 
     if (ordenesSeleccionadas.length === 0) {
       setMensajeError("Ninguna orden seleccionada. Por favor, seleccione las órdenes que desea cerrar.");
-      setEnviando(false);
+      setTimeout(() => setEnviando(false), TIMEOUTFETCH);
       return;
     }
 
@@ -114,7 +114,7 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
       setMensajeError(`Error cerrando las órdenes. Conflictos: ${detallesOrden}`);
     }
 
-    setEnviando(false);
+    setTimeout(() => setEnviando(false), TIMEOUTFETCH);
   };
 
   return (
@@ -173,7 +173,7 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
                       <td className="border-b border-[#eee] px-8 py-5 dark:border-strokedark">
                         <IconButton 
                           onClick={() => handleExpandirFila(index)} 
-                          className="text-inherit dark:text-white w-0.5"
+                          className="text-inherit dark:text-white w-10"
                         >
                           {filasExpandidas.includes(index) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                         </IconButton>

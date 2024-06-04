@@ -1,7 +1,9 @@
-import { metadata } from './metadata';
+import { Metadata } from "next";
 import SignIn from '@/components/SignIn/SignIn';
 
-export { metadata };
+export const metadata: Metadata = {
+  title: "Login Boston ERP",
+};
 
 export default function SignInPage() {
   return <SignIn />;

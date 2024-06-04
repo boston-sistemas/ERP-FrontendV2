@@ -3,7 +3,6 @@ import React from "react";
 import ChartOne from "../Charts/ChartOne";
 import ChartThree from "../Charts/ChartThree";
 import ChartTwo from "../Charts/ChartTwo";
-import ChatCard from "../Chat/ChatCard";
 import CardDataStats from "../CardDataStats";
 
 

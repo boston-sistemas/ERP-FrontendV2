@@ -7,7 +7,7 @@ export const minWidths1 = [
     "min-w-[110px]",  // TejeduriA
     "min-w-[110px]",  // Programado
     "min-w-[110px]",  // Consumido
-    "min-w-[110px]",  // Restante
+    "min-w-[130px]",  // Restante
     "min-w-[110px]",  // Merma
     "min-w-[110px]",  // Progreso
     "min-w-[130px]",  // Estado
@@ -16,16 +16,17 @@ export const minWidths1 = [
   export const minWidths2 = [
     "min-w-[40px]",   // Checkbox
     "min-w-[110px]",  // Orden
-    "min-w-[110px]",  // Fecha
+    "min-w-[140px]",  // Fecha
     "min-w-[110px]",  // TejeduriA
     "min-w-[110px]",  // Programado
     "min-w-[110px]",  // Consumido
-    "min-w-[110px]",  // Restante
+    "min-w-[130px]",  // Restante
     "min-w-[110px]",  // Merma
     "min-w-[110px]",  // Progreso
     "min-w-[110px]",  // Saldo Recogid
   ];
 
+  
   export const minWidths3 = [
     "min-w-[110px]",  // OS
     "min-w-[110px]",  // Tejido

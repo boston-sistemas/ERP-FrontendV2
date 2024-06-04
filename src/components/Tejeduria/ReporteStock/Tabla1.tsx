@@ -115,8 +115,8 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
 
     try {
       await instance.put('/operations/v1/reporte-stock/subordenes', { subordenes: subordenesSeleccionadas });
-      setRollos(new Array(data.length).fill(''));
-      setPeso(new Array(data.length).fill(''));
+      setRollos(new Array(data.length).fill('0'));
+      setPeso(new Array(data.length).fill('0'));
       setMensajeExito(detallesOrden);
       fetchData();
     } catch (error) {
@@ -178,13 +178,13 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
                             onChange={() => handleSelectFila(index)}
                           />
                         </td>
-                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.os}</td>
-                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.tejido}</td>
-                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.ancho}</td>
-                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.programado} kg</td>
-                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.consumido} kg</td>
-                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.restante} kg</td>
-                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                        <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">{item.os}</td>
+                        <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">{item.tejido}</td>
+                        <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">{item.ancho}</td>
+                        <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">{item.programado} kg</td>
+                        <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">{item.consumido} kg</td>
+                        <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">{item.restante} kg</td>
+                        <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">
                           <input
                             type="number"
                             value={rollos[index]}
@@ -202,8 +202,8 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
                             min="0"
                           />
                         </td>
-                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.progreso}</td>
-                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                        <td className="text-black dark:text-white border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.progreso}</td>
+                        <td className="text-black dark:text-white border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                           <p className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(item.estado)}`}>
                             {item.estado}
                           </p>
