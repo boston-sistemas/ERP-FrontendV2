@@ -48,7 +48,7 @@ const calculateGlobalState = (detalles: any[]): string => {
 
 const processOrderData = (orders: any[]): Orden[] => {
   return orders.map(order => {
-    const totalProgramado = roundToTwo(order.detalles.reduce((sum: number, detalle: { cantidad_kg: string; }) => sum + parseFloat(detalle.cantidad_kg), 0));
+    const totalProgramado = roundToTwo(order.detalles.reduce((sum: number, detalle: { programado_kg: string; }) => sum + parseFloat(detalle.programado_kg), 0));
     const totalConsumido = roundToTwo(order.detalles.reduce((sum: number, detalle: { reporte_tejeduria_cantidad_kg: string; }) => sum + parseFloat(detalle.reporte_tejeduria_cantidad_kg), 0));
     const totalRestante = roundToTwo(totalProgramado - totalConsumido);
     const totalMerma = ((totalRestante / totalProgramado) * 100).toFixed(2) + "%";
@@ -65,14 +65,14 @@ const processOrderData = (orders: any[]): Orden[] => {
       merma: totalMerma,
       progreso: totalProgreso,
       estado: estado,
-      expandida: order.detalles.map((detalle: { crudo_id: any; cantidad_kg: any; reporte_tejeduria_cantidad_kg: any; estado: any; }) => ({
+      expandida: order.detalles.map((detalle: { crudo_id: any; programado_kg: any; reporte_tejeduria_cantidad_kg: any; estado: any; }) => ({
         tejido: detalle.crudo_id.slice(0, -2),
         ancho: detalle.crudo_id.slice(-2),
-        programado: roundToTwo(parseFloat(detalle.cantidad_kg)),
+        programado: roundToTwo(parseFloat(detalle.programado_kg)),
         consumido: roundToTwo(parseFloat(detalle.reporte_tejeduria_cantidad_kg)),
-        restante: roundToTwo(parseFloat(detalle.cantidad_kg) - parseFloat(detalle.reporte_tejeduria_cantidad_kg)),
-        merma: ((parseFloat(detalle.cantidad_kg) - parseFloat(detalle.reporte_tejeduria_cantidad_kg)) / parseFloat(detalle.cantidad_kg) * 100).toFixed(2) + "%",
-        progreso: (parseFloat(detalle.reporte_tejeduria_cantidad_kg) / parseFloat(detalle.cantidad_kg) * 100).toFixed(2) + "%",
+        restante: roundToTwo(parseFloat(detalle.programado_kg) - parseFloat(detalle.reporte_tejeduria_cantidad_kg)),
+        merma: ((parseFloat(detalle.programado_kg) - parseFloat(detalle.reporte_tejeduria_cantidad_kg)) / parseFloat(detalle.programado_kg) * 100).toFixed(2) + "%",
+        progreso: (parseFloat(detalle.reporte_tejeduria_cantidad_kg) / parseFloat(detalle.programado_kg) * 100).toFixed(2) + "%",
         estado: detalle.estado
       }))
     };

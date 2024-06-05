@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
@@ -7,20 +7,18 @@ import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
 import TablaExpandida from "./TablaExpandida";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { Orden } from "./ProgramacionATintoreria";
+import { Orden } from "./ProgramacionTintoreria";
 import { TablePagination } from '@mui/material';
 import { MAX_HEIGHT, minWidths1, TIMEOUTFETCH } from "@/components/Parametros/TablasStock";
 import "@/css/checkbox.css";
 
 const columns = [
   "Orden",
-  "Fecha",
-  "Tejeduria",
-  "Programado (kg)",
-  "Consumido (kg)",
-  "Restante (kg)",
-  "Merma",
-  "Progreso",
+  "Hilanderia",
+  "Rollos",
+  "Rollos actuales",
+  "Peso Reportado",
+  "Peso actual",
   "Estado",
 ];
 
@@ -69,7 +67,7 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
     setSelectAll(newfilasSeleccionadas.every(row => row));
   };
 
-  const handleExpandirFila= (index: number) => {
+  const handleExpandirFila = (index: number) => {
     if (filasExpandidas.includes(index)) {
       setFilasExpandidas(filasExpandidas.filter(rowIndex => rowIndex !== index));
     } else {
@@ -182,25 +180,19 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
                         <p className="font-normal text-black dark:text-white">{data.orden}</p>
                       </td>
                       <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="font-normal text-black dark:text-white">{data.fecha}</p>
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                         <p className="font-normal text-black dark:text-white">{data.tejeduria}</p>
                       </td>
                       <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="font-normal text-black dark:text-white">{data.programado} kg</p>
+                        <p className="font-normal text-black dark:text-white">{data.rollos}</p>
                       </td>
                       <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="font-normal text-black dark:text-white">{data.consumido} kg</p>
+                        <p className="font-normal text-black dark:text-white">{data.rollos_actuales}</p>
                       </td>
                       <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="font-normal text-black dark:text-white">{data.restante} kg</p>
+                        <p className="font-normal text-black dark:text-white">{data.peso_reportado}</p>
                       </td>
                       <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="font-normal text-black dark:text-white">{data.merma}</p>
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="font-normal text-black dark:text-white">{data.progreso}</p>
+                        <p className="font-normal text-black dark:text-white">{data.peso_actual}</p>
                       </td>
                       <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                         <p

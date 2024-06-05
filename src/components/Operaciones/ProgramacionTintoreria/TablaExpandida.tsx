@@ -7,12 +7,13 @@ interface ExpandidaProps {
 
 const columnsExpandida = [
   "Tejido",
+  "Densidad",
   "Ancho",
-  "Programado (kg)",
-  "Consumido (kg)",
-  "Restante (kg)",
-  "Merma",
-  "Progreso",
+  "Fibras",
+  "Rollos",
+  "Rollos actuales",
+  "Peso Reportado",
+  "Peso actual",
   "Estado"
 ];
 
@@ -50,6 +51,7 @@ const TablaExpandida = ({ data }: ExpandidaProps) => {
                 <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.consumido}</td>
                 <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.restante}</td>
                 <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.merma}</td>
+                <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.progreso}</td>
                 <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.progreso}</td>
                 <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">
                   <p className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(suborden.estado)}`}>

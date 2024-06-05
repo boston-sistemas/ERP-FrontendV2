@@ -1,5 +1,5 @@
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import ProgramacionATintoreria from "@/components/Operaciones/ProgramacionATintoreria/ProgramacionATintoreria";
+import ProgramacionTintoreria from "@/components/Operaciones/ProgramacionTintoreria/ProgramacionTintoreria";
 import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 
@@ -12,7 +12,7 @@ const TablesPage = () => {
     <DefaultLayout>
       <Breadcrumb pageName="EPT" />
       <div className="flex flex-col gap-10">
-        <ProgramacionATintoreria/>
+        <ProgramacionTintoreria/>
       </div>
     </DefaultLayout>
   );

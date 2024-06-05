@@ -6,7 +6,7 @@ import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
 import TablaExpandida from "./TablaExpandida";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { Orden } from "./ProgramacionATintoreria";
+import { Orden } from "./ProgramacionTintoreria";
 import { TablePagination } from '@mui/material';
 import { MAX_HEIGHT, minWidths2 } from "@/components/Parametros/TablasStock";
 import "@/css/checkbox.css";
