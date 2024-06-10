@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
 import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
 import { TablePagination } from "@mui/material";
 import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
 import { Suborden } from "./ReporteStock";
-import { MAX_HEIGHT, minWidths3, TIMEOUTFETCH } from "@/components/Parametros/TablasStock";
+import { MAX_HEIGHT, TIMEOUTFETCH } from "@/components/Parametros/Parametros";
 import "@/css/checkbox.css";
 
 const columns = [
@@ -21,6 +21,19 @@ const columns = [
   "Estado",
 ];
 
+const minWidths3 = [
+  "min-w-[110px]",  // OS
+  "min-w-[110px]",  // Tejido
+  "min-w-[120px]",  // Ancho
+  "min-w-[110px]",  // Programado (kg)
+  "min-w-[110px]",  // Consumido (kg)
+  "min-w-[110px]",  // Restante (kg)
+  "min-w-[50px]",  // Rollos
+  "min-w-[50px]",  // Peso
+  "min-w-[110px]",  // Progreso
+  "min-w-[110px]",  // Estado
+];
+
 interface Tabla1Props {
   data: Suborden[];
   loading: boolean;
@@ -30,14 +43,17 @@ interface Tabla1Props {
 const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
-  const [filasSeleccionadas, setFilasSeleccionadas] = useState<boolean[]>(new Array(data.length).fill(false));
-  const [selectAll, setSelectAll] = useState<boolean>(false);
-  const [rollos, setRollos] = useState<number[]>(new Array(data.length).fill(0));
-  const [peso, setPeso] = useState<number[]>(new Array(data.length).fill(0));
+  const [rollos, setRollos] = useState<number[]>([]);
+  const [peso, setPeso] = useState<number[]>([]);
   const [mensajeError, setMensajeError] = useState<string | null>(null);
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
-  const [enviando, setEnviando] = useState<boolean>(false);
   const [desvaneciendo, setDesvaneciendo] = useState<boolean>(false);
+  const [enviando, setEnviando] = useState<boolean>(false);
+
+  useEffect(() => {
+    setRollos(new Array(data.length).fill(0));
+    setPeso(new Array(data.length).fill(0));
+  }, [data]);
 
   useEffect(() => {
     if (mensajeError || mensajeExito) {
@@ -63,19 +79,6 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
     setPagina(0);
   };
 
-  const handleSelectAll = () => {
-    const newSelectAll = !selectAll;
-    setSelectAll(newSelectAll);
-    setFilasSeleccionadas(new Array(data.length).fill(newSelectAll));
-  };
-
-  const handleSelectFila = (index: number) => {
-    const newfilasSeleccionadas = [...filasSeleccionadas];
-    newfilasSeleccionadas[index] = !newfilasSeleccionadas[index];
-    setFilasSeleccionadas(newfilasSeleccionadas);
-    setSelectAll(newfilasSeleccionadas.every((row) => row));
-  };
-
   const handleRollosCambio = (index: number, value: number) => {
     if (value >= 0) {
       const newRollos = [...rollos];
@@ -94,29 +97,35 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
 
   const handleEnviarStock = async () => {
     setEnviando(true);
+    const subordenesSeleccionadas = data.map((item, index) => {
+      if ((rollos[index] > 0 && peso[index] <= 0) || (rollos[index] <= 0 && peso[index] > 0)) {
+        setMensajeError(`Debe ingresar tanto el número de rollos como el peso mayor a 0.`);
+        setEnviando(false);
+        return null;
+      }
+      return {
+        orden_servicio_tejeduria_id: item.os,
+        crudo_id: `${item.tejido}${item.ancho}`,
+        reporte_tejeduria_nro_rollos: rollos[index],
+        reporte_tejeduria_cantidad_kg: peso[index],
+        estado: item.estado,
+      };
+    }).filter((suborden): suborden is NonNullable<typeof suborden> => suborden !== null);
 
-    const subordenesSeleccionadas = data.filter((_, index) => filasSeleccionadas[index]).map((item, index) => ({
-      orden_servicio_tejeduria_id: item.os,
-      crudo_id: `${item.tejido}${item.ancho}`,
-      reporte_tejeduria_nro_rollos: rollos[index],
-      reporte_tejeduria_cantidad_kg: peso[index],
-      estado: item.estado,
-    }));
-
-    if (subordenesSeleccionadas.length === 0) {
-      setMensajeError("Ninguna orden seleccionada. Por favor, seleccione las órdenes que enviará en el reporte.");
+    if (subordenesSeleccionadas.length !== data.length) {
+      setMensajeError("Debe ingresar tanto el número de rollos como el peso mayor a 0.");
       setEnviando(false);
       return;
     }
 
-    const detallesOrden = subordenesSeleccionadas.map((suborden, index) => `OS: ${suborden.orden_servicio_tejeduria_id}, Tejido: ${suborden.crudo_id.slice(0, -2)}, Ancho: ${suborden.crudo_id.slice(-2)}`).join(", ");
+    const detallesOrden = subordenesSeleccionadas.map((suborden) => `OS: ${suborden.orden_servicio_tejeduria_id}, Tejido: ${suborden.crudo_id.slice(0, -2)}, Ancho: ${suborden.crudo_id.slice(-2)}`).join(", ");
 
     setMensajeError(null); // Resetear mensaje de error si todo está correcto
 
     try {
       await instance.put('/operations/v1/reporte-stock/subordenes', { subordenes: subordenesSeleccionadas });
-      setRollos(new Array(data.length).fill('0'));
-      setPeso(new Array(data.length).fill('0'));
+      setRollos(new Array(data.length).fill(0));
+      setPeso(new Array(data.length).fill(0));
       setMensajeExito(detallesOrden);
       fetchData();
     } catch (error) {
@@ -136,14 +145,6 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
-                <th className="px-4 py-4 font-normal text-white dark:text-white">
-                  <input
-                    type="checkbox"
-                    className="checkbox-large"
-                    checked={selectAll}
-                    onChange={handleSelectAll}
-                  />
-                </th>
                 {columns.map((column, index) => (
                   <th key={index} className={`px-4 py-4 text-center font-normal text-white dark:text-zinc-100 ${minWidths3[index]}`}>
                     {column}
@@ -154,13 +155,13 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="pt-5 pb-5 text-center text-black dark:text-white">
+                  <td colSpan={columns.length} className="pt-5 pb-5 text-center text-black dark:text-white">
                     Cargando...
                   </td>
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + 1} className="pt-5 pb-5 text-center text-black dark:text-white">
+                  <td colSpan={columns.length} className="pt-5 pb-5 text-center text-black dark:text-white">
                     No existen datos para esta consulta
                   </td>
                 </tr>
@@ -169,15 +170,7 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
                   .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
                   .map((item, index) => (
                     <React.Fragment key={index}>
-                      <tr className={`${filasSeleccionadas[index] ? "bg-blue-100 dark:bg-blue-900" : ""} text-center`}>
-                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                          <input
-                            type="checkbox"
-                            className="checkbox-large"
-                            checked={filasSeleccionadas[index]}
-                            onChange={() => handleSelectFila(index)}
-                          />
-                        </td>
+                      <tr className="text-center">
                         <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">{item.os}</td>
                         <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">{item.tejido}</td>
                         <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">{item.ancho}</td>
@@ -187,7 +180,7 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
                         <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">
                           <input
                             type="number"
-                            value={rollos[index]}
+                            value={rollos[index] || 0}
                             onChange={(e) => handleRollosCambio(index, parseInt(e.target.value))}
                             className="w-20 border-[1.5px] border-neutral-500 bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-blue-800"
                             min="0"
@@ -196,9 +189,9 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
                         <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                           <input
                             type="number"
-                            value={peso[index]}
+                            value={peso[index] || 0}
                             onChange={(e) => handlePesoCambio(index, parseFloat(e.target.value))}
-                            className="w-30 border-[1.5px] border-neutral-500 bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-blue-800"
+                            className="w-30 border-[1.5px] border-neutral-500 bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-blue-800"
                             min="0"
                           />
                         </td>
@@ -253,12 +246,10 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
           </div>
           <div className="w-full">
             <h5 className="mb-3 text-lg font-semibold text-[#9D5425]">
-              {mensajeError.includes("Ninguna orden seleccionada") ? "Ninguna orden seleccionada" : "Error enviando los datos"}
+              Error enviando los datos
             </h5>
             <p className="leading-relaxed text-[#D0915C]">
-              {mensajeError.includes("Ninguna orden seleccionada") 
-                ? "Por favor, seleccione las órdenes que enviará en el reporte."
-                : `Conflictos: ${mensajeError.split('Conflictos: ')[1]}`}
+              {mensajeError}
             </p>
           </div>
         </div>

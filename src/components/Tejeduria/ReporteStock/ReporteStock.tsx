@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
 import Tabla1 from "./Tabla1";
-import { TIMEOUT } from "@/components/Parametros/TablasStock";
+import { TIMEOUT } from "@/components/Parametros/Parametros";
 
 export interface Suborden {
   os: string;
@@ -12,8 +12,8 @@ export interface Suborden {
   programado: number;
   consumido: number;
   restante: number;
-  rollos: number;  
-  peso: number;    
+  rollos: number;
+  peso: number;
   progreso: string;
   estado: string;
 }
@@ -56,7 +56,9 @@ const ReporteStock: React.FC = () => {
       const response = await instance.get("/operations/v1/reporte-stock");
       const ordenes = response.data.ordenes;
       const processedData = processOrderData(ordenes);
-      setData(processedData);
+      // Ordena los datos por algún campo consistente, por ejemplo 'os'
+      const sortedData = processedData.sort((a, b) => a.tejido.localeCompare(b.tejido));
+      setData(sortedData);
     } catch (error) {
       console.error("Error fetching data", error);
     }

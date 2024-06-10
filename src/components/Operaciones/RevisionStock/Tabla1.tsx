@@ -9,7 +9,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { Orden } from "./RevisionStock";
 import { TablePagination } from '@mui/material';
-import { MAX_HEIGHT, minWidths1, TIMEOUTFETCH } from "@/components/Parametros/TablasStock";
+import { MAX_HEIGHT, minWidths1, TIMEOUTFETCH } from "@/components/Parametros/Parametros";
 import "@/css/checkbox.css";
 
 const columns = [

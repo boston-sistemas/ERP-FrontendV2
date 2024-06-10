@@ -26,20 +26,6 @@ export const minWidths1 = [
     "min-w-[110px]",  // Saldo Recogid
   ];
 
-  
-  export const minWidths3 = [
-    "min-w-[110px]",  // OS
-    "min-w-[110px]",  // Tejido
-    "min-w-[120px]",  // Ancho
-    "min-w-[110px]",  // Programado (kg)
-    "min-w-[110px]",  // Consumido (kg)
-    "min-w-[110px]",  // Restante (kg)
-    "min-w-[50px]",  // Rollos
-    "min-w-[50px]",  // Peso
-    "min-w-[110px]",  // Progreso
-    "min-w-[110px]",  // Estado
-  ];
-
   export const TIMEOUT = 1000;
 
   export const TIMEOUTFETCH = 7000;

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
 import Tabla1 from "./Tabla1";
 import Tabla2 from "./Tabla2";
-import { TIMEOUT } from "@/components/Parametros/TablasStock";
+import { TIMEOUT } from "@/components/Parametros/Parametros";
 
 interface Detalle {
   tejido: string;
