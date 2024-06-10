@@ -167,6 +167,11 @@ const ProgramacionTintoreria: React.FC = () => {
   };
 
   const handleAgregarPartida = (subordenesSeleccionadas: Suborden[]) => {
+    if (!tintoreria) {
+      setError('Por favor, selecciona una tintorería');
+      return;
+    }
+
     const nuevasPartidas = subordenesSeleccionadas.map((suborden, index) => ({
       id: partidas.length + index + 1,
       hilanderia: 'POR DEFINIR',
@@ -234,7 +239,7 @@ const ProgramacionTintoreria: React.FC = () => {
         <div className="text-red-500">{error}</div>
       )}
       <Tabla1 data={pendienteData} loading={loading} fetchData={() => fetchData(tejeduria)} handleAgregarPartida={handleAgregarPartida} />
-      <Tabla2 data={cerradaData} loading={loading} colores={colores} partidas={partidas} />
+      <Tabla2 data={cerradaData} loading={loading} colores={colores} partidas={partidas} setPartidas={setPartidas} />
     </div>
   );
 };

@@ -48,6 +48,7 @@ interface Tabla2Props {
   loading: boolean;
   colores: Color[];
   partidas: Partida[];
+  setPartidas: React.Dispatch<React.SetStateAction<Partida[]>>;
 }
 
 const columns = [
@@ -61,14 +62,19 @@ const columns = [
   "Color"
 ];
 
-const Tabla2: React.FC<Tabla2Props> = ({ data, loading, colores, partidas }) => {
+const Tabla2: React.FC<Tabla2Props> = ({ data, loading, colores, partidas, setPartidas }) => {
   const [localPartidas, setLocalPartidas] = useState<Partida[]>(partidas);
 
   const handleRollosChange = (index: number, value: number) => {
     const newPartidas = [...localPartidas];
-    newPartidas[index].rollos = value;
-    newPartidas[index].peso = roundToTwo(value * newPartidas[index].kg_por_rollo);
-    setLocalPartidas(newPartidas);
+    const partida = newPartidas[index];
+
+    if (value <= partida.a_disponer) {
+      partida.rollos = value;
+      partida.peso = roundToTwo(value * partida.kg_por_rollo);
+      partida.a_disponer = partidas[index].a_disponer - value;
+      setLocalPartidas(newPartidas);
+    }
   };
 
   const handleColorChange = (index: number, value: string) => {
@@ -80,6 +86,10 @@ const Tabla2: React.FC<Tabla2Props> = ({ data, loading, colores, partidas }) => 
   useEffect(() => {
     setLocalPartidas(partidas);
   }, [partidas]);
+
+  useEffect(() => {
+    setPartidas(localPartidas);
+  }, [localPartidas, setPartidas]);
 
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
@@ -125,12 +135,14 @@ const Tabla2: React.FC<Tabla2Props> = ({ data, loading, colores, partidas }) => 
                   <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                     {partida.a_disponer}
                   </td>
-                  <td className="w-20 text-center border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                  <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">
                     <input
                       type="number"
                       value={partida.rollos}
                       onChange={(e) => handleRollosChange(index, parseInt(e.target.value))}
-                      className="w-full border border-gray-300 px-2 py-1 rounded dark:bg-boxdark dark:text-white"
+                      className="w-20 border-[1.5px] border-neutral-500 bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-blue-800"
+                      min="0"
+                      max={partida.a_disponer}
                     />
                   </td>
                   <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
@@ -144,7 +156,7 @@ const Tabla2: React.FC<Tabla2Props> = ({ data, loading, colores, partidas }) => 
                       value={partida.color}
                       onChange={(e) => handleColorChange(index, e.target.value as string)}
                       displayEmpty
-                      className="w-50 h-12 border border-gray-300 px-2 py-1 rounded dark:bg-boxdark dark:text-white"
+                      className="w-60 h-12 rounded border-[1.5px] border-stroke bg-transparent px-2 py-3 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                     >
                       <MenuItem value="" disabled>Selecciona color</MenuItem>
                       {colores.map(color => (
