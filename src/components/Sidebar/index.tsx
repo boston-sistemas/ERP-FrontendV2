@@ -291,9 +291,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                           </li>
                           <li>
                             <Link
-                              href="/operaciones/programacion-a-tintoreria"
+                              href="/operaciones/programacion-tintoreria"
                               className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white ${
-                                pathname === "/operaciones/programacion-a-tintoreria" && "text-white"
+                                pathname === "/operaciones/programacion-tintoreria" && "text-white"
                               }`}
                             >
                               EPT

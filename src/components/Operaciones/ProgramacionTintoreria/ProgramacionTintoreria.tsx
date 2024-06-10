@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
@@ -8,35 +8,60 @@ import { TIMEOUT } from "@/components/Parametros/TablasStock";
 import { Select, MenuItem, Card, CardContent, Typography } from "@mui/material";
 import { TbTruckDelivery } from "react-icons/tb";
 
-
 interface Detalle {
   tejido: string;
+  densidad: string;
   ancho: string;
-  programado: number;
-  consumido: number;
-  restante: number;
-  merma: string;
-  progreso: string;
+  fibra: string;
+  rollos: number;
+  cantidad: number;
+  kg_por_rollo: number;
   estado: string;
 }
 
 export interface Orden {
+  hilanderia: string;
+  rollos: number;
+  peso: number;
   orden: string;
   fecha: string;
-  tejeduria: string;
-  programado: number;
-  consumido: number;
-  restante: number;
-  merma: string;
-  progreso: string;
   estado: string;
   expandida: Detalle[];
 }
 
-const roundToTwo = (num: number) => Math.round(num * 100) / 100;
+interface Color {
+  nombre: string;
+  descripcion: string | null;
+  color_id: number;
+}
+
+export interface Suborden {
+  tejido: string;
+  densidad: string;
+  ancho: string;
+  fibra: string;
+  rollos: number;
+  cantidad: number;
+  kg_por_rollo: number;
+  estado: string;
+}
+
+interface Partida {
+  id: number;
+  hilanderia: string;
+  suborden: string;
+  a_disponer: number;
+  rollos: number;
+  peso: number;
+  kg_por_rollo: number;
+  tintoreria: string;
+  color: string;
+}
+
+export const roundToTwo = (num: number) => Math.round(num * 100) / 100;
 
 const calculateGlobalState = (detalles: any[]): string => {
-  const estados = detalles.map((detalle: { estado: string; }) => detalle.estado);
+  const estados = detalles.map((detalle: { estado: string }) => detalle.estado);
   if (estados.every(estado => estado === "LISTO")) {
     return "LISTO";
   }
@@ -51,31 +76,25 @@ const calculateGlobalState = (detalles: any[]): string => {
 
 const processOrderData = (orders: any[]): Orden[] => {
   return orders.map(order => {
-    const totalProgramado = roundToTwo(order.detalles.reduce((sum: number, detalle: { programado_kg: string; }) => sum + parseFloat(detalle.programado_kg), 0));
-    const totalConsumido = roundToTwo(order.detalles.reduce((sum: number, detalle: { reporte_tejeduria_cantidad_kg: string; }) => sum + parseFloat(detalle.reporte_tejeduria_cantidad_kg), 0));
-    const totalRestante = roundToTwo(totalProgramado - totalConsumido);
-    const totalMerma = ((totalRestante / totalProgramado) * 100).toFixed(2) + "%";
-    const totalProgreso = ((totalConsumido / totalProgramado) * 100).toFixed(2) + "%";
+    const totalRollos = order.detalles.reduce((sum: number, detalle: { reporte_tejeduria_nro_rollos: number }) => sum + detalle.reporte_tejeduria_nro_rollos, 0);
+    const totalPeso = order.detalles.reduce((sum: number, detalle: { reporte_tejeduria_cantidad_kg: string }) => sum + parseFloat(detalle.reporte_tejeduria_cantidad_kg), 0);
     const estado = calculateGlobalState(order.detalles);
 
     return {
       orden: order.orden_servicio_tejeduria_id,
-      fecha: order.fecha.slice(0, -9),
-      tejeduria: order.tejeduria_id,
-      programado: roundToTwo(totalProgramado),
-      consumido: roundToTwo(totalConsumido),
-      restante: roundToTwo(totalRestante),
-      merma: totalMerma,
-      progreso: totalProgreso,
+      hilanderia: "POR DEFINIR",
+      fecha: order.fecha.slice(0, 10),
+      rollos: totalRollos,
+      peso: totalPeso,
       estado: estado,
-      expandida: order.detalles.map((detalle: { crudo_id: any; programado_kg: any; reporte_tejeduria_cantidad_kg: any; estado: any; }) => ({
-        tejido: detalle.crudo_id.slice(0, -2),
+      expandida: order.detalles.map((detalle: { crudo_id: string; reporte_tejeduria_nro_rollos: number; reporte_tejeduria_cantidad_kg: string; estado: string }) => ({
+        tejido: detalle.crudo_id.slice(0, 3),
+        densidad: detalle.crudo_id.slice(3, 6),
         ancho: detalle.crudo_id.slice(-2),
-        programado: roundToTwo(parseFloat(detalle.programado_kg)),
-        consumido: roundToTwo(parseFloat(detalle.reporte_tejeduria_cantidad_kg)),
-        restante: roundToTwo(parseFloat(detalle.programado_kg) - parseFloat(detalle.reporte_tejeduria_cantidad_kg)),
-        merma: ((parseFloat(detalle.programado_kg) - parseFloat(detalle.reporte_tejeduria_cantidad_kg)) / parseFloat(detalle.programado_kg) * 100).toFixed(2) + "%",
-        progreso: (parseFloat(detalle.reporte_tejeduria_cantidad_kg) / parseFloat(detalle.programado_kg) * 100).toFixed(2) + "%",
+        fibra: "POR DEFINIR",
+        rollos: detalle.reporte_tejeduria_nro_rollos,
+        cantidad: roundToTwo(parseFloat(detalle.reporte_tejeduria_cantidad_kg)),
+        kg_por_rollo: roundToTwo(parseFloat(detalle.reporte_tejeduria_cantidad_kg) / detalle.reporte_tejeduria_nro_rollos),
         estado: detalle.estado
       }))
     };
@@ -85,30 +104,81 @@ const processOrderData = (orders: any[]): Orden[] => {
 const ProgramacionTintoreria: React.FC = () => {
   const [pendienteData, setPendienteData] = useState<Orden[]>([]);
   const [cerradaData, setCerradaData] = useState<Orden[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [tejeduria, setTejeduria] = useState('');
   const [tintoreria, setTintoreria] = useState('');
+  const [tejedurias, setTejedurias] = useState<{ proveedor_id: string; razon_social: string; alias: string }[]>([]);
+  const [tintorerias, setTintorerias] = useState<{ proveedor_id: string; razon_social: string; alias: string }[]>([]);
+  const [colores, setColores] = useState<Color[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [partidas, setPartidas] = useState<Partida[]>([]);
 
-  const fetchData = async () => {
+  const fetchData = async (tejeduriaId: string) => {
     try {
-      const response = await instance.get('/operations/v1/revision-stock');
+      setLoading(true);
+      setError(null);
+      const response = await instance.get(`/operations/v1/programacion-tintoreria/${tejeduriaId}/stock`);
       const data = response.data;
-      const pendienteData = processOrderData(data.ordenes_pendientes);
-      const cerradaData = processOrderData(data.ordenes_cerradas);
+      const pendienteData = processOrderData(data.ordenes);
+      const cerradaData = processOrderData(data.ordenes_cerradas || []);
       setPendienteData(pendienteData);
       setCerradaData(cerradaData);
     } catch (error) {
       console.error('Error fetching data', error);
+      setError('Error fetching data');
+    } finally {
+      setTimeout(() => setLoading(false), TIMEOUT);
     }
-    setTimeout(() => setLoading(false), TIMEOUT);
+  };
+
+  const handleParametrosTejTinCol = async () => {
+    try {
+      const response = await instance.get('/operations/v1/programacion-tintoreria');
+      const data = response.data;
+      setTejedurias(data.tejedurias);
+      setTintorerias(data.tintorerias);
+      setColores(data.colores);
+    } catch (error) {
+      console.error('Error fetching parametros', error);
+      setError('Error fetching parametros');
+    }
   };
 
   useEffect(() => {
-    fetchData();
+    handleParametrosTejTinCol();
   }, []);
 
+  const handleTejeduriaChange = (alias: string) => {
+    setTejeduria(alias);
+    setPendienteData([]);
+    setCerradaData([]);
+    setError(null);
+  };
+
   const handleUltimoStock = () => {
-    // Función para obtener el último stock
+    if (tejeduria) {
+      const selectedTejeduria = tejedurias.find(t => t.alias === tejeduria);
+      if (selectedTejeduria) {
+        fetchData(selectedTejeduria.proveedor_id);
+      }
+    } else {
+      setError('Por favor, selecciona una tejeduría');
+    }
+  };
+
+  const handleAgregarPartida = (subordenesSeleccionadas: Suborden[]) => {
+    const nuevasPartidas = subordenesSeleccionadas.map((suborden, index) => ({
+      id: partidas.length + index + 1,
+      hilanderia: 'POR DEFINIR',
+      suborden: `${suborden.tejido}-${suborden.densidad}-${suborden.ancho}`,
+      a_disponer: suborden.rollos,
+      rollos: 0,
+      peso: 0,
+      kg_por_rollo: suborden.kg_por_rollo,
+      tintoreria: tintoreria,
+      color: ''
+    }));
+    setPartidas([...partidas, ...nuevasPartidas]);
   };
 
   return (
@@ -121,14 +191,14 @@ const ProgramacionTintoreria: React.FC = () => {
               <div>
                 <Select
                   value={tejeduria}
-                  onChange={(e) => setTejeduria(e.target.value)}
+                  onChange={(e) => handleTejeduriaChange(e.target.value)}
                   displayEmpty
                   className="w-60 h-12 rounded border-[1.5px] border-stroke bg-transparent px-2 py-3 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                 >
                   <MenuItem value="" disabled>Selecciona una opción</MenuItem>
-                  <MenuItem value="FRA">FRA</MenuItem>
-                  <MenuItem value="RSA">RSA</MenuItem>
-                  {/* Agregar TEJEDURIAS */}
+                  {tejedurias.map(tejeduria => (
+                    <MenuItem key={tejeduria.proveedor_id} value={tejeduria.alias}>{tejeduria.alias}</MenuItem>
+                  ))}
                 </Select>
                 <button
                   onClick={handleUltimoStock}
@@ -136,7 +206,7 @@ const ProgramacionTintoreria: React.FC = () => {
                 >
                   Obtener Último Stock
                 </button>
-              </div>           
+              </div>
             </CardContent>
           </Card>
           <TbTruckDelivery className="mt-9 text-6xl text-black dark:text-neutral-300" />
@@ -151,21 +221,22 @@ const ProgramacionTintoreria: React.FC = () => {
                   className="w-60 h-12 rounded border-[1.5px] border-stroke bg-transparent px-2 py-3 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                 >
                   <MenuItem value="" disabled>Selecciona una opción</MenuItem>
-                  <MenuItem value="Color y Textura">Color y Textura</MenuItem>
-                  <MenuItem value="Tricot">Tricot</MenuItem>
-                  {/* Agregar TINTORERIAS */}
+                  {tintorerias.map(tintoreria => (
+                    <MenuItem key={tintoreria.proveedor_id} value={tintoreria.alias}>{tintoreria.alias}</MenuItem>
+                  ))}
                 </Select>
-              </div>           
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
-      <Tabla1 data={pendienteData} loading={loading} fetchData={fetchData} />
-      <Tabla2 data={cerradaData} loading={loading} />
+      {error && (
+        <div className="text-red-500">{error}</div>
+      )}
+      <Tabla1 data={pendienteData} loading={loading} fetchData={() => fetchData(tejeduria)} handleAgregarPartida={handleAgregarPartida} />
+      <Tabla2 data={cerradaData} loading={loading} colores={colores} partidas={partidas} />
     </div>
   );
-  
-  
 };
 
 export default ProgramacionTintoreria;

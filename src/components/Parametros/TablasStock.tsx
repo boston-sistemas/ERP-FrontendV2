@@ -30,7 +30,7 @@ export const minWidths1 = [
   export const minWidths3 = [
     "min-w-[110px]",  // OS
     "min-w-[110px]",  // Tejido
-    "min-w-[110px]",  // Ancho
+    "min-w-[120px]",  // Ancho
     "min-w-[110px]",  // Programado (kg)
     "min-w-[110px]",  // Consumido (kg)
     "min-w-[110px]",  // Restante (kg)

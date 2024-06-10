@@ -23,12 +23,18 @@ const columns = [
   "Saldo Recogido"
 ];
 
+interface Color {
+  nombre: string;
+  descripcion: string | null;
+  color_id: number;
+}
+
 interface Tabla2Props {
   data: Orden[];
   loading: boolean;
 }
 
-const Tabla2: React.FC<Tabla2Props> = ({ data, loading }) => {
+const Tabla2: React.FC<Tabla2Props> = ({ data, loading}) => {
   const [filasSeleccionadas, setFilasSeleccionadas] = useState<boolean[]>(new Array(data.length).fill(false));
   const [selectAll, setSelectAll] = useState<boolean>(false);
   const [filasExpandidas, setFilasExpandidas] = useState<number[]>([]);
