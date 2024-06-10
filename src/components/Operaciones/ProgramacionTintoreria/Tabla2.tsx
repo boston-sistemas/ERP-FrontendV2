@@ -72,7 +72,7 @@ const Tabla2: React.FC<Tabla2Props> = ({ data, loading, colores, partidas, setPa
     if (value <= partida.a_disponer) {
       partida.rollos = value;
       partida.peso = roundToTwo(value * partida.kg_por_rollo);
-      partida.a_disponer = partidas[index].a_disponer - value;
+      newPartidas[index].a_disponer = partidas[index].a_disponer - value;
       setLocalPartidas(newPartidas);
     }
   };

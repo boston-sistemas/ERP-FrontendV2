@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { IconButton, Collapse } from "@mui/material";
 import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
 import TablaExpandida from "./TablaExpandida";
@@ -53,8 +53,12 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData, handleAgregar
         handleAgregarPartida(subordenesSeleccionadas);
     };
 
-    const onSeleccionar = (suborden: Suborden) => {
-        setSubordenesSeleccionadas(prev => [...prev, suborden]);
+    const onSeleccionar = (suborden: Suborden, seleccionado: boolean) => {
+        if (seleccionado) {
+            setSubordenesSeleccionadas(prev => [...prev, suborden]);
+        } else {
+            setSubordenesSeleccionadas(prev => prev.filter(s => s !== suborden));
+        }
     };
 
     return (
