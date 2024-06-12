@@ -180,17 +180,23 @@ const ProgramacionTintoreria: React.FC = () => {
       return;
     }
 
-    const nuevasPartidas = subordenesSeleccionadas.map((suborden, index) => ({
-      id: partidas.length + index + 1,
-      hilanderia: 'POR DEFINIR',
-      suborden: `${suborden.tejido}-${suborden.densidad}-${suborden.ancho}`,
-      a_disponer: rollosDisponibles[`${suborden.tejido}-${suborden.densidad}-${suborden.ancho}`],
-      rollos: 0,
-      peso: 0,
-      kg_por_rollo: suborden.kg_por_rollo,
-      tintoreria: tintoreria,
-      color: ''
-    }));
+    const nuevasPartidas = subordenesSeleccionadas.map((suborden, index) => {
+      const idSuborden = `${suborden.tejido}-${suborden.densidad}-${suborden.ancho}`;
+      const rollosIniciales = rollosDisponibles[idSuborden] ?? suborden.rollos;
+
+      return {
+        id: partidas.length + index + 1,
+        hilanderia: 'POR DEFINIR',
+        suborden: idSuborden,
+        a_disponer: rollosIniciales,
+        rollos: 0,
+        peso: 0,
+        kg_por_rollo: suborden.kg_por_rollo,
+        tintoreria: tintoreria,
+        color: ''
+      };
+    });
+
     setPartidas([...partidas, ...nuevasPartidas]);
   };
 
@@ -219,25 +225,39 @@ const ProgramacionTintoreria: React.FC = () => {
     }
   };
 
-  const handleRollosChange = (partidaIndex: number, value: number) => {
+  const handleRollosChange = (partidaIndex: number, value: string) => {
     const newPartidas = [...partidas];
     const partida = newPartidas[partidaIndex];
     const idSuborden = partida.suborden;
-    const rollosDisponiblesActuales = rollosDisponibles[idSuborden];
+    const rollosDisponiblesActuales = rollosDisponibles[idSuborden] ?? partida.a_disponer;
 
-    // Calculate difference between the current and new rollos value
-    const rollosDiff = value - partida.rollos;
+    // Handle empty input or non-numeric input
+    const newValue = value === "" ? 0 : parseInt(value);
+    if (isNaN(newValue)) {
+      return;
+    }
+
+    const rollosDiff = newValue - partida.rollos;
 
     if (rollosDisponiblesActuales - rollosDiff >= 0) {
-      partida.rollos = value;
-      partida.peso = roundToTwo(value * partida.kg_por_rollo);
+      partida.rollos = newValue;
+      partida.peso = roundToTwo(newValue * partida.kg_por_rollo);
       setPartidas(newPartidas);
 
       // Update rollosDisponibles
       setRollosDisponibles(prev => ({
         ...prev,
-        [idSuborden]: prev[idSuborden] - rollosDiff
+        [idSuborden]: rollosDisponiblesActuales - rollosDiff
       }));
+
+      // Update a_disponer for all partidas with the same suborden
+      setPartidas(prevPartidas =>
+        prevPartidas.map(p =>
+          p.suborden === idSuborden
+            ? { ...p, a_disponer: rollosDisponibles[idSuborden] }
+            : p
+        )
+      );
     }
   };
 
@@ -437,16 +457,15 @@ const ProgramacionTintoreria: React.FC = () => {
                       {partida.suborden}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      {rollosDisponibles[partida.suborden] - partida.rollos}
+                      {rollosDisponibles[partida.suborden] ?? partida.a_disponer}
                     </td>
                     <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">
                       <input
-                        type="number"
+                        type="text"
                         value={partida.rollos}
-                        onChange={(e) => handleRollosChange(index, parseInt(e.target.value))}
+                        onChange={(e) => handleRollosChange(index, e.target.value)}
                         className="w-20 border-[1.5px] border-neutral-500 bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-blue-800"
-                        min="0"
-                        max={rollosDisponibles[partida.suborden]}
+                        inputMode="numeric"
                       />
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
