@@ -2,22 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
-import Tabla1 from "./Tabla1";
-import Tabla2 from "./Tabla2";
 import { TIMEOUT } from "@/components/Parametros/Parametros";
-import { Select, MenuItem, Card, CardContent, Typography } from "@mui/material";
+import { Select, MenuItem, Card, CardContent, Typography, IconButton, Collapse, TablePagination } from "@mui/material";
 import { TbTruckDelivery } from "react-icons/tb";
-
-interface Detalle {
-  tejido: string;
-  densidad: string;
-  ancho: string;
-  fibra: string;
-  rollos: number;
-  cantidad: number;
-  kg_por_rollo: number;
-  estado: string;
-}
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
+import TablaExpandida from "./TablaExpandida";
+import "@/css/checkbox.css";
 
 export interface Orden {
   hilanderia: string;
@@ -26,7 +18,7 @@ export interface Orden {
   orden: string;
   fecha: string;
   estado: string;
-  expandida: Detalle[];
+  expandida: Suborden[];
 }
 
 interface Color {
@@ -60,7 +52,7 @@ interface Partida {
 
 export const roundToTwo = (num: number) => Math.round(num * 100) / 100;
 
-const calculateGlobalState = (detalles: any[]): string => {
+const calculateGlobalState = (detalles: Suborden[]): string => {
   const estados = detalles.map((detalle: { estado: string }) => detalle.estado);
   if (estados.every(estado => estado === "LISTO")) {
     return "LISTO";
@@ -112,6 +104,11 @@ const ProgramacionTintoreria: React.FC = () => {
   const [colores, setColores] = useState<Color[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [partidas, setPartidas] = useState<Partida[]>([]);
+  const [filasExpandidas, setFilasExpandidas] = useState<number[]>([]);
+  const [pagina, setPagina] = useState(0);
+  const [filasPorPagina, setFilasPorPagina] = useState(10);
+  const [subordenesSeleccionadas, setSubordenesSeleccionadas] = useState<Suborden[]>([]);
+  const [rollosDisponibles, setRollosDisponibles] = useState<Record<string, number>>({});
 
   const fetchData = async (tejeduriaId: string) => {
     try {
@@ -123,6 +120,17 @@ const ProgramacionTintoreria: React.FC = () => {
       const cerradaData = processOrderData(data.ordenes_cerradas || []);
       setPendienteData(pendienteData);
       setCerradaData(cerradaData);
+
+      // Initialize rollosDisponibles
+      const rollosMap: Record<string, number> = {};
+      pendienteData.forEach(order => {
+        order.expandida.forEach(suborden => {
+          const idSuborden = `${suborden.tejido}-${suborden.densidad}-${suborden.ancho}`;
+          rollosMap[idSuborden] = suborden.rollos;
+        });
+      });
+      setRollosDisponibles(rollosMap);
+
     } catch (error) {
       console.error('Error fetching data', error);
       setError('Error fetching data');
@@ -176,7 +184,7 @@ const ProgramacionTintoreria: React.FC = () => {
       id: partidas.length + index + 1,
       hilanderia: 'POR DEFINIR',
       suborden: `${suborden.tejido}-${suborden.densidad}-${suborden.ancho}`,
-      a_disponer: suborden.rollos,
+      a_disponer: rollosDisponibles[`${suborden.tejido}-${suborden.densidad}-${suborden.ancho}`],
       rollos: 0,
       peso: 0,
       kg_por_rollo: suborden.kg_por_rollo,
@@ -184,6 +192,59 @@ const ProgramacionTintoreria: React.FC = () => {
       color: ''
     }));
     setPartidas([...partidas, ...nuevasPartidas]);
+  };
+
+  const handleExpandirFila = (index: number) => {
+    if (filasExpandidas.includes(index)) {
+      setFilasExpandidas(filasExpandidas.filter(rowIndex => rowIndex !== index));
+    } else {
+      setFilasExpandidas([...filasExpandidas, index]);
+    }
+  };
+
+  const handleCambiarPagina = (event: any, newPage: any) => {
+    setPagina(newPage);
+  };
+
+  const handleCambiarFilasPorPagina = (event: any) => {
+    setFilasPorPagina(parseInt(event.target.value, 10));
+    setPagina(0);
+  };
+
+  const onSeleccionar = (suborden: Suborden, seleccionado: boolean) => {
+    if (seleccionado) {
+      setSubordenesSeleccionadas(prev => [...prev, suborden]);
+    } else {
+      setSubordenesSeleccionadas(prev => prev.filter(s => s !== suborden));
+    }
+  };
+
+  const handleRollosChange = (partidaIndex: number, value: number) => {
+    const newPartidas = [...partidas];
+    const partida = newPartidas[partidaIndex];
+    const idSuborden = partida.suborden;
+    const rollosDisponiblesActuales = rollosDisponibles[idSuborden];
+
+    // Calculate difference between the current and new rollos value
+    const rollosDiff = value - partida.rollos;
+
+    if (rollosDisponiblesActuales - rollosDiff >= 0) {
+      partida.rollos = value;
+      partida.peso = roundToTwo(value * partida.kg_por_rollo);
+      setPartidas(newPartidas);
+
+      // Update rollosDisponibles
+      setRollosDisponibles(prev => ({
+        ...prev,
+        [idSuborden]: prev[idSuborden] - rollosDiff
+      }));
+    }
+  };
+
+  const handleColorChange = (index: number, value: string) => {
+    const newPartidas = [...partidas];
+    newPartidas[index].color = value;
+    setPartidas(newPartidas);
   };
 
   return (
@@ -238,8 +299,184 @@ const ProgramacionTintoreria: React.FC = () => {
       {error && (
         <div className="text-red-500">{error}</div>
       )}
-      <Tabla1 data={pendienteData} loading={loading} fetchData={() => fetchData(tejeduria)} handleAgregarPartida={handleAgregarPartida} />
-      <Tabla2 data={cerradaData} loading={loading} colores={colores} partidas={partidas} setPartidas={setPartidas} />
+      <div>
+        <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
+          <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
+            Ordenes de Servicio - Pendientes
+          </h4>
+          <div className="max-w-full overflow-x-auto" style={{ maxHeight: "500px", overflowY: 'auto' }}>
+            <table className="w-full table-auto">
+              <thead>
+                <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
+                  <th></th>
+                  {["Orden", "Hilanderia", "Rollos Reportados (Kg)", "Peso Reportado (Kg)", "Estado"].map((column, index) => (
+                    <th key={index} className={`px-4 py-4 text-center font-normal text-white dark:text-zinc-100`}>
+                      {column}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="pt-5 pb-5 text-center text-black dark:text-white">
+                      Cargando...
+                    </td>
+                  </tr>
+                ) : pendienteData.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="pt-5 pb-5 text-center text-black dark:text-white">
+                      No existen datos para esta consulta
+                    </td>
+                  </tr>
+                ) : (
+                  pendienteData
+                    .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
+                    .map((data, index) => (
+                      <React.Fragment key={index}>
+                        <tr className="text-center">
+                          <td className="w-10 border-b border-[#eee] px-8 py-5 dark:border-strokedark">
+                            <IconButton
+                              onClick={() => handleExpandirFila(index)}
+                              className="text-inherit dark:text-white"
+                            >
+                              {filasExpandidas.includes(index) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                            </IconButton>
+                          </td>
+                          <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                            <p className="font-normal text-black dark:text-white">{data.orden}</p>
+                          </td>
+                          <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                            <p className="font-normal text-black dark:text-white">{data.hilanderia}</p>
+                          </td>
+                          <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                            <p className="font-normal text-black dark:text-white">{data.rollos}</p>
+                          </td>
+                          <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                            <p className="font-normal text-black dark:text-white">{data.peso}</p>
+                          </td>
+                          <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                            <p
+                              className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(data.estado)}`}
+                            >
+                              {data.estado}
+                            </p>
+                          </td>
+                        </tr>
+                        <tr className="bg-gray-100 dark:bg-gray-700">
+                          <td colSpan={6} className="p-0">
+                            <Collapse in={filasExpandidas.includes(index)} timeout="auto" unmountOnExit>
+                              <TablaExpandida data={data.expandida} onSeleccionar={onSeleccionar} />
+                            </Collapse>
+                          </td>
+                        </tr>
+                      </React.Fragment>
+                    ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <TablePagination
+            rowsPerPageOptions={[10, 25, 50]}
+            component="div"
+            count={pendienteData.length}
+            rowsPerPage={filasPorPagina}
+            page={pagina}
+            onPageChange={handleCambiarPagina}
+            onRowsPerPageChange={handleCambiarFilasPorPagina}
+            labelRowsPerPage="Filas por página:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
+            sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : 'inherit' }}
+          />
+        </div>
+        <button
+          onClick={() => handleAgregarPartida(subordenesSeleccionadas)}
+          className="mt-4 w-full border border-gray-300 px-5 py-3 text-white transition bg-blue-800 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 dark:bg-blue-500 dark:hover:bg-blue-400"
+        >
+          Agregar Partida
+        </button>
+      </div>
+      <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
+        <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
+          Partidas
+        </h4>
+        <div className="max-w-full overflow-x-auto">
+          <table className="w-full table-auto">
+            <thead>
+              <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
+                {["Partida", "Hilanderia", "Suborden", "A Disponer", "Rollos", "Peso", "Tintoreria", "Color"].map((column, index) => (
+                  <th key={index} className="px-4 py-4 text-center font-normal text-white dark:text-zinc-100">
+                    {column}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="pt-5 pb-5 text-center text-black dark:text-white">
+                    Cargando...
+                  </td>
+                </tr>
+              ) : partidas.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="pt-5 pb-5 text-center text-black dark:text-white">
+                    No existen partidas para mostrar
+                  </td>
+                </tr>
+              ) : (
+                partidas.map((partida, index) => (
+                  <tr key={index} className="text-center">
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      {partida.id}
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      {partida.hilanderia}
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      {partida.suborden}
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      {rollosDisponibles[partida.suborden] - partida.rollos}
+                    </td>
+                    <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">
+                      <input
+                        type="number"
+                        value={partida.rollos}
+                        onChange={(e) => handleRollosChange(index, parseInt(e.target.value))}
+                        className="w-20 border-[1.5px] border-neutral-500 bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-blue-800"
+                        min="0"
+                        max={rollosDisponibles[partida.suborden]}
+                      />
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      {partida.peso}
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      {partida.tintoreria}
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      <Select
+                        value={partida.color}
+                        onChange={(e) => handleColorChange(index, e.target.value as string)}
+                        displayEmpty
+                        className="w-60 h-12 rounded border-[1.5px] border-stroke bg-transparent px-2 py-3 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                      >
+                        <MenuItem value="" disabled>Selecciona color</MenuItem>
+                        {colores.map(color => (
+                          <MenuItem key={color.color_id} value={color.nombre}>
+                            {color.nombre}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };
