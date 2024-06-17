@@ -10,6 +10,8 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
 import TablaExpandida from "./TablaExpandida";
 import "@/css/checkbox.css";
+import { SelectChangeEvent } from '@mui/material/Select';
+
 
 export interface Orden {
   hilanderia: string;
@@ -160,7 +162,8 @@ const ProgramacionTintoreria: React.FC = () => {
     setTejeduria(alias);
     setPendienteData([]);
     setCerradaData([]);
-    setError(null);
+    setError('');
+
   };
 
   const handleUltimoStock = () => {
@@ -174,11 +177,21 @@ const ProgramacionTintoreria: React.FC = () => {
     }
   };
 
+  const handleTintoreriaChange = (event: SelectChangeEvent<string>) => {
+    const selectedTintoreria = event.target.value as string;
+    setTintoreria(selectedTintoreria);
+    if (selectedTintoreria) {
+      setError(null);
+    }
+  };
+  
+
   const handleAgregarPartida = (subordenesSeleccionadas: Suborden[]) => {
     if (!tintoreria) {
       setError('Por favor, selecciona una tintorería');
       return;
     }
+    setError(null)
 
     const nuevasPartidas = subordenesSeleccionadas.map((suborden, index) => {
       const idSuborden = `${suborden.tejido}-${suborden.densidad}-${suborden.ancho}`;
@@ -302,7 +315,7 @@ const ProgramacionTintoreria: React.FC = () => {
               <div>
                 <Select
                   value={tintoreria}
-                  onChange={(e) => setTintoreria(e.target.value)}
+                  onChange={handleTintoreriaChange}
                   displayEmpty
                   className="w-60 h-12 rounded border-[1.5px] border-stroke bg-transparent px-2 py-3 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                 >
