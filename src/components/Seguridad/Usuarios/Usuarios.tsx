@@ -7,6 +7,12 @@ import { TablePagination, IconButton, Typography, Button } from "@mui/material";
 import { Edit, Visibility } from "@mui/icons-material";
 import "@/css/checkbox.css";
 
+interface Rol {
+  rol_id: number;
+  nombre: string;
+  is_active: boolean;
+}
+
 interface Usuario {
   usuario_id: number;
   username: string;
@@ -14,7 +20,7 @@ interface Usuario {
   display_name: string;
   is_active: boolean;
   blocked_until: string;
-  roles: string[];
+  roles: Rol[];
 }
 
 const Usuarios: React.FC = () => {
@@ -103,13 +109,13 @@ const Usuarios: React.FC = () => {
                         usuario.roles.map((role, index) => (
                           <span
                             key={index}
-                            className={`inline-block px-2 py-1 text-xs font-medium text-white ${role === "Produccion" ? "bg-blue-500" : role === "Operaciones" ? "bg-red-500" : "bg-green-500"} rounded-full`}
+                            className={`inline-block px-2 py-1 text-xs font-medium text-white ${role.nombre === "Produccion" ? "bg-blue-500" : role.nombre === "Operaciones" ? "bg-red-500" : "bg-green-500"} rounded-full`}
                           >
-                            {role}
+                            {role.nombre}
                           </span>
                         ))
                       ) : (
-                        <Typography variant="body2" className="text-red-500">-</Typography>
+                        <Typography variant="body2" className="text-red-500">Sin roles</Typography>
                       )}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
@@ -149,12 +155,14 @@ const Usuarios: React.FC = () => {
           sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : 'inherit' }}
         />
       </div>
-      <button
+      <Button
         onClick={handleCrearUsuario}
-        className={`mt-4 w-full border border-gray-300 px-5 py-3 text-white transition bg-blue-900 hover:bg-blue-700 focus:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 dark:bg-blue-500 dark:hover:bg-blue-400`}
+        variant="contained"
+        color="primary"
+        className="mt-4 w-full"
       >
         Crear Usuario
-      </button>
+      </Button>
     </div>
   );
 };
