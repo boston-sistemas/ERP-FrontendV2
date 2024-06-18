@@ -67,7 +67,9 @@ const Usuarios: React.FC = () => {
         <div className="text-red-500">{error}</div>
       )}
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
-        <Typography variant="h5" className="text-black dark:text-white mb-4">Usuarios</Typography>
+        <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
+          Usuarios 
+        </h4>
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
             <thead>
