@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { TablePagination, IconButton, Typography, Button } from "@mui/material";
 import { Edit, Visibility } from "@mui/icons-material";
 import "@/css/checkbox.css";
@@ -29,6 +30,7 @@ const Usuarios: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
+  const router = useRouter();
 
   const fetchUsuarios = async () => {
     try {
@@ -57,8 +59,7 @@ const Usuarios: React.FC = () => {
   };
 
   const handleCrearUsuario = () => {
-    // Implementar la función para crear un usuario
-    console.log("Crear usuario");
+    router.push('/seguridad/usuarios/crear-usuario');
   };
 
   return (
@@ -117,7 +118,7 @@ const Usuarios: React.FC = () => {
                           </span>
                         ))
                       ) : (
-                        <Typography variant="body2" className="text-red-500">Sin roles</Typography>
+                        <Typography variant="body2" className="text-red-500">-</Typography>
                       )}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
@@ -161,7 +162,7 @@ const Usuarios: React.FC = () => {
         onClick={handleCrearUsuario}
         className={`mt-4 w-full border border-gray-300 px-5 py-3 text-white transition bg-blue-900 hover:bg-blue-700 focus:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 dark:bg-blue-500 dark:hover:bg-blue-400`}
       >
-        Enviar Stock
+        Crear Usuario
       </button>
     </div>
   );

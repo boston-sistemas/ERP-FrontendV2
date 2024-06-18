@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const TablesPage = () => {
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="Reporte de Stock" />
+      <Breadcrumb pageName="Crear Usuario" />
       <div className="flex flex-col gap-10">
         <CrearUsuario/>
       </div>

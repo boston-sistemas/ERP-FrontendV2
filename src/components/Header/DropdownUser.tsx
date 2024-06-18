@@ -44,7 +44,7 @@ const DropdownUser = () => {
       >
         <span className="hidden text-right lg:block">
           <span className="block text-sm font-medium text-black dark:text-white">
-            Aaron Coorahua
+            Anonymus
           </span>
           <span className="block text-xs">Sistemas</span>
         </span>
@@ -53,7 +53,7 @@ const DropdownUser = () => {
           <Image
             width={112}
             height={112}
-            src={"/images/user/user-aaron.png"}
+            src={"/images/user/user-default.png"}
             style={{
               width: "auto",
               height: "auto",
