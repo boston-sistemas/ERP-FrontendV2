@@ -280,6 +280,17 @@ const ProgramacionTintoreria: React.FC = () => {
     setPartidas(newPartidas);
   };
 
+  const canAddPartida = (): boolean => {
+    return subordenesSeleccionadas.length > 0 && tintoreria !== '';
+  };
+
+  useEffect(() => {
+    const buttonElement = document.getElementById("agregar-partida-button") as HTMLButtonElement;
+    if (buttonElement) {
+      buttonElement.disabled = !canAddPartida();
+    }
+  }, [subordenesSeleccionadas, tintoreria]);
+
   return (
     <div className="space-y-5">
       <div className="overflow-x-auto mb-6">
@@ -424,7 +435,12 @@ const ProgramacionTintoreria: React.FC = () => {
         </div>
         <button
           onClick={() => handleAgregarPartida(subordenesSeleccionadas)}
-          className="mt-4 w-full border border-gray-300 px-5 py-3 text-white transition bg-blue-800 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 dark:bg-blue-500 dark:hover:bg-blue-400"
+          className={`mt-4 w-full border px-5 py-3 text-white transition focus:outline-none focus:ring-2 focus:ring-opacity-50 ${
+            canAddPartida()
+              ? 'bg-blue-800 hover:bg-blue-700 focus:ring-blue-500 border-gray-400 dark:bg-blue-500 dark:hover:bg-blue-400'
+              : 'bg-slate-400 text-gray-700 dark:bg-gray-600 dark:text-gray-300 border-gray-500'
+          }`}
+          style={{ pointerEvents: canAddPartida() ? 'auto' : 'none' }}
         >
           Agregar Partida
         </button>
