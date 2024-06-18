@@ -155,14 +155,12 @@ const Usuarios: React.FC = () => {
           sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : 'inherit' }}
         />
       </div>
-      <Button
+      <button
         onClick={handleCrearUsuario}
-        variant="contained"
-        color="primary"
-        className="mt-4 w-full"
+        className={`mt-4 w-full border border-gray-300 px-5 py-3 text-white transition bg-blue-900 hover:bg-blue-700 focus:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 dark:bg-blue-500 dark:hover:bg-blue-400`}
       >
-        Crear Usuario
-      </Button>
+        Enviar Stock
+      </button>
     </div>
   );
 };
