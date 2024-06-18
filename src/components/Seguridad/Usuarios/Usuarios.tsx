@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
 import Image from "next/image";
-import { TablePagination, IconButton, Typography} from "@mui/material";
+import { TablePagination, IconButton, Typography, Button } from "@mui/material";
 import { Edit, Visibility } from "@mui/icons-material";
 import "@/css/checkbox.css";
 
@@ -51,12 +51,12 @@ const Usuarios: React.FC = () => {
   };
 
   const handleCrearUsuario = () => {
-        throw new Error("Function not implemented.");
-  }
+    // Implementar la función para crear un usuario
+    console.log("Crear usuario");
+  };
 
   return (
     <div className="space-y-5">
-      
       {error && (
         <div className="text-red-500">{error}</div>
       )}
@@ -99,14 +99,18 @@ const Usuarios: React.FC = () => {
                       <Typography variant="body2" className="text-black dark:text-white">{usuario.email}</Typography>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      {usuario.roles.map((role, index) => (
-                        <span
-                          key={index}
-                          className={`inline-block px-2 py-1 text-xs font-medium text-white ${role === "Produccion" ? "bg-blue-500" : role === "Operaciones" ? "bg-red-500" : "bg-green-500"} rounded-full`}
-                        >
-                          {role}
-                        </span>
-                      ))}
+                      {usuario.roles.length > 0 ? (
+                        usuario.roles.map((role, index) => (
+                          <span
+                            key={index}
+                            className={`inline-block px-2 py-1 text-xs font-medium text-white ${role === "Produccion" ? "bg-blue-500" : role === "Operaciones" ? "bg-red-500" : "bg-green-500"} rounded-full`}
+                          >
+                            {role}
+                          </span>
+                        ))
+                      ) : (
+                        <Typography variant="body2" className="text-red-500">-</Typography>
+                      )}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       POR DEFINIR
@@ -149,7 +153,7 @@ const Usuarios: React.FC = () => {
         onClick={handleCrearUsuario}
         className={`mt-4 w-full border border-gray-300 px-5 py-3 text-white transition bg-blue-900 hover:bg-blue-700 focus:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 dark:bg-blue-500 dark:hover:bg-blue-400`}
       >
-        Enviar Stock
+        Crear Usuario
       </button>
     </div>
   );
