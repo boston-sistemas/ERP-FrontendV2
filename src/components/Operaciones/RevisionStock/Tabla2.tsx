@@ -35,7 +35,7 @@ interface Tabla2Props {
 }
 
 const Tabla2: React.FC<Tabla2Props> = ({ data, loading}) => {
-  const [filasSeleccionadas, setFilasSeleccionadas] = useState<boolean[]>(new Array(data.length).fill(false));
+  const [filasSeleccionadas, setFilasSeleccionadas] = useState<boolean[]>(Array.from({ length: data.length }, () => false));
   const [selectAll, setSelectAll] = useState<boolean>(false);
   const [filasExpandidas, setFilasExpandidas] = useState<number[]>([]);
   const [pagina, setPagina] = useState(0);
