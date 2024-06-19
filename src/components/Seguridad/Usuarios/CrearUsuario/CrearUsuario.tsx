@@ -146,7 +146,7 @@ const CrearUsuario: React.FC = () => {
                     )}
                     <button
                       type="submit"
-                      className="bg-blue-800 px-5 py-3 text-white hover:bg-blue-600"
+                      className="w-30 bg-blue-800 px-5 py-3 text-white hover:bg-blue-600"
                     >
                       Siguiente
                     </button>
@@ -160,13 +160,13 @@ const CrearUsuario: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleBack}
-                      className="bg-white px-5 py-3 text-black border border-black hover:bg-gray-200"
+                      className="bg-white px-5 py-3 text-black border border-black hover:bg-zinc-100"
                     >
                       Atrás
                     </button>
                     <button
                       type="submit"
-                      className="bg-blue-800 px-5 py-3 text-white hover:bg-blue-600"
+                      className="w-30 bg-blue-800 px-5 py-3 text-white hover:bg-blue-600"
                     >
                       Siguiente
                     </button>
@@ -180,13 +180,13 @@ const CrearUsuario: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleBack}
-                      className="bg-white px-5 py-3 text-black border border-black hover:bg-gray-200"
+                      className="bg-white px-5 py-3 text-black border border-black hover:bg-zinc-100"
                     >
                       Atrás
                     </button>
                     <button
                       type="submit"
-                      className="bg-blue-800 px-5 py-3 text-white hover:bg-blue-600"
+                      className="w-30 bg-blue-800 px-5 py-3 text-white hover:bg-blue-600"
                     >
                       Crear
                     </button>
