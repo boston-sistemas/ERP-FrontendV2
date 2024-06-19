@@ -43,8 +43,8 @@ interface Tabla1Props {
 const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
-  const [rollos, setRollos] = useState<number[]>([]);
-  const [peso, setPeso] = useState<number[]>([]);
+  const [rollos, setRollos] = useState<string[]>([]);
+  const [peso, setPeso] = useState<string[]>([]);  
   const [mensajeError, setMensajeError] = useState<string | null>(null);
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
   const [desvaneciendo, setDesvaneciendo] = useState<boolean>(false);
@@ -79,26 +79,48 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
     setPagina(0);
   };
 
-  const handleRollosCambio = (index: number, value: number) => {
-    if (value >= 0) {
-      const newRollos = [...rollos];
-      newRollos[index] = value;
-      setRollos(newRollos);
+  const handleRollosCambio = (index: number, value: string) => {
+    const newRollos = [...rollos];
+    const newValue = value === "" ? 0 : parseInt(value);
+  
+    if (isNaN(newValue)) {
+      return;
     }
+  
+    newRollos[index] = newValue.toString();
+    setRollos(newRollos);
   };
-
-  const handlePesoCambio = (index: number, value: number) => {
-    if (value >= 0) {
+  
+  const handlePesoCambio = (index: number, value: string) => {
+    const newPeso = [...peso];
+    const newValue = value === "" ? 0 : parseFloat(value);
+  
+    if (isNaN(newValue)) {
+      return;
+    }
+  
+    newPeso[index] = newValue.toString();
+    setPeso(newPeso);
+  };
+  
+  const handleFocus = (index: number, type: 'rollos' | 'peso') => {
+    if (type === 'rollos' && rollos[index] === "0") {
+      const newRollos = [...rollos];
+      newRollos[index] = '';
+      setRollos(newRollos);
+    } else if (type === 'peso' && peso[index] === "0") {
       const newPeso = [...peso];
-      newPeso[index] = value;
+      newPeso[index] = '';
       setPeso(newPeso);
     }
-  };
+  };   
 
   const handleEnviarStock = async () => {
     setEnviando(true);
     const subordenesSeleccionadas = data.map((item, index) => {
-      if ((rollos[index] > 0 && peso[index] <= 0) || (rollos[index] <= 0 && peso[index] > 0)) {
+      const rollosInt = parseInt(rollos[index]);
+      const pesoInt = parseFloat(peso[index]);
+      if ((rollosInt > 0 && pesoInt <= 0) || (rollosInt <= 0 && pesoInt > 0)) {
         setMensajeError(`Debe ingresar tanto el número de rollos como el peso mayor a 0.`);
         setEnviando(false);
         return null;
@@ -106,34 +128,34 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
       return {
         orden_servicio_tejeduria_id: item.os,
         crudo_id: `${item.tejido}${item.ancho}`,
-        reporte_tejeduria_nro_rollos: rollos[index],
-        reporte_tejeduria_cantidad_kg: peso[index],
+        reporte_tejeduria_nro_rollos: rollosInt,
+        reporte_tejeduria_cantidad_kg: pesoInt,
         estado: item.estado,
       };
     }).filter((suborden): suborden is NonNullable<typeof suborden> => suborden !== null);
-
+  
     if (subordenesSeleccionadas.length !== data.length) {
       setMensajeError("Debe ingresar tanto el número de rollos como el peso mayor a 0.");
       setEnviando(false);
       return;
     }
-
+  
     const detallesOrden = subordenesSeleccionadas.map((suborden) => `OS: ${suborden.orden_servicio_tejeduria_id}, Tejido: ${suborden.crudo_id.slice(0, -2)}, Ancho: ${suborden.crudo_id.slice(-2)}`).join(", ");
-
+  
     setMensajeError(null); // Resetear mensaje de error si todo está correcto
-
+  
     try {
       await instance.put('/operations/v1/reporte-stock/subordenes', { subordenes: subordenesSeleccionadas });
-      setRollos(new Array(data.length).fill(0));
-      setPeso(new Array(data.length).fill(0));
+      setRollos(new Array(data.length).fill('0'));
+      setPeso(new Array(data.length).fill('0'));
       setMensajeExito(detallesOrden);
       fetchData();
     } catch (error) {
       setMensajeError(`Error enviando los datos. Conflictos: ${detallesOrden}`);
     }
-
+  
     setTimeout(() => setEnviando(false), TIMEOUTFETCH);
-  };
+  };  
 
   return (
     <div>
@@ -178,23 +200,23 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
                         <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">{item.consumido} kg</td>
                         <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">{item.restante} kg</td>
                         <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">
-                          <input
-                            type="number"
-                            value={rollos[index] || 0}
-                            onChange={(e) => handleRollosCambio(index, parseInt(e.target.value))}
-                            className="w-20 border-[1.5px] border-neutral-500 bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-blue-800"
-                            min="0"
-                          />
-                        </td>
-                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                          <input
-                            type="number"
-                            value={peso[index] || 0}
-                            onChange={(e) => handlePesoCambio(index, parseFloat(e.target.value))}
-                            className="w-30 border-[1.5px] border-neutral-500 bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-blue-800"
-                            min="0"
-                          />
-                        </td>
+                        <input
+                          type="text"
+                          value={rollos[index]}
+                          onChange={(e) => handleRollosCambio(index, e.target.value)}
+                          onFocus={() => handleFocus(index, 'rollos')}
+                          className="w-20 border-[1.5px] border-neutral-500 bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 dark:text-white"
+                        />
+                      </td>
+                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                        <input
+                          type="text"
+                          value={peso[index]}
+                          onChange={(e) => handlePesoCambio(index, e.target.value)}
+                          onFocus={() => handleFocus(index, 'peso')}
+                          className="w-20 border-[1.5px] border-neutral-500 bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 dark:text-white"
+                        />
+                      </td>
                         <td className="text-black dark:text-white border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.progreso}</td>
                         <td className="text-black dark:text-white border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                           <p className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(item.estado)}`}>
