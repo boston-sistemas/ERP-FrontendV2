@@ -4,14 +4,21 @@ import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { TablePagination, IconButton, Typography, Button } from "@mui/material";
+import { TablePagination, IconButton, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, TextField } from "@mui/material";
 import { Edit, Visibility } from "@mui/icons-material";
 import "@/css/checkbox.css";
+
+interface Acceso {
+  acceso_id: number;
+  nombre: string;
+  is_active: boolean;
+}
 
 interface Rol {
   rol_id: number;
   nombre: string;
   is_active: boolean;
+  accesos: Acceso[];
 }
 
 interface Usuario {
@@ -30,6 +37,12 @@ const Usuarios: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [openViewPermissionsDialog, setOpenViewPermissionsDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<Usuario | null>(null);
+  const [selectedRoleAccesses, setSelectedRoleAccesses] = useState<Rol[]>([]);
+  const [originalUser, setOriginalUser] = useState<Usuario | null>(null);
+  const [updateError, setUpdateError] = useState<string | null>(null);
   const router = useRouter();
 
   const fetchUsuarios = async () => {
@@ -42,6 +55,16 @@ const Usuarios: React.FC = () => {
       setError('Error fetching users');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRoleAccesses = async (role_id: number) => {
+    try {
+      const response = await instance.get(`/security/v1/roles/${role_id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching role accesses', error);
+      return null;
     }
   };
 
@@ -60,6 +83,57 @@ const Usuarios: React.FC = () => {
 
   const handleCrearUsuario = () => {
     router.push('/seguridad/usuarios/crear-usuario');
+  };
+
+  const handleEditUser = (usuario: Usuario) => {
+    setSelectedUser(usuario);
+    setOriginalUser({ ...usuario });
+    setOpenEditDialog(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setOpenEditDialog(false);
+    setSelectedUser(null);
+    setOriginalUser(null);
+    setUpdateError(null);
+  };
+
+  const handleViewPermissions = async (usuario: Usuario) => {
+    const roleAccessesPromises = usuario.roles.map(rol => fetchRoleAccesses(rol.rol_id));
+    const roleAccesses = await Promise.all(roleAccessesPromises);
+    setSelectedRoleAccesses(roleAccesses.filter(access => access !== null));
+    setSelectedUser(usuario);
+    setOpenViewPermissionsDialog(true);
+  };
+
+  const handleCloseViewPermissionsDialog = () => {
+    setOpenViewPermissionsDialog(false);
+    setSelectedRoleAccesses([]);
+    setSelectedUser(null);
+  };
+
+  const handleSaveUser = async () => {
+    if (selectedUser) {
+      try {
+        const updatedUser: Partial<Usuario> = {};
+        if (selectedUser.username !== originalUser?.username) updatedUser.username = selectedUser.username;
+        if (selectedUser.email !== originalUser?.email) updatedUser.email = selectedUser.email;
+        if (selectedUser.display_name !== originalUser?.display_name) updatedUser.display_name = selectedUser.display_name;
+        if (selectedUser.is_active !== originalUser?.is_active) updatedUser.is_active = selectedUser.is_active;
+        if (selectedUser.blocked_until !== originalUser?.blocked_until) updatedUser.blocked_until = selectedUser.blocked_until;
+
+        if (Object.keys(updatedUser).length > 0) {
+          console.log('Updating user:', updatedUser); // Log to check the data being sent
+          await instance.put(`/security/v1/usuarios/${selectedUser.usuario_id}`, updatedUser);
+        }
+
+        fetchUsuarios();
+        handleCloseEditDialog();
+      } catch (error) {
+        console.error('Error updating user', error);
+        setUpdateError('Error updating user. ' + (error.response?.data?.message || ''));
+      }
+    }
   };
 
   return (
@@ -112,7 +186,7 @@ const Usuarios: React.FC = () => {
                         usuario.roles.map((role, index) => (
                           <span
                             key={index}
-                            className={`inline-block px-2 py-1 text-xs font-medium text-white ${role.nombre === "Produccion" ? "bg-blue-500" : role.nombre === "Operaciones" ? "bg-red-500" : "bg-green-500"} rounded-full`}
+                            className={`inline-block ml-1 mr-1 px-2 py-1 text-xs font-medium text-white ${role.nombre === "Produccion" ? "bg-blue-500" : role.nombre === "Operaciones" ? "bg-red-500" : "bg-green-500"} rounded-full`}
                           >
                             {role.nombre}
                           </span>
@@ -130,12 +204,12 @@ const Usuarios: React.FC = () => {
                       </span>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <IconButton className="text-inherit dark:text-white">
+                      <IconButton className="text-inherit dark:text-white" onClick={() => handleViewPermissions(usuario)}>
                         <Visibility />
                       </IconButton>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <IconButton className="text-inherit dark:text-white">
+                      <IconButton className="text-inherit dark:text-white" onClick={() => handleEditUser(usuario)}>
                         <Edit />
                       </IconButton>
                     </td>
@@ -164,6 +238,78 @@ const Usuarios: React.FC = () => {
       >
         Crear Usuario
       </button>
+
+      <Dialog open={openEditDialog} onClose={handleCloseEditDialog}>
+        <DialogTitle>Editar Usuario</DialogTitle>
+        <DialogContent>
+          {selectedUser && (
+            <>
+              <TextField
+                margin="dense"
+                label="Nombre"
+                fullWidth
+                variant="outlined"
+                value={selectedUser.username}
+                onChange={(e) => setSelectedUser({ ...selectedUser, username: e.target.value })}
+              />
+              <TextField
+                margin="dense"
+                label="Display Name"
+                fullWidth
+                variant="outlined"
+                value={selectedUser.display_name}
+                onChange={(e) => setSelectedUser({ ...selectedUser, display_name: e.target.value })}
+              />
+              <TextField
+                margin="dense"
+                label="Email"
+                fullWidth
+                variant="outlined"
+                value={selectedUser.email}
+                onChange={(e) => setSelectedUser({ ...selectedUser, email: e.target.value })}
+              />
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          {updateError && <Typography color="error">{updateError}</Typography>}
+          <Button onClick={handleCloseEditDialog} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleSaveUser} color="primary">
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openViewPermissionsDialog} onClose={handleCloseViewPermissionsDialog}>
+        <DialogTitle>Ver Permisos</DialogTitle>
+        <DialogContent>
+          {selectedRoleAccesses.length > 0 ? (
+            <List>
+              {selectedRoleAccesses.map(role => (
+                <div key={role.rol_id}>
+                  <Typography variant="h6">{role.nombre}</Typography>
+                  <List>
+                    {role.accesos.map(acceso => (
+                      <ListItem key={acceso.acceso_id}>
+                        <ListItemText primary={acceso.nombre} />
+                      </ListItem>
+                    ))}
+                  </List>
+                </div>
+              ))}
+            </List>
+          ) : (
+            <Typography>No tiene roles asignados o no se encontraron permisos.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseViewPermissionsDialog} color="primary">
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
