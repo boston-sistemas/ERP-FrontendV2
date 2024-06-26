@@ -100,7 +100,7 @@ const ProgramacionTintoreria: React.FC = () => {
   const [cerradaData, setCerradaData] = useState<Orden[]>([]);
   const [loading, setLoading] = useState(false);
   const [tejeduria, setTejeduria] = useState('');
-  const [tintoreria, setTintoreria] = useState('');
+  const [tintoreria, setTintoreria] = useState<string | null>(null);
   const [tejedurias, setTejedurias] = useState<{ proveedor_id: string; razon_social: string; alias: string }[]>([]);
   const [tintorerias, setTintorerias] = useState<{ proveedor_id: string; razon_social: string; alias: string }[]>([]);
   const [colores, setColores] = useState<Color[]>([]);
@@ -111,6 +111,8 @@ const ProgramacionTintoreria: React.FC = () => {
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [subordenesSeleccionadas, setSubordenesSeleccionadas] = useState<Suborden[]>([]);
   const [rollosDisponibles, setRollosDisponibles] = useState<Record<string, number>>({});
+  const [mensajeError, setMensajeError] = useState<string | null>(null);
+  const [desvaneciendo, setDesvaneciendo] = useState(false);
 
   const fetchData = async (tejeduriaId: string) => {
     try {
@@ -163,7 +165,7 @@ const ProgramacionTintoreria: React.FC = () => {
     setPendienteData([]);
     setCerradaData([]);
     setError('');
-
+    setSubordenesSeleccionadas([]);
   };
 
   const handleUltimoStock = () => {
@@ -184,21 +186,30 @@ const ProgramacionTintoreria: React.FC = () => {
       setError(null);
     }
   };
-  
 
   const handleAgregarPartida = (subordenesSeleccionadas: Suborden[]) => {
     if (!tintoreria) {
       setError('Por favor, selecciona una tintorería');
       return;
     }
-    setError(null)
+
+    const subordenesConCeroRollos = subordenesSeleccionadas.filter(suborden => suborden.rollos === 0);
+    if (subordenesConCeroRollos.length > 0) {
+      const subordenesCeroRollosText = subordenesConCeroRollos.map(suborden => `${suborden.tejido}-${suborden.densidad}-${suborden.ancho}`).join(', ');
+      setMensajeError(`No se pueden agregar subordenes con 0 rollos: ${subordenesCeroRollosText}`);
+      return;
+    }
+
+    setError(null);
+    setMensajeError(null); // Limpiar el mensaje de error si no hay subordenes con 0 rollos
+    const currentMaxId = partidas.length > 0 ? Math.max(...partidas.map(p => p.id)) : 0;
 
     const nuevasPartidas = subordenesSeleccionadas.map((suborden, index) => {
       const idSuborden = `${suborden.tejido}-${suborden.densidad}-${suborden.ancho}`;
       const rollosIniciales = rollosDisponibles[idSuborden] ?? suborden.rollos;
 
       return {
-        id: partidas.length + index + 1,
+        id: currentMaxId + 1,
         hilanderia: 'POR DEFINIR',
         suborden: idSuborden,
         a_disponer: rollosIniciales,
@@ -281,8 +292,9 @@ const ProgramacionTintoreria: React.FC = () => {
   };
 
   const canAddPartida = (): boolean => {
-    return subordenesSeleccionadas.length > 0 && tintoreria !== '';
+    return subordenesSeleccionadas.length > 0 && tintoreria !== null && tintoreria !== '';
   };
+  
 
   useEffect(() => {
     const buttonElement = document.getElementById("agregar-partida-button") as HTMLButtonElement;
@@ -325,7 +337,7 @@ const ProgramacionTintoreria: React.FC = () => {
               <Typography variant="subtitle1" className="dark:text-white">Tintorería</Typography>
               <div>
                 <Select
-                  value={tintoreria}
+                  value={tintoreria ?? ""}
                   onChange={handleTintoreriaChange}
                   displayEmpty
                   className="w-60 h-12 rounded border-[1.5px] border-stroke bg-transparent px-2 py-3 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
@@ -342,6 +354,9 @@ const ProgramacionTintoreria: React.FC = () => {
       </div>
       {error && (
         <div className="text-red-500">{error}</div>
+      )}
+      {mensajeError && (
+        <div className="text-red-500">{mensajeError}</div>
       )}
       <div>
         <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
@@ -434,6 +449,7 @@ const ProgramacionTintoreria: React.FC = () => {
           />
         </div>
         <button
+          id="agregar-partida-button"
           onClick={() => handleAgregarPartida(subordenesSeleccionadas)}
           className={`mt-4 w-full border px-5 py-3 text-white transition focus:outline-none focus:ring-2 focus:ring-opacity-50 ${
             canAddPartida()
