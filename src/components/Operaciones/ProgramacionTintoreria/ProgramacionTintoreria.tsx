@@ -160,6 +160,23 @@ const ProgramacionTintoreria: React.FC = () => {
     handleParametrosTejTinCol();
   }, []);
 
+  useEffect(() => {
+    if (mensajeError) {
+      setDesvaneciendo(false);
+      const timer = setTimeout(() => setDesvaneciendo(true), 5000); // Desvanecer después de 5 segundos
+      return () => clearTimeout(timer); // Limpiar timeout si el mensaje de error cambia
+    }
+  }, [mensajeError]); 
+  
+  useEffect(() => {
+    if (desvaneciendo) {
+      setTimeout(() => {
+        setDesvaneciendo(false);
+        setMensajeError(null);
+      }, 1000); // Tiempo para la transición de desvanecimiento
+    }
+  }, [desvaneciendo]);  
+
   const handleTejeduriaChange = (alias: string) => {
     setTejeduria(alias);
     setPendienteData([]);
@@ -192,22 +209,23 @@ const ProgramacionTintoreria: React.FC = () => {
       setError('Por favor, selecciona una tintorería');
       return;
     }
-
+  
     const subordenesConCeroRollos = subordenesSeleccionadas.filter(suborden => suborden.rollos === 0);
     if (subordenesConCeroRollos.length > 0) {
       const subordenesCeroRollosText = subordenesConCeroRollos.map(suborden => `${suborden.tejido}-${suborden.densidad}-${suborden.ancho}`).join(', ');
+      setDesvaneciendo(false);
       setMensajeError(`No se pueden agregar subordenes con 0 rollos: ${subordenesCeroRollosText}`);
       return;
     }
-
+  
     setError(null);
     setMensajeError(null); // Limpiar el mensaje de error si no hay subordenes con 0 rollos
     const currentMaxId = partidas.length > 0 ? Math.max(...partidas.map(p => p.id)) : 0;
-
+  
     const nuevasPartidas = subordenesSeleccionadas.map((suborden, index) => {
       const idSuborden = `${suborden.tejido}-${suborden.densidad}-${suborden.ancho}`;
       const rollosIniciales = rollosDisponibles[idSuborden] ?? suborden.rollos;
-
+  
       return {
         id: currentMaxId + 1,
         hilanderia: 'POR DEFINIR',
@@ -220,9 +238,9 @@ const ProgramacionTintoreria: React.FC = () => {
         color: ''
       };
     });
-
+  
     setPartidas([...partidas, ...nuevasPartidas]);
-  };
+  };  
 
   const handleExpandirFila = (index: number) => {
     if (filasExpandidas.includes(index)) {
@@ -356,8 +374,31 @@ const ProgramacionTintoreria: React.FC = () => {
         <div className="text-red-500">{error}</div>
       )}
       {mensajeError && (
-        <div className="text-red-500">{mensajeError}</div>
-      )}
+          <div className={`flex w-full border-l-6 border-warning bg-warning bg-opacity-[15%] px-7 py-8 shadow-md dark:bg-[#1B1B24] dark:bg-opacity-30 md:p-9 mt-4 transition-opacity duration-1000 ${desvaneciendo ? 'opacity-0' : 'opacity-100'}`}>
+            <div className="mr-5 flex h-9 w-9 items-center justify-center rounded-lg bg-warning bg-opacity-30">
+              <svg
+                width="19"
+                height="16"
+                viewBox="0 0 19 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M1.50493 16H17.5023C18.6204 16 19.3413 14.9018 18.8354 13.9735L10.8367 0.770573C10.2852 -0.256858 8.70677 -0.256858 8.15528 0.770573L0.156617 13.9735C-0.334072 14.8998 0.386764 16 1.50493 16ZM10.7585 12.9298C10.7585 13.6155 10.2223 14.1433 9.45583 14.1433C8.6894 14.1433 8.15311 13.6155 8.15311 12.9298V12.9015C8.15311 12.2159 8.6894 11.688 9.45583 11.688C10.2223 11.688 10.7585 12.2159 10.7585 12.9015V12.9298ZM8.75236 4.01062H10.2548C10.6674 4.01062 10.9127 4.33826 10.8671 4.75288L10.2071 10.1186C10.1615 10.5049 9.88572 10.7455 9.50142 10.7455C9.11929 10.7455 8.84138 10.5028 8.79579 10.1186L8.13574 4.75288C8.09449 4.33826 8.33984 4.01062 8.75236 4.01062Z"
+                  fill="#FBBF24"
+                ></path>
+              </svg>
+            </div>
+            <div className="w-full">
+              <h5 className="mb-3 text-lg font-semibold text-[#9D5425]">
+                No se pueden agregar subordenes con 0 rollos
+              </h5>
+              <p className="leading-relaxed text-[#D0915C]">
+                {mensajeError}
+              </p>
+            </div>
+          </div>
+        )}
       <div>
         <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
           <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
