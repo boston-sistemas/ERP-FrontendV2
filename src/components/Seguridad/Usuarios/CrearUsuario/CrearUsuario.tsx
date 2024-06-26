@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
+import { useRouter } from 'next/navigation';
 import { TablePagination } from "@mui/material";
-import Link from 'next/link';
 
 interface Acceso {
   acceso_id: number;
@@ -32,6 +32,7 @@ const CrearUsuario: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [selectAll, setSelectAll] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   const filteredRoles = roles.filter(rol =>
     rol.nombre.toLowerCase().includes(searchTerm.toLowerCase())
@@ -77,11 +78,11 @@ const CrearUsuario: React.FC = () => {
             email,
             display_name: displayName,
             is_active: true,
-            blocked_until: new Date().toISOString(),
             password,
             rol_ids: selectedRoles
           });
           setIsSubmitting(false);
+          router.push('/seguridad/usuarios');
         } catch (error) {
           console.error("Error creating user:", error);
           setIsSubmitting(false);
@@ -97,7 +98,7 @@ const CrearUsuario: React.FC = () => {
   };
 
   const generarPassword = () => {
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*";
     const length = 16;
     let generatedPassword = "";
     for (let i = 0; i < length; i++) {
@@ -358,15 +359,15 @@ const CrearUsuario: React.FC = () => {
                     >
                       Atrás
                     </button>
-                    <Link href="/seguridad/usuarios">
-                      <button
-                        type="submit"
-                        className="w-30 bg-blue-800 px-5 py-3 text-white hover:bg-blue-600"
-                      >
-                        Crear
-                      </button>
-                    </Link>
+                    <button
+                      type="submit"
+                      className="w-30 bg-blue-800 px-5 py-3 text-white hover:bg-blue-600"
+                      disabled={isSubmitting}
+                    >
+                      Crear
+                    </button>
                   </div>
+                  {isSubmitting && <p className="text-black dark:text-white mt-2">Creando usuario...</p>}
                 </div>
               )}
             </form>
