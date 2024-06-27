@@ -11,6 +11,7 @@ import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
 import TablaExpandida from "./TablaExpandida";
 import "@/css/checkbox.css";
 import { SelectChangeEvent } from '@mui/material/Select';
+import '@/css/delete-icon.css';
 
 
 export interface Orden {
@@ -321,6 +322,12 @@ const ProgramacionTintoreria: React.FC = () => {
     }
   }, [subordenesSeleccionadas, tintoreria]);
 
+  const handleEliminarPartida = (index: number) => {
+    const nuevasPartidas = [...partidas];
+    nuevasPartidas.splice(index, 1);
+    setPartidas(nuevasPartidas);
+  };  
+
   return (
     <div className="space-y-5">
       <div className="overflow-x-auto mb-6">
@@ -574,6 +581,14 @@ const ProgramacionTintoreria: React.FC = () => {
                           </MenuItem>
                         ))}
                       </Select>
+                    </td>
+                    <td className="relative border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      <IconButton
+                        onClick={() => handleEliminarPartida(index)}
+                        className="delete-icon"
+                      >
+                        <span className="text-gray-500">X</span>
+                      </IconButton>
                     </td>
                   </tr>
                 ))
