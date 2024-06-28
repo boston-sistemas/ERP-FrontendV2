@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
 import { useRouter } from 'next/navigation';
 import { TablePagination } from "@mui/material";
+import { FaUser, FaEnvelope, FaKey, FaUserShield } from 'react-icons/fa';
 
 interface Acceso {
   acceso_id: number;
@@ -140,11 +141,11 @@ const CrearUsuario: React.FC = () => {
 
   return (
     <div className="flex flex-col lg:flex-row bg-gray-100 dark:bg-gray-900 min-h-screen">
-      <div className="w-full lg:w-1/4 bg-gray-200 dark:bg-gray-700 shadow-md p-4 lg:sticky lg:top-0 h-full lg:h-32">
+      <div className="w-full lg:w-1/4 bg-white dark:bg-boxdark shadow-md p-4 lg:sticky lg:top-0 h-full lg:h-32">
         <ul className="space-y-2">
-          <li className={`font-medium ${step === 1 ? "text-white" : "text-gray-500"}`}>Paso 1: Detalles de usuario</li>
-          <li className={`font-medium ${step === 2 ? "text-white" : "text-gray-500"}`}>Paso 2: Asignar Rol</li>
-          <li className={`font-medium ${step === 3 ? "text-white" : "text-gray-500"}`}>Paso 3: Revisar y crear</li>
+          <li className={`font-medium ${step === 1 ? "text-blue-700" : "text-gray-500"}`}>Paso 1: Detalles de usuario</li>
+          <li className={`font-medium ${step === 2 ? "text-blue-700" : "text-gray-500"}`}>Paso 2: Asignar Rol</li>
+          <li className={`font-medium ${step === 3 ? "text-blue-700" : "text-gray-500"}`}>Paso 3: Revisar y crear</li>
         </ul>
       </div>
       <div className="flex-1 flex flex-col items-center">
@@ -153,11 +154,14 @@ const CrearUsuario: React.FC = () => {
             <form onSubmit={handleSubmit}>
               {step === 1 && (
                 <div className="p-6.5">
-                  <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
-                    <div className="w-full xl:w-1/2">
-                      <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                        Nombre
-                      </label>
+                  <div className="mb-4.5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md">
+                      <div className="flex items-center">
+                        <FaUser className="text-blue-800 dark:text-white mr-3" />
+                        <label className="mb-1 block text-sm font-medium text-black dark:text-white flex items-center">
+                          Usuario
+                        </label>
+                      </div>
                       <input
                         type="text"
                         value={nombre}
@@ -170,10 +174,13 @@ const CrearUsuario: React.FC = () => {
                       {errors.nombre && <span className="text-red-500 text-sm">Campo requerido</span>}
                     </div>
 
-                    <div className="w-full xl:w-1/2">
-                      <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                        Display Name
-                      </label>
+                    <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md">
+                      <div className="flex items-center">
+                        <FaUserShield className="text-blue-800 dark:text-white mr-3" />
+                        <label className="mb-1 block text-sm font-medium text-black dark:text-white flex items-center">
+                          Nombre
+                        </label>
+                      </div>
                       <input
                         type="text"
                         value={displayName}
@@ -187,11 +194,14 @@ const CrearUsuario: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
-                    <div className="w-full xl:w-1/2">
-                      <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                        Email
-                      </label>
+                  <div className="mb-4.5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md">
+                      <div className="flex items-center">
+                        <FaEnvelope className="text-blue-800 dark:text-white mr-3" />
+                        <label className="mb-1 block text-sm font-medium text-black dark:text-white flex items-center">
+                          Email
+                        </label>
+                      </div>
                       <input
                         type="email"
                         value={email}
@@ -204,17 +214,20 @@ const CrearUsuario: React.FC = () => {
                       {errors.email && <span className="text-red-500 text-sm">Campo requerido</span>}
                     </div>
 
-                    <div className="w-full xl:w-1/2">
-                      <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                        Password
-                      </label>
+                    <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md">
+                      <div className="flex items-center">
+                        <FaKey className="text-blue-800 dark:text-white mr-3" />
+                        <label className="mb-1 block text-sm font-medium text-black dark:text-white flex items-center">
+                          Password
+                        </label>
+                      </div>
                       <div className="flex">
                         <input
                           type="text"
                           value={password}
                           readOnly
                           placeholder="Generar contraseña"
-                          className={`w-5 flex-1 rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black dark:text-white outline-none transition focus:border-blue-800 active:border-blue-800 dark:border-form-strokedark dark:bg-form-input dark:focus:border-blue-800 ${errors.password ? "border-red-500" : ""}`}
+                          className={`w-50 flex-1 rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black dark:text-white outline-none transition focus:border-blue-800 active:border-blue-800 dark:border-form-strokedark dark:bg-form-input dark:focus:border-blue-800 ${errors.password ? "border-red-500" : ""}`}
                         />
                         <button
                           type="button"
@@ -263,29 +276,29 @@ const CrearUsuario: React.FC = () => {
                     <table className="w-full table-auto">
                       <thead>
                         <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
-                          <th className="w-12 px-6 py-3 border-b-2 border-gray-200 bg-gray-50 dark:bg-gray-700 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="w-12 px-4 py-4 text-center font-normal text-white dark:text-zinc-100">
                             <input type="checkbox" checked={selectAll} onChange={handleSelectAll} />
                           </th>
-                          <th className="px-6 py-3 border-b-2 border-gray-200 bg-gray-50 dark:bg-gray-700 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="font-normal text-white border-b border-[#eee] px-4 py-5 dark:text-zinc-100 dark:border-strokedark">
                             Nombre del Rol
                           </th>
-                          <th className="px-6 py-3 border-b-2 border-gray-200 bg-gray-50 dark:bg-gray-700 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="font-normal text-white border-b border-[#eee] px-4 py-5 dark:text-zinc-100 dark:border-strokedark">
                             Accesos
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white dark:bg-gray-800">
+                      <tbody className="bg-white dark:bg-transparent">
                         {filteredRoles.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((rol: Rol) => (
-                          <tr key={rol.rol_id}>
-                            <td className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                          <tr key={rol.rol_id} className="hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                            <td className="px-4 py-4 text-black border-b border-[#eee] dark:text-white dark:border-strokedark">
                               <input
                                 type="checkbox"
                                 checked={selectedRoles.includes(rol.rol_id)}
                                 onChange={() => handleRoleSelection(rol.rol_id)}
                               />
                             </td>
-                            <td className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">{rol.nombre}</td>
-                            <td className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                            <td className="px-4 py-4 text-black border-b border-[#eee] dark:text-white dark:border-strokedark">{rol.nombre}</td>
+                            <td className="px-4 py-4 text-black border-b border-[#eee] dark:text-white dark:border-strokedark">
                               <ul className="list-disc list-inside">
                                 {rol.accesos.map(acceso => (
                                   <li key={acceso.acceso_id}>{acceso.nombre}</li>
@@ -308,7 +321,7 @@ const CrearUsuario: React.FC = () => {
                     onRowsPerPageChange={handleRowsPerPageChange}
                     labelRowsPerPage="Filas por página:"
                     labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-                    sx={{ color: 'text.secondary' }}
+                    sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : 'inherit' }}
                   />
                   <div className="flex justify-between mt-4">
                     <button
@@ -339,17 +352,46 @@ const CrearUsuario: React.FC = () => {
               {step === 3 && (
                 <div className="p-6.5">
                   <h3 className="text-lg font-medium text-black dark:text-white mb-4">Resumen</h3>
-                  <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md">
-                    <p className="text-black dark:text-white mb-2"><strong>Nombre:</strong> {nombre}</p>
-                    <p className="text-black dark:text-white mb-2"><strong>Display Name:</strong> {displayName}</p>
-                    <p className="text-black dark:text-white mb-2"><strong>Email:</strong> {email}</p>
-                    <p className="text-black dark:text-white mb-2"><strong>Password:</strong> {password}</p>
-                    <p className="text-black dark:text-white mb-2"><strong>Roles Seleccionados:</strong></p>
-                    <ul className="list-disc list-inside text-black dark:text-white">
-                      {selectedRoleNames.map((role, index) => (
-                        <li key={index}>{role}</li>
-                      ))}
-                    </ul>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md overflow-x-auto">
+                      <div className="flex items-center">
+                        <FaUser className="text-blue-800 dark:text-white mr-3" />
+                        <p className="text-black dark:text-white"><strong>Usuario:</strong></p>
+                      </div>
+                      <p className="text-black dark:text-white">{nombre}</p>
+                    </div>
+                    <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md overflow-x-auto">
+                      <div className="flex items-center">
+                        <FaUserShield className="text-blue-800 dark:text-white mr-3" />
+                        <p className="text-black dark:text-white"><strong>Nombre:</strong></p>
+                      </div>
+                      <p className="text-black dark:text-white">{displayName}</p>
+                    </div>
+                    <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md overflow-x-auto">
+                      <div className="flex items-center">
+                        <FaEnvelope className="text-blue-800 dark:text-white mr-3" />
+                        <p className="text-black dark:text-white"><strong>Email:</strong></p>
+                      </div>
+                      <p className="text-black dark:text-white">{email}</p>
+                    </div>
+                    <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md overflow-x-auto">
+                      <div className="flex items-center">
+                        <FaKey className="text-blue-800 dark:text-white mr-3" />
+                        <p className="text-black dark:text-white"><strong>Password:</strong></p>
+                      </div>
+                      <p className="text-black dark:text-white">{password}</p>
+                    </div>
+                    <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md col-span-1 sm:col-span-2 overflow-x-auto">
+                      <div className="flex items-center">
+                        <FaUserShield className="text-blue-800 dark:text-white mr-3" />
+                        <p className="text-black dark:text-white"><strong>Roles Seleccionados:</strong></p>
+                      </div>
+                      <ul className="list-disc list-inside text-black dark:text-white ml-6">
+                        {selectedRoleNames.map((role, index) => (
+                          <li key={index}>{role}</li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                   <div className="flex justify-between mt-4">
                     <button
