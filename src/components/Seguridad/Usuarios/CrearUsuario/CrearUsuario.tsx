@@ -5,6 +5,7 @@ import instance from "@/config/AxiosConfig";
 import { useRouter } from 'next/navigation';
 import { TablePagination } from "@mui/material";
 import { FaUser, FaEnvelope, FaKey, FaUserShield } from 'react-icons/fa';
+import { TIMEOUT } from "@/components/Parametros/Parametros";
 
 interface Acceso {
   acceso_id: number;
@@ -82,8 +83,10 @@ const CrearUsuario: React.FC = () => {
             password,
             rol_ids: selectedRoles
           });
-          setIsSubmitting(false);
-          router.push('/seguridad/usuarios');
+          setTimeout(() => {
+            setIsSubmitting(false);
+            router.push('/seguridad/usuarios');
+          }, TIMEOUT);
         } catch (error) {
           console.error("Error creating user:", error);
           setIsSubmitting(false);
@@ -336,15 +339,6 @@ const CrearUsuario: React.FC = () => {
                       className="w-30 bg-blue-800 px-5 py-3 text-white hover:bg-blue-600"
                     >
                       Siguiente
-                    </button>
-                  </div>
-                  <div className="mt-4">
-                    <button
-                      type="button"
-                      className="bg-black text-white px-5 py-3 border border-black hover:bg-gray-200 dark:hover:bg-gray-600"
-                      onClick={() => window.location.href = '/crearrol'}
-                    >
-                      ¿No encuentras un rol adecuado? Prueba con crearrol/
                     </button>
                   </div>
                 </div>

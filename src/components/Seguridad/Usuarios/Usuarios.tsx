@@ -4,9 +4,11 @@ import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { TablePagination, IconButton, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, TextField } from "@mui/material";
-import { Edit, Visibility } from "@mui/icons-material";
+import { TablePagination, IconButton, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, TextField, ListItemIcon } from "@mui/material";
+import { Edit, Visibility, Assignment, Shield, Build } from "@mui/icons-material";
 import "@/css/checkbox.css";
+
+const TIMEOUT = 1000;
 
 interface Acceso {
   acceso_id: number;
@@ -42,7 +44,6 @@ const Usuarios: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<Usuario | null>(null);
   const [selectedRoleAccesses, setSelectedRoleAccesses] = useState<Rol[]>([]);
   const [originalUser, setOriginalUser] = useState<Usuario | null>(null);
-  const [updateError, setUpdateError] = useState<string | null>(null);
   const router = useRouter();
 
   const fetchUsuarios = async () => {
@@ -54,7 +55,7 @@ const Usuarios: React.FC = () => {
       console.error('Error fetching users', error);
       setError('Error fetching users');
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), TIMEOUT);
     }
   };
 
@@ -86,6 +87,8 @@ const Usuarios: React.FC = () => {
   };
 
   const handleEditUser = (usuario: Usuario) => {
+    setSelectedUser(null);
+    setOriginalUser(null);
     setSelectedUser(usuario);
     setOriginalUser({ ...usuario });
     setOpenEditDialog(true);
@@ -93,12 +96,11 @@ const Usuarios: React.FC = () => {
 
   const handleCloseEditDialog = () => {
     setOpenEditDialog(false);
-    setSelectedUser(null);
-    setOriginalUser(null);
-    setUpdateError(null);
   };
 
   const handleViewPermissions = async (usuario: Usuario) => {
+    setSelectedRoleAccesses([]);
+    setSelectedUser(null);
     const roleAccessesPromises = usuario.roles.map(rol => fetchRoleAccesses(rol.rol_id));
     const roleAccesses = await Promise.all(roleAccessesPromises);
     setSelectedRoleAccesses(roleAccesses.filter(access => access !== null));
@@ -108,8 +110,6 @@ const Usuarios: React.FC = () => {
 
   const handleCloseViewPermissionsDialog = () => {
     setOpenViewPermissionsDialog(false);
-    setSelectedRoleAccesses([]);
-    setSelectedUser(null);
   };
 
   const handleSaveUser = async () => {
@@ -123,15 +123,12 @@ const Usuarios: React.FC = () => {
         if (selectedUser.blocked_until !== originalUser?.blocked_until) updatedUser.blocked_until = selectedUser.blocked_until;
 
         if (Object.keys(updatedUser).length > 0) {
-          console.log('Updating user:', updatedUser); // Log to check the data being sent
           await instance.put(`/security/v1/usuarios/${selectedUser.usuario_id}`, updatedUser);
         }
-
         fetchUsuarios();
         handleCloseEditDialog();
       } catch (error) {
         console.error('Error updating user', error);
-        setUpdateError('Error updating user. ' + (error.response?.data?.message || ''));
       }
     }
   };
@@ -272,7 +269,6 @@ const Usuarios: React.FC = () => {
           )}
         </DialogContent>
         <DialogActions>
-          {updateError && <Typography color="error">{updateError}</Typography>}
           <Button onClick={handleCloseEditDialog} color="primary">
             Cancelar
           </Button>
@@ -285,14 +281,17 @@ const Usuarios: React.FC = () => {
       <Dialog open={openViewPermissionsDialog} onClose={handleCloseViewPermissionsDialog}>
         <DialogTitle>Ver Permisos</DialogTitle>
         <DialogContent>
-          {selectedRoleAccesses.length > 0 ? (
+          {selectedRoleAccesses.length > 0 && (
             <List>
               {selectedRoleAccesses.map(role => (
-                <div key={role.rol_id}>
+                <div key={role.rol_id} className="mb-4">
                   <Typography variant="h6">{role.nombre}</Typography>
                   <List>
                     {role.accesos.map(acceso => (
                       <ListItem key={acceso.acceso_id}>
+                        <ListItemIcon>
+                          {acceso.nombre.includes("admin") ? <Shield /> : acceso.nombre.includes("key") ? <Build /> : <Assignment />}
+                        </ListItemIcon>
                         <ListItemText primary={acceso.nombre} />
                       </ListItem>
                     ))}
@@ -300,8 +299,6 @@ const Usuarios: React.FC = () => {
                 </div>
               ))}
             </List>
-          ) : (
-            <Typography>No tiene roles asignados o no se encontraron permisos.</Typography>
           )}
         </DialogContent>
         <DialogActions>
