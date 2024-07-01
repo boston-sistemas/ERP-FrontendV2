@@ -403,7 +403,7 @@ const CrearUsuario: React.FC = () => {
                       Crear
                     </button>
                   </div>
-                  {isSubmitting && <p className="text-black dark:text-white mt-2">Creando usuario...</p>}
+                  {isSubmitting && <p className="text-blac dark:text-white mt-2">Creando usuario...</p>}
                 </div>
               )}
             </form>
