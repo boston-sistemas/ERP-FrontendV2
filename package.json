@@ -17,6 +17,7 @@
     "axios": "^1.7.2",
     "flatpickr": "^4.6.13",
     "jsvectormap": "^1.5.3",
+    "jwt-decode": "^4.0.0",
     "next": "^14.2.3",
     "react": "^18",
     "react-apexcharts": "^1.4.1",
