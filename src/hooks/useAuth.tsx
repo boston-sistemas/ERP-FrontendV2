@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from '../config/AxiosConfig';
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode'; // Importa correctamente jwtDecode
 import { useAuthContext } from '../context/AuthContext';
 import { User } from '../types/user'; // Importar el tipo User
 

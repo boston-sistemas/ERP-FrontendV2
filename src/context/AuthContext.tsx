@@ -1,7 +1,7 @@
 // src/context/AuthContext.tsx
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 import axios from '../config/AxiosConfig';
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode'; // Importa correctamente jwtDecode
 import { User } from '../types/user'; // Importar el tipo User
 
 interface AuthContextType {
@@ -65,6 +65,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         accesos: decodedToken.accesos 
       });
     } catch (error) {
+      setUser(null);
       throw error;
     }
   };
