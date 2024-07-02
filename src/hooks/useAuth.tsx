@@ -27,6 +27,8 @@ const useAuth = () => {
           console.log('useAuth: Access token refreshed and user authenticated.');
         } catch (error) {
           console.error('useAuth: Error refreshing token', error);
+          localStorage.removeItem('access_token');
+          document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
           router.push('/');
         }
       } else if (isTokenExpired(accessToken)) {
@@ -36,6 +38,8 @@ const useAuth = () => {
           console.log('useAuth: Access token refreshed and user authenticated.');
         } catch (error) {
           console.error('useAuth: Error refreshing token', error);
+          localStorage.removeItem('access_token');
+          document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
           router.push('/');
         }
       } else {
@@ -49,6 +53,7 @@ const useAuth = () => {
           console.log('useAuth: User authenticated with existing access token.');
         } catch (error) {
           localStorage.removeItem('access_token');
+          document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
           console.error('useAuth: Invalid access token', error);
           router.push('/');
         }

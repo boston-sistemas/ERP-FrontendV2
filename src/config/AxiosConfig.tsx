@@ -26,7 +26,9 @@ const AxiosInterceptor = () => {
             originalRequest.headers['Authorization'] = `Bearer ${localStorage.getItem('access_token')}`;
             return instance(originalRequest);
           } catch (err) {
-            console.log('config/AxiosConfig Interceptor: Refresh token failed, logging out.');
+            console.error('config/AxiosConfig Interceptor: Refresh token failed, logging out.');
+            localStorage.removeItem('access_token');
+            document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
             await logout();
             window.location.href = '/';
             return Promise.reject(err);

@@ -50,6 +50,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.log('refreshAccessToken: Access token refreshed successfully.');
     } catch (error) {
       console.error('refreshAccessToken: Failed to refresh access token.', error);
+      localStorage.removeItem('access_token');
+      document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
       setUser(null);
       throw error;
     }
@@ -62,6 +64,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         await refreshAccessToken();
       } catch (error) {
         console.error('context/AuthContext checkAuth: No access token found and refresh token failed.');
+        setUser(null);
+      }
+    } else if (isTokenExpired(accessToken)) {
+      console.log('context/AuthContext checkAuth: Access token is expired, attempting to refresh.');
+      try {
+        await refreshAccessToken();
+      } catch (error) {
+        console.error('context/AuthContext checkAuth: Refresh token failed.', error);
         setUser(null);
       }
     } else {
