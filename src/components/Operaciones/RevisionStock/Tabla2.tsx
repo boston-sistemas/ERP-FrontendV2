@@ -7,7 +7,7 @@ import TablaExpandida from "./TablaExpandida";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { Orden } from "./RevisionStock";
-import { TablePagination } from '@mui/material';
+import { TablePagination, LinearProgress } from '@mui/material';
 import { MAX_HEIGHT, minWidths2 } from "@/components/Parametros/Parametros";
 import "@/css/checkbox.css";
 
@@ -153,8 +153,17 @@ const Tabla2: React.FC<Tabla2Props> = ({ data, loading}) => {
                       <p className="font-normal text-black dark:text-white">{data.merma}</p>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <p className="font-normal text-black dark:text-white">{data.progreso}</p>
-                    </td>
+                        <div className="flex flex-col items-center">
+                          <span className="text-sm font-medium text-blue-700 dark:text-blue-500">
+                            {data.progreso}
+                          </span>
+                          <LinearProgress
+                            variant="determinate"
+                            value={parseInt(data.progreso.replace("%", ""), 10)}
+                            style={{ width: "100%" }}
+                          />
+                        </div>
+                      </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <p
                         className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(
