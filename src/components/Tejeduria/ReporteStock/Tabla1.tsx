@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
-import { TablePagination } from "@mui/material";
+import { TablePagination, LinearProgress } from "@mui/material";
 import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
 import { Suborden } from "./ReporteStock";
 import { MAX_HEIGHT, TIMEOUTFETCH } from "@/components/Parametros/Parametros";
@@ -217,7 +217,18 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
                           className="w-20 border-[1.5px] border-neutral-500 bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 dark:text-white"
                         />
                       </td>
-                        <td className="text-black dark:text-white border-b border-[#eee] px-4 py-5 dark:border-strokedark">{item.progreso}</td>
+                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                        <div className="flex flex-col items-center">
+                          <span className="text-sm font-medium text-blue-700 dark:text-blue-500">
+                            {item.progreso}
+                          </span>
+                          <LinearProgress
+                            variant="determinate"
+                            value={parseInt(item.progreso.replace("%", ""), 10)}
+                            style={{ width: "100%" }}
+                          />
+                        </div>
+                      </td>
                         <td className="text-black dark:text-white border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                           <p className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(item.estado)}`}>
                             {item.estado}
