@@ -1,5 +1,6 @@
 import React from "react";
 import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
+import { LinearProgress } from '@mui/material';
 
 interface ExpandidaProps {
   data: any;
@@ -50,7 +51,18 @@ const TablaExpandida = ({ data }: ExpandidaProps) => {
                 <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.consumido}</td>
                 <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.restante}</td>
                 <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.merma}</td>
-                <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.progreso}</td>
+                <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">
+                  <div className="flex flex-col items-center">
+                    <span className="text-sm font-medium text-blue-700 dark:text-blue-500">
+                      {data.progreso || "0%"}
+                    </span>
+                    <LinearProgress
+                      variant="determinate"
+                      value={data.progreso ? parseInt(data.progreso.replace("%", ""), 10) : 0}
+                      style={{ width: "100%" }}
+                    />
+                  </div>
+                </td>
                 <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">
                   <p className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(suborden.estado)}`}>
                     {suborden.estado}
