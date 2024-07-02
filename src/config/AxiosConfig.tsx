@@ -1,4 +1,3 @@
-// src/config/AxiosConfig.ts
 import axios from 'axios';
 import React, { useEffect } from 'react';
 import { useAuthContext } from '../context/AuthContext'; // Importa el hook useAuthContext
@@ -20,14 +19,16 @@ const AxiosInterceptor = () => {
       async (error) => {
         const originalRequest = error.config;
         if (error.response?.status === 401 && !originalRequest._retry) {
+          console.log('config/AxiosConfig Interceptor: Access token expired, attempting to refresh.');
           originalRequest._retry = true;
           try {
             await refreshAccessToken();
             originalRequest.headers['Authorization'] = `Bearer ${localStorage.getItem('access_token')}`;
             return instance(originalRequest);
           } catch (err) {
+            console.log('config/AxiosConfig Interceptor: Refresh token failed, logging out.');
             await logout();
-            window.location.href = '/login';
+            window.location.href = '/';
             return Promise.reject(err);
           }
         }
