@@ -1,4 +1,3 @@
-// src/components/SignIn/SignIn.tsx
 "use client";
 
 import React, { useState } from 'react';
@@ -27,12 +26,15 @@ const SignIn: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await login(username, password);
+    if (!username || !password) {
+      alert('Por favor, complete todos los campos.');
+      return;
+    }
+    const success = await login(username, password);
+    if (success) {
       router.push('/panel');
-    } catch (error) {
-      console.error(error);
-      alert('Error al iniciar sesión');
+    } else {
+      alert('Error al iniciar sesión. Credenciales inválidas.');
     }
   };
 

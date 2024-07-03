@@ -18,7 +18,7 @@ const AxiosInterceptor = () => {
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('login')) {
           console.log('config/AxiosConfig Interceptor: Access token expired, attempting to refresh.');
           originalRequest._retry = true;
           try {

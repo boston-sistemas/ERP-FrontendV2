@@ -6,7 +6,7 @@ import { User } from '../types/user'; // Importar el tipo User
 interface AuthContextType {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   refreshAccessToken: () => Promise<void>;
@@ -60,12 +60,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const checkAuth = useCallback(async () => {
     const accessToken = localStorage.getItem('access_token');
     if (!accessToken) {
-      try {
-        await refreshAccessToken();
-      } catch (error) {
-        console.error('context/AuthContext checkAuth: No access token found and refresh token failed.');
-        setUser(null);
-      }
+      console.log('context/AuthContext checkAuth: No access token found.');
+      setUser(null);
     } else if (isTokenExpired(accessToken)) {
       console.log('context/AuthContext checkAuth: Access token is expired, attempting to refresh.');
       try {
@@ -92,15 +88,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const login = useCallback(async (username: string, password: string) => {
     console.log('login: Attempting to log in.');
+    if (!username || !password) {
+      alert('Por favor, complete todos los campos.');
+      return false;
+    }
     try {
       const response = await axios.post('security/v1/auth/login', { username, password });
       const { access_token, usuario } = response.data;
       localStorage.setItem('access_token', access_token);
       console.log('login: Logged in successfully.');
       setUser(usuario);
+      return true;
     } catch (error) {
       console.error('login: Failed to log in.', error);
-      throw error;
+      return false;
     }
   }, []);
 
