@@ -1,4 +1,3 @@
-// src/app/layout.tsx
 "use client";
 import "jsvectormap/dist/css/jsvectormap.css";
 import "flatpickr/dist/flatpickr.min.css";
@@ -6,8 +5,9 @@ import "@/css/satoshi.css";
 import "@/css/style.css";
 import React, { useEffect, useState } from "react";
 import Loader from "@/components/common/Loader";
-import { AuthProvider } from '../context/AuthContext'; // Asegúrate de importar el AuthProvider
-import { AxiosInterceptor } from '../config/AxiosConfig'; // Importa el AxiosInterceptor
+import { AuthProvider } from '../context/AuthContext';
+import { SessionExpiredProvider } from '../context/SessionExpiredContext'; // Importa el SessionExpiredProvider
+import { AxiosInterceptor } from '../config/AxiosConfig';
 
 export default function RootLayout({
   children,
@@ -27,10 +27,12 @@ export default function RootLayout({
         <div className="dark:bg-boxdark-2 dark:text-bodydark">
           <Loader loading={loading} />
           <AuthProvider>
-            <AxiosInterceptor />
-            <div className={`${loading ? "hidden" : "block"} relative`}>
-              {children}
-            </div>
+            <SessionExpiredProvider>
+              <AxiosInterceptor />
+              <div className={`${loading ? "hidden" : "block"} relative`}>
+                {children}
+              </div>
+            </SessionExpiredProvider>
           </AuthProvider>
         </div>
       </body>

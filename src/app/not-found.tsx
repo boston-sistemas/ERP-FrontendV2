@@ -29,7 +29,7 @@ const NotFound: React.FC = () => {
           Página no encontrada
         </p>
         <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
-          Lo sentimos, la página que estás buscando no existe o ha sido movida.
+          Lo sentimos, la página que estás buscando no existe o ha sido eliminada.
         </p>
         <button
           onClick={handleGoBack}

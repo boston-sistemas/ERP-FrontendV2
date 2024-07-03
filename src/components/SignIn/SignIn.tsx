@@ -12,11 +12,19 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import LanguageIcon from '@mui/icons-material/Language';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert, { AlertProps } from '@mui/material/Alert';
+
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
 
 const SignIn: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const { login } = useAuthContext();
   const router = useRouter();
 
@@ -27,15 +35,24 @@ const SignIn: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) {
-      alert('Por favor, complete todos los campos.');
+      setSnackbarMessage('Por favor, complete todos los campos.');
+      setOpenSnackbar(true);
       return;
     }
     const success = await login(username, password);
     if (success) {
       router.push('/panel');
     } else {
-      alert('Error al iniciar sesión. Credenciales inválidas.');
+      setSnackbarMessage('Error al iniciar sesión. Credenciales inválidas.');
+      setOpenSnackbar(true);
     }
+  };
+
+  const handleCloseSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setOpenSnackbar(false);
   };
 
   return (
@@ -106,6 +123,11 @@ const SignIn: React.FC = () => {
           </div>
         </div>
       </div>
+      <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%', alignItems: 'center'}}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

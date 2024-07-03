@@ -54,12 +54,6 @@ const useAuth = () => {
     authenticate();
   }, [router, setUser, refreshAccessToken]);
 
-  useEffect(() => {
-    if (user) {
-      router.push('/panel');
-    }
-  }, [user, router]);
-
   return { user, loading, login, logout, checkAuth };
 };
 
