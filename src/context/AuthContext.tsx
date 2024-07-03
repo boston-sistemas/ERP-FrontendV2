@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import axios from '../config/AxiosConfig';
-import { jwtDecode } from 'jwt-decode'; // Importa correctamente jwtDecode
-import { User } from '../types/user'; // Importar el tipo User
+import { jwtDecode } from 'jwt-decode';
+import { User } from '../types/user';
 
 interface AuthContextType {
   user: User | null;

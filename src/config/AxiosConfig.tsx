@@ -10,7 +10,7 @@ const instance = axios.create({
 });
 
 const AxiosInterceptor = () => {
-  const { refreshAccessToken, logout } = useAuthContext();
+  const { refreshAccessToken, logout, sessionExpired } = useAuthContext();
 
   useEffect(() => {
     const interceptor = instance.interceptors.response.use(
@@ -42,7 +42,7 @@ const AxiosInterceptor = () => {
     return () => {
       instance.interceptors.response.eject(interceptor);
     };
-  }, [refreshAccessToken, logout]);
+  }, [refreshAccessToken, logout, sessionExpired]);
 
   return null;
 };

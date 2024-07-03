@@ -5,7 +5,7 @@ import { useAuthContext } from '../context/AuthContext';
 import { User } from '../types/user';
 
 const useAuth = () => {
-  const { user, setUser, login, logout, checkAuth, refreshAccessToken } = useAuthContext();
+  const { user, setUser, login, logout, checkAuth, refreshAccessToken, sessionExpired } = useAuthContext();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
 
@@ -28,7 +28,11 @@ const useAuth = () => {
           console.error('useAuth: Error refreshing token', error);
           localStorage.removeItem('access_token');
           document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-          router.push('/');
+          setSessionExpired(true);
+          setTimeout(() => {
+            setSessionExpired(false);
+            router.push('/');
+          }, 3000);
         }
       } else if (accessToken) {
         try {
@@ -54,13 +58,7 @@ const useAuth = () => {
     authenticate();
   }, [router, setUser, refreshAccessToken]);
 
-  useEffect(() => {
-    if (user) {
-      router.push('/panel');
-    }
-  }, [user, router]);
-
-  return { user, loading, login, logout, checkAuth };
+  return { user, loading, login, logout, checkAuth, sessionExpired };
 };
 
 export default useAuth;
