@@ -43,6 +43,7 @@ const TablaExpandida = ({ data }: ExpandidaProps) => {
         </thead>
         <tbody>
           {data.map((suborden: any, index: any) => {
+            const progreso = suborden.progreso ? parseInt(suborden.progreso.replace("%", ""), 10) : 0;
             return (
               <tr key={index} className="text-center">
                 <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">{suborden.tejido}</td>
@@ -54,11 +55,11 @@ const TablaExpandida = ({ data }: ExpandidaProps) => {
                 <td className="text-sm font-normal border-b border-t px-4 py-2 dark:border-white">
                   <div className="flex flex-col items-center">
                     <span className="text-sm font-medium text-blue-700 dark:text-blue-500">
-                      {data.progreso || "0%"}
+                      {suborden.progreso || "0%"}
                     </span>
                     <LinearProgress
                       variant="determinate"
-                      value={data.progreso ? parseInt(data.progreso.replace("%", ""), 10) : 0}
+                      value={progreso}
                       style={{ width: "100%" }}
                     />
                   </div>
