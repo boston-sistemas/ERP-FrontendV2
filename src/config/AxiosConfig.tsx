@@ -1,7 +1,6 @@
 import axios from 'axios';
 import React, { useEffect } from 'react';
 import { useAuthContext } from '../context/AuthContext';
-import { useSessionExpiredContext } from '../context/SessionExpiredContext';
 
 const server = 'http://localhost:8000'; // Local
 
@@ -12,7 +11,6 @@ const instance = axios.create({
 
 const AxiosInterceptor = () => {
   const { refreshAccessToken, logout } = useAuthContext();
-  const { setSessionExpired } = useSessionExpiredContext();
 
   useEffect(() => {
     const interceptor = instance.interceptors.response.use(
@@ -31,9 +29,7 @@ const AxiosInterceptor = () => {
             localStorage.removeItem('access_token');
             document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
             await logout();
-            setSessionExpired(true);
             setTimeout(() => {
-              setSessionExpired(false);
               window.location.href = '/';
             }, 3000); // Espera 3 segundos antes de redirigir al login
             return Promise.reject(err);
@@ -46,7 +42,7 @@ const AxiosInterceptor = () => {
     return () => {
       instance.interceptors.response.eject(interceptor);
     };
-  }, [refreshAccessToken, logout, setSessionExpired]);
+  }, [refreshAccessToken, logout]);
 
   return null;
 };

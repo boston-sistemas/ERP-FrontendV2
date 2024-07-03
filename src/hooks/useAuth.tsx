@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { jwtDecode } from 'jwt-decode'; // Importa correctamente jwtDecode
+import { jwtDecode } from 'jwt-decode';
 import { useAuthContext } from '../context/AuthContext';
-import { User } from '../types/user'; // Importar el tipo User
+import { User } from '../types/user';
 
 const useAuth = () => {
   const { user, setUser, login, logout, checkAuth, refreshAccessToken } = useAuthContext();
@@ -33,10 +33,10 @@ const useAuth = () => {
       } else if (accessToken) {
         try {
           const decodedToken: User = jwtDecode(accessToken);
-          setUser({ 
-            id: decodedToken.id, 
-            username: decodedToken.username, 
-            accesos: decodedToken.accesos 
+          setUser({
+            id: decodedToken.id,
+            username: decodedToken.username,
+            accesos: decodedToken.accesos
           });
           console.log('useAuth: User authenticated with existing access token.');
         } catch (error) {
@@ -53,6 +53,12 @@ const useAuth = () => {
     };
     authenticate();
   }, [router, setUser, refreshAccessToken]);
+
+  useEffect(() => {
+    if (user) {
+      router.push('/panel');
+    }
+  }, [user, router]);
 
   return { user, loading, login, logout, checkAuth };
 };

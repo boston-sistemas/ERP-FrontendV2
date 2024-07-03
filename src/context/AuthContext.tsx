@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import axios from '../config/AxiosConfig';
-import { jwtDecode }  from 'jwt-decode'; // Importa correctamente jwtDecode
+import { jwtDecode } from 'jwt-decode'; // Importa correctamente jwtDecode
 import { User } from '../types/user'; // Importar el tipo User
 
 interface AuthContextType {
@@ -10,6 +10,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   refreshAccessToken: () => Promise<void>;
+  sessionExpired: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -28,6 +29,7 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const isTokenExpired = (token: string) => {
     const decodedToken: any = jwtDecode(token);
@@ -42,10 +44,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const newAccessToken = response.data.access_token;
       localStorage.setItem('access_token', newAccessToken);
       const decodedToken: User = jwtDecode(newAccessToken);
-      setUser({ 
-        id: decodedToken.id, 
-        username: decodedToken.username, 
-        accesos: decodedToken.accesos 
+      setUser({
+        id: decodedToken.id,
+        username: decodedToken.username,
+        accesos: decodedToken.accesos
       });
       console.log('refreshAccessToken: Access token refreshed successfully.');
     } catch (error) {
@@ -53,6 +55,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       localStorage.removeItem('access_token');
       document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
       setUser(null);
+      setSessionExpired(true);
+      setTimeout(() => {
+        setSessionExpired(false);
+        window.location.href = '/';
+      }, 3000); // Espera 3 segundos antes de redirigir al login
       throw error;
     }
   }, []);
@@ -73,10 +80,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     } else {
       try {
         const decodedToken: User = jwtDecode(accessToken);
-        setUser({ 
-          id: decodedToken.id, 
-          username: decodedToken.username, 
-          accesos: decodedToken.accesos 
+        setUser({
+          id: decodedToken.id,
+          username: decodedToken.username,
+          accesos: decodedToken.accesos
         });
       } catch (error) {
         localStorage.removeItem('access_token');
@@ -120,7 +127,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, login, logout, checkAuth, refreshAccessToken }}>
+    <AuthContext.Provider value={{ user, setUser, login, logout, checkAuth, refreshAccessToken, sessionExpired }}>
       {children}
     </AuthContext.Provider>
   );
