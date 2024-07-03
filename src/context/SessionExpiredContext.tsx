@@ -30,6 +30,7 @@ export const SessionExpiredProvider = ({ children }: { children: ReactNode }) =>
       <Snackbar
         open={sessionExpired}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        onClose={() => setSessionExpired(false)}
         autoHideDuration={3000}
       >
         <Alert severity="warning">Su sesión ha expirado. Redirigiendo al inicio de sesión...</Alert>

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useEffect } from 'react';
-import { useAuthContext } from '../context/AuthContext'; // Importa el hook useAuthContext
+import { useAuthContext } from '../context/AuthContext';
 import { useSessionExpiredContext } from '../context/SessionExpiredContext';
 
 const server = 'http://localhost:8000'; // Local
