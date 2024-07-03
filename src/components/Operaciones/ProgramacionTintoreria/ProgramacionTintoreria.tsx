@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import instance from "@/config/AxiosConfig";
 import { TIMEOUT } from "@/components/Parametros/Parametros";
 import { Select, MenuItem, Card, CardContent, Typography, IconButton, Collapse, TablePagination } from "@mui/material";
@@ -310,9 +310,9 @@ const ProgramacionTintoreria: React.FC = () => {
     setPartidas(newPartidas);
   };
 
-  const canAddPartida = (): boolean => {
+  const canAddPartida = useCallback((): boolean => {
     return subordenesSeleccionadas.length > 0 && tintoreria !== null && tintoreria !== '';
-  };
+  }, [subordenesSeleccionadas, tintoreria]);
   
 
   useEffect(() => {
@@ -320,7 +320,7 @@ const ProgramacionTintoreria: React.FC = () => {
     if (buttonElement) {
       buttonElement.disabled = !canAddPartida();
     }
-  }, [subordenesSeleccionadas, tintoreria]);
+  }, [subordenesSeleccionadas, tintoreria, canAddPartida]);
 
   const handleEliminarPartida = (index: number) => {
     const nuevasPartidas = [...partidas];
