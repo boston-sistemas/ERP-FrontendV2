@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
-import { TablePagination, LinearProgress } from "@mui/material";
+import { TablePagination, LinearProgress, Menu, MenuItem } from "@mui/material";
 import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
 import { Suborden } from "./ReporteStock";
 import { MAX_HEIGHT, TIMEOUTFETCH } from "@/components/Parametros/Parametros";
@@ -49,10 +49,14 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
   const [desvaneciendo, setDesvaneciendo] = useState<boolean>(false);
   const [enviando, setEnviando] = useState<boolean>(false);
+  const [estadoData, setEstadoData] = useState<string[]>([]);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [currentRow, setCurrentRow] = useState<number | null>(null);
 
   useEffect(() => {
     setRollos(new Array(data.length).fill(0));
     setPeso(new Array(data.length).fill(0));
+    setEstadoData(data.map((item) => item.estado));
   }, [data]);
 
   useEffect(() => {
@@ -113,7 +117,22 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
       newPeso[index] = '';
       setPeso(newPeso);
     }
-  };   
+  };  
+
+  const handleEstadoClick = (event: React.MouseEvent<HTMLElement>, index: number) => {
+    setAnchorEl(event.currentTarget);
+    setCurrentRow(index);
+  };
+
+  const handleEstadoClose = (nuevoEstado?: string) => {
+    if (currentRow !== null && nuevoEstado) {
+      const newEstadoData = [...estadoData];
+      newEstadoData[currentRow] = nuevoEstado;
+      setEstadoData(newEstadoData);
+    }
+    setAnchorEl(null);
+    setCurrentRow(null);
+  };
 
   const handleEnviarStock = async () => {
     setEnviando(true);
@@ -130,7 +149,7 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
         crudo_id: `${item.tejido}${item.ancho}`,
         reporte_tejeduria_nro_rollos: rollosInt,
         reporte_tejeduria_cantidad_kg: pesoInt,
-        estado: item.estado,
+        estado: estadoData[index],
       };
     }).filter((suborden): suborden is NonNullable<typeof suborden> => suborden !== null);
   
@@ -200,39 +219,46 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
                         <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">{item.consumido} kg</td>
                         <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">{item.restante} kg</td>
                         <td className="text-black border-b border-[#eee] px-4 py-5 dark:text-white dark:border-strokedark">
-                        <input
-                          type="text"
-                          value={rollos[index]}
-                          onChange={(e) => handleRollosCambio(index, e.target.value)}
-                          onFocus={() => handleFocus(index, 'rollos')}
-                          className="w-20 border-[1.5px] border-neutral-500 bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 dark:text-white"
-                        />
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <input
-                          type="text"
-                          value={peso[index]}
-                          onChange={(e) => handlePesoCambio(index, e.target.value)}
-                          onFocus={() => handleFocus(index, 'peso')}
-                          className="w-20 border-[1.5px] border-neutral-500 bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 dark:text-white"
-                        />
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <div className="flex flex-col items-center">
-                          <span className="text-sm font-medium text-blue-700 dark:text-blue-500">
-                            {item.progreso}
-                          </span>
-                          <LinearProgress
-                            variant="determinate"
-                            value={parseInt(item.progreso.replace("%", ""), 10)}
-                            style={{ width: "100%" }}
+                          <input
+                            type="text"
+                            value={rollos[index]}
+                            onChange={(e) => handleRollosCambio(index, e.target.value)}
+                            onFocus={() => handleFocus(index, 'rollos')}
+                            className="w-20 border-[1.5px] border-neutral-500 bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 dark:text-white"
                           />
-                        </div>
-                      </td>
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                          <input
+                            type="text"
+                            value={peso[index]}
+                            onChange={(e) => handlePesoCambio(index, e.target.value)}
+                            onFocus={() => handleFocus(index, 'peso')}
+                            className="w-20 border-[1.5px] border-neutral-500 bg-transparent px-3 py-1.5 text-center text-black outline-none transition focus:border-blue-800 active:border-blue-800 dark:text-white"
+                          />
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                          <div className="flex flex-col items-center">
+                            <span className="text-sm font-medium text-blue-700 dark:text-blue-500">
+                              {item.progreso}
+                            </span>
+                            <LinearProgress
+                              variant="determinate"
+                              value={parseInt(item.progreso.replace("%", ""), 10)}
+                              style={{ width: "100%" }}
+                            />
+                          </div>
+                        </td>
                         <td className="text-black dark:text-white border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                          <p className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(item.estado)}`}>
-                            {item.estado}
-                          </p>
+                          <div onClick={(e) => handleEstadoClick(e, index)}>
+                            <p className={`cursor-pointer inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(estadoData[index])}`}>
+                              {estadoData[index]}
+                            </p>
+                          </div>
+                          <Menu anchorEl={anchorEl} open={anchorEl !== null && currentRow === index} onClose={() => handleEstadoClose()}>
+                            <MenuItem onClick={() => handleEstadoClose("EN CURSO")}>EN CURSO</MenuItem>
+                            <MenuItem onClick={() => handleEstadoClose("LISTO")}>LISTO</MenuItem>
+                            <MenuItem onClick={() => handleEstadoClose("DETENIDO")}>DETENIDO</MenuItem>
+                          </Menu>
                         </td>
                       </tr>
                     </React.Fragment>
