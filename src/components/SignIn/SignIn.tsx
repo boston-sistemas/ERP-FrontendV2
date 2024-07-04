@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthContext } from '../../context/AuthContext';
 import Image from 'next/image';
@@ -14,6 +14,13 @@ import FacebookIcon from '@mui/icons-material/Facebook';
 import LanguageIcon from '@mui/icons-material/Language';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
+import axios from 'axios';
+
+declare global {
+  interface Window {
+    grecaptcha: any;
+  }
+}
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -25,11 +32,41 @@ const SignIn: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const { login } = useAuthContext();
   const router = useRouter();
 
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = `https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`;
+    script.async = true;
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      window.grecaptcha.ready(() => {
+        window.grecaptcha.execute(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY, { action: 'login' }).then((token: string) => {
+          setRecaptchaToken(token);
+        });
+      });
+    };
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleRecaptcha = async () => {
+    return new Promise<string>((resolve) => {
+      window.grecaptcha.ready(() => {
+        window.grecaptcha.execute(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY, { action: 'submit' }).then((token: string) => {
+          resolve(token);
+        });
+      });
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,11 +76,26 @@ const SignIn: React.FC = () => {
       setOpenSnackbar(true);
       return;
     }
-    const success = await login(username, password);
-    if (success) {
-      router.push('/panel');
-    } else {
-      setSnackbarMessage('Error al iniciar sesión. Credenciales inválidas.');
+
+    try {
+      const token = await handleRecaptcha();
+      setRecaptchaToken(token);
+
+      const recaptchaResponse = await axios.post('/api/verifyRecaptcha', { token });
+      if (recaptchaResponse.data.message === 'Token is valid') {
+        const success = await login(username, password);
+        if (success) {
+          router.push('/panel');
+        } else {
+          setSnackbarMessage('Error al iniciar sesión. Credenciales inválidas.');
+          setOpenSnackbar(true);
+        }
+      } else {
+        setSnackbarMessage('Error de reCAPTCHA. Inténtalo de nuevo.');
+        setOpenSnackbar(true);
+      }
+    } catch (error) {
+      setSnackbarMessage('Error verificando reCAPTCHA.');
       setOpenSnackbar(true);
     }
   };
