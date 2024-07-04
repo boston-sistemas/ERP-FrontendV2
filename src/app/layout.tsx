@@ -7,12 +7,8 @@ import React, { useEffect, useState } from "react";
 import Loader from "@/components/common/Loader";
 import { AuthProvider, useAuthContext } from '../context/AuthContext';
 import { AxiosInterceptor } from '../config/AxiosConfig';
-import Snackbar from '@mui/material/Snackbar';
-import MuiAlert, { AlertProps } from '@mui/material/Alert';
 
-const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
-  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
-});
+
 
 export default function RootLayout({
   children,
@@ -36,7 +32,6 @@ export default function RootLayout({
             <div className={`${loading ? "hidden" : "block"} relative`}>
               {children}
             </div>
-            <SessionExpiredHandler />
           </AuthProvider>
         </div>
       </body>
@@ -44,15 +39,4 @@ export default function RootLayout({
   );
 }
 
-const SessionExpiredHandler = () => {
-  const { sessionExpired } = useAuthContext();
 
-  return (
-    <Snackbar
-      open={sessionExpired}
-      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-    >
-      <Alert severity="warning">Su sesión ha expirado. Redirigiendo al inicio de sesión...</Alert>
-    </Snackbar>
-  );
-};

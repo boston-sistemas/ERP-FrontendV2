@@ -1,6 +1,7 @@
 import axios from 'axios';
-import React, { useEffect } from 'react';
 import { useAuthContext } from '../context/AuthContext';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 const server = 'http://localhost:8000'; // Local
 
@@ -10,7 +11,8 @@ const instance = axios.create({
 });
 
 const AxiosInterceptor = () => {
-  const { refreshAccessToken, logout, sessionExpired } = useAuthContext();
+  const { refreshAccessToken } = useAuthContext();
+  const router = useRouter();
 
   useEffect(() => {
     const interceptor = instance.interceptors.response.use(
@@ -18,20 +20,14 @@ const AxiosInterceptor = () => {
       async (error) => {
         const originalRequest = error.config;
         if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('login')) {
-          console.log('config/AxiosConfig Interceptor: Access token expired, attempting to refresh.');
           originalRequest._retry = true;
           try {
             await refreshAccessToken();
             originalRequest.headers['Authorization'] = `Bearer ${localStorage.getItem('access_token')}`;
             return instance(originalRequest);
           } catch (err) {
-            console.error('config/AxiosConfig Interceptor: Refresh token failed, logging out.');
-            localStorage.removeItem('access_token');
-            document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-            await logout();
-            setTimeout(() => {
-              window.location.href = '/';
-            }, 3000); // Espera 3 segundos antes de redirigir al login
+            console.log('Refresh token expirado o inválido:', err);
+            router.push('/session-expired');
             return Promise.reject(err);
           }
         }
@@ -42,10 +38,10 @@ const AxiosInterceptor = () => {
     return () => {
       instance.interceptors.response.eject(interceptor);
     };
-  }, [refreshAccessToken, logout, sessionExpired]);
+  }, [refreshAccessToken, router]);
 
   return null;
 };
 
 export { AxiosInterceptor };
-export default instance; // Exportar axiosInstance por defecto
+export default instance;

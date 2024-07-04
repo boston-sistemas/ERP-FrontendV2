@@ -1,6 +1,7 @@
-import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
 import axios from '../config/AxiosConfig';
-import { jwtDecode } from 'jwt-decode';
+import jwt from 'jsonwebtoken';
+import { useRouter } from 'next/navigation';
 import { User } from '../types/user';
 
 interface AuthContextType {
@@ -11,6 +12,8 @@ interface AuthContextType {
   checkAuth: () => Promise<void>;
   refreshAccessToken: () => Promise<void>;
   sessionExpired: boolean;
+  loading: boolean;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -30,104 +33,146 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Nuevo estado
+  const router = useRouter();
 
   const isTokenExpired = (token: string) => {
-    const decodedToken: any = jwtDecode(token);
-    const currentTime = Date.now() / 1000;
-    return decodedToken.exp < currentTime;
+    try {
+      const decodedToken = jwt.decode(token) as any;
+      const currentTime = Date.now() / 1000;
+      return decodedToken.exp < currentTime;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return true;
+    }
   };
 
   const refreshAccessToken = useCallback(async () => {
-    console.log('refreshAccessToken: Attempting to refresh access token.');
+    console.log('Intentando refrescar el access token...');
+    const refreshToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('refresh_token='))
+      ?.split('=')[1];
+
+    if (!refreshToken || isTokenExpired(refreshToken)) {
+      console.log('Refresh token no existe o ha expirado.');
+      throw new Error('Refresh token expirado o no existe.');
+    }
+
     try {
       const response = await axios.post('security/v1/auth/refresh');
       const newAccessToken = response.data.access_token;
       localStorage.setItem('access_token', newAccessToken);
-      const decodedToken: User = jwtDecode(newAccessToken);
+      const decodedToken = jwt.decode(newAccessToken) as User;
       setUser({
         id: decodedToken.id,
         username: decodedToken.username,
-        accesos: decodedToken.accesos
+        accesos: decodedToken.accesos,
       });
-      console.log('refreshAccessToken: Access token refreshed successfully.');
+      console.log('Access token refrescado exitosamente.');
     } catch (error) {
-      console.error('refreshAccessToken: Failed to refresh access token.', error);
-      localStorage.removeItem('access_token');
-      document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      setUser(null);
-      setSessionExpired(true);
-      setTimeout(() => {
-        setSessionExpired(false);
-        window.location.href = '/';
-      }, 3000); // Espera 3 segundos antes de redirigir al login
-      throw error;
+      console.error('Error refrescando el access token:', error);
+      throw error; // Lanzar el error para que el interceptor lo maneje
     }
   }, []);
 
   const checkAuth = useCallback(async () => {
+    console.log('Verificando autenticación...');
     const accessToken = localStorage.getItem('access_token');
     if (!accessToken) {
-      console.log('context/AuthContext checkAuth: No access token found.');
+      console.log('No se encontró access token.');
       setUser(null);
     } else if (isTokenExpired(accessToken)) {
-      console.log('context/AuthContext checkAuth: Access token is expired, attempting to refresh.');
+      console.log('El access token ha expirado.');
       try {
         await refreshAccessToken();
       } catch (error) {
-        console.error('context/AuthContext checkAuth: Refresh token failed.', error);
+        console.error('Error refrescando el access token:', error);
         setUser(null);
       }
     } else {
-      try {
-        const decodedToken: User = jwtDecode(accessToken);
-        setUser({
-          id: decodedToken.id,
-          username: decodedToken.username,
-          accesos: decodedToken.accesos
-        });
-      } catch (error) {
-        localStorage.removeItem('access_token');
-        console.error('context/AuthContext checkAuth: Invalid access token.', error);
-        setUser(null);
-      }
+      console.log('El access token es válido.');
+      const decodedToken = jwt.decode(accessToken) as User;
+      setUser({
+        id: decodedToken.id,
+        username: decodedToken.username,
+        accesos: decodedToken.accesos,
+      });
+      setIsAuthenticated(true); // Marcar como autenticado
     }
   }, [refreshAccessToken]);
 
   const login = useCallback(async (username: string, password: string) => {
-    console.log('login: Attempting to log in.');
+    console.log('Intentando iniciar sesión...');
     if (!username || !password) {
       alert('Por favor, complete todos los campos.');
       return false;
     }
     try {
       const response = await axios.post('security/v1/auth/login', { username, password });
-      const { access_token, usuario } = response.data;
+      const { access_token, refresh_token, usuario } = response.data;
       localStorage.setItem('access_token', access_token);
-      console.log('login: Logged in successfully.');
+      document.cookie = `refresh_token=${refresh_token}; Path=/; HttpOnly`;
       setUser(usuario);
+      setIsAuthenticated(true); // Marcar como autenticado
+      console.log('Inicio de sesión exitoso.');
       return true;
     } catch (error) {
-      console.error('login: Failed to log in.', error);
+      console.error('Error iniciando sesión:', error);
       return false;
     }
   }, []);
 
   const logout = useCallback(async () => {
-    console.log('logout: Attempting to log out.');
+    console.log('Intentando cerrar sesión...');
     try {
       await axios.post('security/v1/auth/logout');
       localStorage.removeItem('access_token');
       document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
       setUser(null);
-      console.log('logout: Logged out successfully.');
+      setIsAuthenticated(false); // Marcar como no autenticado
+      console.log('Cierre de sesión exitoso.');
     } catch (error) {
-      console.error('logout: Failed to log out.', error);
+      console.error('Error cerrando sesión:', error);
       throw error;
     }
   }, []);
 
+  useEffect(() => {
+    const authenticate = async () => {
+      console.log('Autenticando...');
+      const accessToken = localStorage.getItem('access_token');
+      if (accessToken && isTokenExpired(accessToken)) {
+        console.log('El access token ha expirado.');
+        try {
+          await refreshAccessToken();
+        } catch (error) {
+          console.error('Error refrescando el access token:', error);
+          setSessionExpired(true);
+          setTimeout(() => {
+            setSessionExpired(false);
+          }, 0);
+        }
+      } else if (accessToken) {
+        console.log('El access token es válido.');
+        const decodedToken = jwt.decode(accessToken) as User;
+        setUser({
+          id: decodedToken.id,
+          username: decodedToken.username,
+          accesos: decodedToken.accesos,
+        });
+      } else {
+        console.log('No se encontró access token.');
+        router.push('/');
+      }
+      setLoading(false);
+    };
+    authenticate();
+  }, [router, refreshAccessToken, isAuthenticated]);
+
   return (
-    <AuthContext.Provider value={{ user, setUser, login, logout, checkAuth, refreshAccessToken, sessionExpired }}>
+    <AuthContext.Provider value={{ user, setUser, login, logout, checkAuth, refreshAccessToken, sessionExpired, loading, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );
