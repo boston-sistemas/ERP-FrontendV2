@@ -1,7 +1,8 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
 import axios from '../config/AxiosConfig';
 import jwt from 'jsonwebtoken';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import Cookies from 'js-cookie';
 import { User } from '../types/user';
 
 interface AuthContextType {
@@ -34,8 +35,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Nuevo estado
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   const isTokenExpired = (token: string) => {
     try {
@@ -50,16 +52,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const refreshAccessToken = useCallback(async () => {
     console.log('Intentando refrescar el access token...');
-    const refreshToken = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('refresh_token='))
-      ?.split('=')[1];
-
-    if (!refreshToken || isTokenExpired(refreshToken)) {
-      console.log('Refresh token no existe o ha expirado.');
-      throw new Error('Refresh token expirado o no existe.');
-    }
-
+    const allCookies = Cookies.get();
+    console.log('Todas las cookies:', allCookies);
+  
     try {
       const response = await axios.post('security/v1/auth/refresh');
       const newAccessToken = response.data.access_token;
@@ -73,7 +68,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.log('Access token refrescado exitosamente.');
     } catch (error) {
       console.error('Error refrescando el access token:', error);
-      throw error; // Lanzar el error para que el interceptor lo maneje
+      throw error;
     }
   }, []);
 
@@ -90,6 +85,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       } catch (error) {
         console.error('Error refrescando el access token:', error);
         setUser(null);
+        router.push('/session-expired');
       }
     } else {
       console.log('El access token es válido.');
@@ -99,9 +95,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         username: decodedToken.username,
         accesos: decodedToken.accesos,
       });
-      setIsAuthenticated(true); // Marcar como autenticado
+      setIsAuthenticated(true);
     }
-  }, [refreshAccessToken]);
+  }, [refreshAccessToken, router]);
 
   const login = useCallback(async (username: string, password: string) => {
     console.log('Intentando iniciar sesión...');
@@ -113,9 +109,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const response = await axios.post('security/v1/auth/login', { username, password });
       const { access_token, refresh_token, usuario } = response.data;
       localStorage.setItem('access_token', access_token);
-      document.cookie = `refresh_token=${refresh_token}; Path=/; HttpOnly`;
+      Cookies.set('refresh_token', refresh_token, { path: '/', secure: true, sameSite: 'Lax' });
       setUser(usuario);
-      setIsAuthenticated(true); // Marcar como autenticado
+      setIsAuthenticated(true);
       console.log('Inicio de sesión exitoso.');
       return true;
     } catch (error) {
@@ -129,9 +125,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       await axios.post('security/v1/auth/logout');
       localStorage.removeItem('access_token');
-      document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      Cookies.remove('refresh_token', { path: '/' });
       setUser(null);
-      setIsAuthenticated(false); // Marcar como no autenticado
+      setIsAuthenticated(false);
       console.log('Cierre de sesión exitoso.');
     } catch (error) {
       console.error('Error cerrando sesión:', error);
@@ -141,35 +137,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     const authenticate = async () => {
-      console.log('Autenticando...');
-      const accessToken = localStorage.getItem('access_token');
-      if (accessToken && isTokenExpired(accessToken)) {
-        console.log('El access token ha expirado.');
-        try {
-          await refreshAccessToken();
-        } catch (error) {
-          console.error('Error refrescando el access token:', error);
-          setSessionExpired(true);
-          setTimeout(() => {
-            setSessionExpired(false);
-          }, 0);
-        }
-      } else if (accessToken) {
-        console.log('El access token es válido.');
-        const decodedToken = jwt.decode(accessToken) as User;
-        setUser({
-          id: decodedToken.id,
-          username: decodedToken.username,
-          accesos: decodedToken.accesos,
-        });
-      } else {
-        console.log('No se encontró access token.');
-        router.push('/');
-      }
+      await checkAuth();
       setLoading(false);
     };
+
     authenticate();
-  }, [router, refreshAccessToken, isAuthenticated]);
+  }, [pathname, checkAuth]); // Re-check auth on pathname change
 
   return (
     <AuthContext.Provider value={{ user, setUser, login, logout, checkAuth, refreshAccessToken, sessionExpired, loading, isAuthenticated }}>

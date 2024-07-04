@@ -8,8 +8,6 @@ import Loader from "@/components/common/Loader";
 import { AuthProvider, useAuthContext } from '../context/AuthContext';
 import { AxiosInterceptor } from '../config/AxiosConfig';
 
-
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -38,5 +36,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-

@@ -11,7 +11,7 @@ const SessionExpired = () => {
   useEffect(() => {
     // Eliminar tokens
     localStorage.removeItem('access_token');
-     
+    document.cookie = 'refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
 
     const timer = setInterval(() => {
       setCountdown((prevCountdown) => prevCountdown - 1);
