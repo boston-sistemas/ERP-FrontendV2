@@ -89,7 +89,7 @@ const processOrderData = (orders: any[]): Orden[] => {
         fibra: "POR DEFINIR",
         rollos: detalle.reporte_tejeduria_nro_rollos,
         cantidad: roundToTwo(parseFloat(detalle.reporte_tejeduria_cantidad_kg)),
-        kg_por_rollo: roundToTwo(parseFloat(detalle.reporte_tejeduria_cantidad_kg) / detalle.reporte_tejeduria_nro_rollos),
+        kg_por_rollo: isNaN(roundToTwo(parseFloat(detalle.reporte_tejeduria_cantidad_kg) / detalle.reporte_tejeduria_nro_rollos)) ? 0 : roundToTwo(parseFloat(detalle.reporte_tejeduria_cantidad_kg) / detalle.reporte_tejeduria_nro_rollos),
         estado: detalle.estado
       }))
     };
