@@ -41,15 +41,19 @@ const SignIn: React.FC = () => {
     script.src = `https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`;
     script.async = true;
     document.body.appendChild(script);
-
+  
     script.onload = () => {
-      window.grecaptcha.ready(() => {
-        window.grecaptcha.execute(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY, { action: 'login' }).then((token: string) => {
-          setRecaptchaToken(token);
+      if (window.grecaptcha) {
+        window.grecaptcha.ready(() => {
+          window.grecaptcha.execute(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY, { action: 'login' }).then((token: string) => {
+            setRecaptchaToken(token);
+          });
         });
-      });
+      } else {
+        console.error('grecaptcha not loaded');
+      }
     };
-
+  
     return () => {
       document.body.removeChild(script);
     };

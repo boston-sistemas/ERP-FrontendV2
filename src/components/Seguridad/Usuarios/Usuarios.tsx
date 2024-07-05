@@ -1,11 +1,26 @@
+// src/components/Seguridad/Usuarios/Usuarios.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { TablePagination, IconButton, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, TextField, ListItemIcon } from "@mui/material";
-import { Edit, Visibility, Assignment, Shield, Build } from "@mui/icons-material";
+import {
+  TablePagination,
+  IconButton,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  TextField,
+} from "@mui/material";
+import { Edit, Visibility, Assignment, Shield, Build, PowerSettingsNew } from "@mui/icons-material";
 import "@/css/checkbox.css";
 
 const TIMEOUT = 1000;
@@ -133,6 +148,17 @@ const Usuarios: React.FC = () => {
     }
   };
 
+  const handleToggleUserStatus = async (usuario: Usuario) => {
+    try {
+      await instance.put(`/security/v1/usuarios/${usuario.usuario_id}`, {
+        is_active: !usuario.is_active,
+      });
+      fetchUsuarios();
+    } catch (error) {
+      console.error('Error toggling user status', error);
+    }
+  };
+
   return (
     <div className="space-y-5">
       {error && (
@@ -140,13 +166,13 @@ const Usuarios: React.FC = () => {
       )}
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
         <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
-          Usuarios 
+          Usuarios
         </h4>
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
-                {["Foto", "Nombre", "Correo", "Roles", "Último Inicio Sesión", "Estado", "Permisos", "Editar"].map((column, index) => (
+                {["Nombre", "Correo", "Roles", "Permisos", "Editar", "Estado", "Modificar"].map((column, index) => (
                   <th key={index} className="px-4 py-4 text-center font-normal text-white dark:text-zinc-100">
                     {column}
                   </th>
@@ -156,23 +182,21 @@ const Usuarios: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="pt-5 pb-5 text-center text-black dark:text-white">
+                  <td colSpan={7} className="pt-5 pb-5 text-center text-black dark:text-white">
                     Cargando...
                   </td>
                 </tr>
               ) : usuarios.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="pt-5 pb-5 text-center text-black dark:text-white">
+                  <td colSpan={7} className="pt-5 pb-5 text-center text-black dark:text-white">
                     No existen usuarios
                   </td>
                 </tr>
               ) : (
                 usuarios.slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina).map(usuario => (
                   <tr key={usuario.usuario_id} className="text-center">
-                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <Image src="/images/user/user-default.png" alt="User" width={40} height={40} className="rounded-full mx-auto" />
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark flex items-center justify-center">
+                      <Image src="/images/user/user-default.png" alt="User" width={40} height={40} className="rounded-full mr-2" />
                       <Typography variant="body1" className="text-black dark:text-white">{usuario.display_name}</Typography>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
@@ -183,7 +207,7 @@ const Usuarios: React.FC = () => {
                         usuario.roles.map((role, index) => (
                           <span
                             key={index}
-                            className={`inline-block ml-1 mr-1 px-2 py-1 text-xs font-medium text-white ${role.nombre === "Produccion" ? "bg-blue-500" : role.nombre === "Operaciones" ? "bg-red-500" : "bg-green-500"} rounded-full`}
+                            className={`inline-block ml-1 mr-1 px-2 py-1 text-xs font-medium text-white ${role.nombre === "MECSA_OPERACIONES" ? "bg-blue-500" : role.nombre === "PROVEEDOR" ? "bg-teal-500" : "bg-green-500"} rounded-full`}
                           >
                             {role.nombre}
                           </span>
@@ -193,14 +217,6 @@ const Usuarios: React.FC = () => {
                       )}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      POR DEFINIR
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <span className={`text-sm ${usuario.is_active ? "text-green-500" : "text-red-500"}`}>
-                        {usuario.is_active ? "Habilitado" : "Deshabilitado"}
-                      </span>
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <IconButton className="text-inherit dark:text-white" onClick={() => handleViewPermissions(usuario)}>
                         <Visibility />
                       </IconButton>
@@ -208,6 +224,16 @@ const Usuarios: React.FC = () => {
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <IconButton className="text-inherit dark:text-white" onClick={() => handleEditUser(usuario)}>
                         <Edit />
+                      </IconButton>
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      <span className={`text-sm ${usuario.is_active ? "text-green-500" : "text-red-500"}`}>
+                        {usuario.is_active ? "Habilitado" : "Deshabilitado"}
+                      </span>
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      <IconButton onClick={() => handleToggleUserStatus(usuario)} className="text-blue-500">
+                        <PowerSettingsNew />
                       </IconButton>
                     </td>
                   </tr>

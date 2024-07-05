@@ -21,7 +21,7 @@ import {
   InputAdornment,
   Chip,
 } from "@mui/material";
-import { Edit, Visibility, Assignment, Shield, Build, Add, Delete, Close } from "@mui/icons-material";
+import { Edit, Visibility, Assignment, Shield, Build, Add, Delete, Close, PowerSettingsNew } from "@mui/icons-material";
 import SearchIcon from '@mui/icons-material/Search';
 import "@/css/checkbox.css";
 
@@ -261,7 +261,7 @@ const Roles: React.FC = () => {
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <span className={`text-sm ${rol.is_active ? "text-green-500" : "text-red-500"}`}>
-                        {rol.is_active ? "Activo" : "Inactivo"}
+                        {rol.is_active ? "Habilitado" : "Deshabilitado"}
                       </span>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
@@ -284,16 +284,9 @@ const Roles: React.FC = () => {
                       </IconButton>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                    <button
-                      onClick={() => handleToggleRoleStatus(rol)}
-                      className={`px-4 py-2 rounded text-white transition focus:outline-none focus:ring-2 focus:ring-opacity-50 ${
-                        rol.is_active
-                          ? "bg-red-600 hover:bg-red-500 focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-400"
-                          : "bg-green-600 hover:bg-green-500 focus:ring-green-500 dark:bg-green-500 dark:hover:bg-green-400"
-                      }`}
-                    >
-                      {rol.is_active ? "Desactivar" : "Activar"}
-                    </button>
+                      <IconButton onClick={() => handleToggleRoleStatus(rol)} className="text-blue-500">
+                        <PowerSettingsNew />
+                      </IconButton>
                     </td>
                   </tr>
                 ))
@@ -357,7 +350,7 @@ const Roles: React.FC = () => {
                   <ListItemIcon>
                     {acceso.nombre.includes("admin") ? <Shield /> : acceso.nombre.includes("key") ? <Build /> : <Assignment />}
                   </ListItemIcon>
-                  <ListItemText primary={acceso.nombre} secondary={acceso.is_active ? "Activo" : "Inactivo"} />
+                  <ListItemText primary={acceso.nombre} secondary={acceso.is_active ? "Habilitado" : "Deshabilitado"} />
                 </ListItem>
               ))}
             </List>
@@ -413,7 +406,7 @@ const Roles: React.FC = () => {
                     <ListItemIcon>
                       {acceso.nombre.includes("admin") ? <Shield /> : acceso.nombre.includes("key") ? <Build /> : <Assignment />}
                     </ListItemIcon>
-                    <ListItemText primary={acceso.nombre} secondary={acceso.is_active ? "Activo" : "Inactivo"} />
+                    <ListItemText primary={acceso.nombre} secondary={acceso.is_active ? "Habilitado" : "Deshabilitado"} />
                   </ListItem>
                 ))}
               </List>
@@ -458,7 +451,7 @@ const Roles: React.FC = () => {
                     <ListItemIcon>
                       {acceso.nombre.includes("admin") ? <Shield /> : acceso.nombre.includes("key") ? <Build /> : <Assignment />}
                     </ListItemIcon>
-                    <ListItemText primary={acceso.nombre} secondary={acceso.is_active ? "Activo" : "Inactivo"} />
+                    <ListItemText primary={acceso.nombre} secondary={acceso.is_active ? "Habilitado" : "Deshabilitado"} />
                   </ListItem>
                 ))}
               </List>
