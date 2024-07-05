@@ -306,7 +306,7 @@ const CrearUsuario: React.FC = () => {
                                 onChange={() => handleRoleSelection(rol.rol_id)}
                               />
                             </td>
-                            <td className="px-4 py-4 text-black border-b border-[#eee] dark:text-white dark:border-strokedark">{rol.nombre}</td>
+                            <td className="text-center px-4 py-4 text-black border-b border-[#eee] dark:text-white dark:border-strokedark">{rol.nombre}</td>
                             <td className="px-4 py-4 text-black border-b border-[#eee] dark:text-white dark:border-strokedark">
                               <ul className="list-disc list-inside">
                                 {rol.accesos.map(acceso => (
