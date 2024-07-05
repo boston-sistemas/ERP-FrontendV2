@@ -232,7 +232,7 @@ const Roles: React.FC = () => {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
-                {["Nombre", "Accesos", "Cantidad", "Estado", "Modificar", "Editar"].map((column, index) => (
+                {["Nombre", "Accesos", "Cantidad", "Estado", " ", "Editar"].map((column, index) => (
                   <th key={index} className="px-4 py-4 text-center font-normal text-white dark:text-zinc-100">
                     {column}
                   </th>

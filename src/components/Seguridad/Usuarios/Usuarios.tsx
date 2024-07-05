@@ -266,7 +266,8 @@ const Usuarios: React.FC = () => {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
-                {["Nombre", "Correo", "Roles", "Permisos", "Estado", "Modificar", "Editar"].map((column, index) => (
+                <th className="px-4 py-4"></th>
+                {["Nombre", "Correo", "Roles", "Permisos", "Estado", " ", "Editar"].map((column, index) => (
                   <th key={index} className="px-4 py-4 text-center font-normal text-white dark:text-zinc-100">
                     {column}
                   </th>
@@ -276,13 +277,13 @@ const Usuarios: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="pt-5 pb-5 text-center text-black dark:text-white">
+                  <td colSpan={8} className="pt-5 pb-5 text-center text-black dark:text-white">
                     Cargando...
                   </td>
                 </tr>
               ) : usuarios.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="pt-5 pb-5 text-center text-black dark:text-white">
+                  <td colSpan={8} className="pt-5 pb-5 text-center text-black dark:text-white">
                     No existen usuarios
                   </td>
                 </tr>
@@ -290,7 +291,9 @@ const Usuarios: React.FC = () => {
                 usuarios.slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina).map(usuario => (
                   <tr key={usuario.usuario_id} className="text-center">
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark flex items-center justify-center">
-                      <Image src="/images/user/user-default.png" alt="User" width={40} height={40} className="rounded-full mr-2" />
+                      <Image src="/images/user/user-default.png" alt="User" width={40} height={40} className="rounded-full" />
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <Typography variant="body1" className="text-black dark:text-white">{usuario.display_name}</Typography>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
@@ -307,18 +310,18 @@ const Usuarios: React.FC = () => {
                           </span>
                         ))
                       ) : (
-                        <Typography variant="body2" className="text-red-500">-</Typography>
+                        <Typography variant="body2">Sin roles</Typography>
                       )}
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      <IconButton className="text-inherit dark:text-white" onClick={() => handleViewPermissions(usuario)}>
+                        <Visibility />
+                      </IconButton>
                       <IconButton className="text-inherit dark:text-white" onClick={() => handleOpenAddRoleDialog(usuario)}>
                         <Add />
                       </IconButton>
                       <IconButton className="text-inherit dark:text-white" onClick={() => handleOpenRemoveRoleDialog(usuario)}>
                         <Delete />
-                      </IconButton>
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <IconButton className="text-inherit dark:text-white" onClick={() => handleViewPermissions(usuario)}>
-                        <Visibility />
                       </IconButton>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
