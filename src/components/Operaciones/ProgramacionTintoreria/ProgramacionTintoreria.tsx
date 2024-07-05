@@ -221,14 +221,16 @@ const ProgramacionTintoreria: React.FC = () => {
   
     setError(null);
     setMensajeError(null); // Limpiar el mensaje de error si no hay subordenes con 0 rollos
-    const currentMaxId = partidas.length > 0 ? Math.max(...partidas.map(p => p.id)) : 0;
   
-    const nuevasPartidas = subordenesSeleccionadas.map((suborden, index) => {
+    // Obtener el siguiente ID disponible
+    const nextId = partidas.length > 0 ? Math.max(...partidas.map(p => p.id)) + 1 : 1;
+  
+    const nuevasPartidas = subordenesSeleccionadas.map(suborden => {
       const idSuborden = `${suborden.tejido}-${suborden.densidad}-${suborden.ancho}`;
       const rollosIniciales = rollosDisponibles[idSuborden] ?? suborden.rollos;
   
       return {
-        id: currentMaxId + 1,
+        id: nextId,
         hilanderia: 'POR DEFINIR',
         suborden: idSuborden,
         a_disponer: rollosIniciales,
@@ -241,7 +243,8 @@ const ProgramacionTintoreria: React.FC = () => {
     });
   
     setPartidas([...partidas, ...nuevasPartidas]);
-  };  
+  };
+    
 
   const handleExpandirFila = (index: number) => {
     if (filasExpandidas.includes(index)) {
@@ -322,21 +325,49 @@ const ProgramacionTintoreria: React.FC = () => {
     }
   }, [subordenesSeleccionadas, tintoreria, canAddPartida]);
 
+
   const handleEliminarPartida = (index: number) => {
     const nuevasPartidas = [...partidas];
-    const partida = nuevasPartidas[index];
-    const idSuborden = partida.suborden;
-    const rollosDevueltos = partida.rollos;
-
-    // Devolver los rollos a la cantidad disponible
+    const partidaEliminada = nuevasPartidas.splice(index, 1)[0];
+    // Devolver los rollos eliminados a la cantidad disponible
+    const idSuborden = partidaEliminada.suborden;
+    const rollosDisponiblesActuales = rollosDisponibles[idSuborden] ?? 0;
+    const nuevosRollosDisponibles = rollosDisponiblesActuales + partidaEliminada.rollos;
     setRollosDisponibles(prev => ({
       ...prev,
-      [idSuborden]: (prev[idSuborden] ?? 0) + rollosDevueltos
+      [idSuborden]: nuevosRollosDisponibles
     }));
+  
+    // Reenumerar solo si el índice eliminado deja un grupo vacío
+    const partidasAgrupadas = nuevasPartidas.reduce((acc, partida) => {
+      if (!acc[partida.id]) {
+        acc[partida.id] = [];
+      }
+      acc[partida.id].push(partida);
+      return acc;
+    }, {} as Record<number, Partida[]>);
 
-    nuevasPartidas.splice(index, 1);
-    setPartidas(nuevasPartidas);
-  }; 
+    // Filtrar grupos vacíos y renumerar
+    const partidasRenumeradas: Partida[] = [];
+    let newIndex = 1;
+    for (const grupo of Object.values(partidasAgrupadas)) {
+      if (grupo.length > 0) {
+        grupo.forEach(partida => {
+          partidasRenumeradas.push({ ...partida, id: newIndex });
+        });
+        newIndex++;
+      }
+    }
+  
+    setPartidas(partidasRenumeradas);
+  };
+  
+  
+  
+
+  
+  
+  
 
   return (
     <div className="space-y-5">
