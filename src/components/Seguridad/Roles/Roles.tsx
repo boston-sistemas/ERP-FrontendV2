@@ -1,4 +1,3 @@
-// src/components/Seguridad/Roles/Roles.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -233,7 +232,7 @@ const Roles: React.FC = () => {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
-                {["Nombre", "Estado", "Accesos", "Cantidad", "Editar", "Modificar"].map((column, index) => (
+                {["Nombre", "Accesos", "Cantidad", "Estado", "Modificar", "Editar"].map((column, index) => (
                   <th key={index} className="px-4 py-4 text-center font-normal text-white dark:text-zinc-100">
                     {column}
                   </th>
@@ -260,11 +259,6 @@ const Roles: React.FC = () => {
                       <Typography variant="body1" className="text-black dark:text-white">{rol.nombre}</Typography>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <span className={`text-sm ${rol.is_active ? "text-green-500" : "text-red-500"}`}>
-                        {rol.is_active ? "Habilitado" : "Deshabilitado"}
-                      </span>
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <IconButton className="text-inherit dark:text-white" onClick={() => handleViewPermissions(rol)}>
                         <Visibility />
                       </IconButton>
@@ -279,13 +273,18 @@ const Roles: React.FC = () => {
                       <Typography variant="body1" className="text-black dark:text-white">{rol.accesos.length}</Typography>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <IconButton className="text-inherit dark:text-white" onClick={() => handleEditRole(rol)}>
-                        <Edit />
-                      </IconButton>
+                      <span className={`text-sm ${rol.is_active ? "text-green-500" : "text-red-500"}`}>
+                        {rol.is_active ? "Habilitado" : "Deshabilitado"}
+                      </span>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <IconButton onClick={() => handleToggleRoleStatus(rol)} className="text-blue-500">
                         <PowerSettingsNew />
+                      </IconButton>
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      <IconButton className="text-inherit dark:text-white" onClick={() => handleEditRole(rol)}>
+                        <Edit />
                       </IconButton>
                     </td>
                   </tr>

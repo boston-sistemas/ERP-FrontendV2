@@ -1,4 +1,3 @@
-// src/components/Seguridad/Usuarios/Usuarios.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -19,8 +18,10 @@ import {
   ListItemText,
   ListItemIcon,
   TextField,
+  Chip,
+  InputAdornment,
 } from "@mui/material";
-import { Edit, Visibility, Assignment, Shield, Build, PowerSettingsNew } from "@mui/icons-material";
+import { Edit, Visibility, Assignment, Shield, Build, PowerSettingsNew, Add, Delete, Close, Search } from "@mui/icons-material";
 import "@/css/checkbox.css";
 
 const TIMEOUT = 1000;
@@ -50,15 +51,21 @@ interface Usuario {
 
 const Usuarios: React.FC = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [roles, setRoles] = useState<Rol[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openViewPermissionsDialog, setOpenViewPermissionsDialog] = useState(false);
+  const [openAddRoleDialog, setOpenAddRoleDialog] = useState(false);
+  const [openRemoveRoleDialog, setOpenRemoveRoleDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Usuario | null>(null);
   const [selectedRoleAccesses, setSelectedRoleAccesses] = useState<Rol[]>([]);
   const [originalUser, setOriginalUser] = useState<Usuario | null>(null);
+  const [selectedRoles, setSelectedRoles] = useState<Rol[]>([]);
+  const [removeRoles, setRemoveRoles] = useState<Rol[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
 
   const fetchUsuarios = async () => {
@@ -74,6 +81,15 @@ const Usuarios: React.FC = () => {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const response = await instance.get('/security/v1/roles/');
+      setRoles(response.data.roles);
+    } catch (error) {
+      console.error('Error fetching roles', error);
+    }
+  };
+
   const fetchRoleAccesses = async (role_id: number) => {
     try {
       const response = await instance.get(`/security/v1/roles/${role_id}`);
@@ -86,6 +102,7 @@ const Usuarios: React.FC = () => {
 
   useEffect(() => {
     fetchUsuarios();
+    fetchRoles();
   }, []);
 
   const handleCambiarPagina = (event: any, newPage: any) => {
@@ -159,6 +176,83 @@ const Usuarios: React.FC = () => {
     }
   };
 
+  const handleOpenAddRoleDialog = (usuario: Usuario) => {
+    setSelectedUser(usuario);
+    setOpenAddRoleDialog(true);
+  };
+
+  const handleCloseAddRoleDialog = () => {
+    setOpenAddRoleDialog(false);
+    setSelectedRoles([]);
+    setSearchTerm("");
+  };
+
+  const handleOpenRemoveRoleDialog = (usuario: Usuario) => {
+    setSelectedUser(usuario);
+    setOpenRemoveRoleDialog(true);
+  };
+
+  const handleCloseRemoveRoleDialog = () => {
+    setOpenRemoveRoleDialog(false);
+    setRemoveRoles([]);
+  };
+
+  const handleAddRole = async () => {
+    if (selectedUser) {
+      try {
+        await instance.post(`/security/v1/usuarios/${selectedUser.usuario_id}/roles/`, {
+          rol_ids: selectedRoles.map(rol => rol.rol_id)
+        });
+        fetchUsuarios();
+        handleCloseAddRoleDialog();
+      } catch (error) {
+        console.error('Error adding role', error);
+      }
+    }
+  };
+
+  const handleRemoveRole = async () => {
+    if (selectedUser) {
+      try {
+        await instance.delete(`/security/v1/usuarios/${selectedUser.usuario_id}/roles/`, {
+          data: { rol_ids: removeRoles.map(rol => rol.rol_id) }
+        });
+        fetchUsuarios();
+        handleCloseRemoveRoleDialog();
+      } catch (error) {
+        console.error('Error removing role', error);
+      }
+    }
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const filteredRoles = roles.filter(rol =>
+    rol.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleToggleRole = (rol: Rol) => {
+    setSelectedRoles(prev => {
+      if (prev.some(selected => selected.rol_id === rol.rol_id)) {
+        return prev.filter(selected => selected.rol_id !== rol.rol_id);
+      } else {
+        return [...prev, rol];
+      }
+    });
+  };
+
+  const handleToggleRemoveRole = (rol: Rol) => {
+    setRemoveRoles(prev => {
+      if (prev.some(selected => selected.rol_id === rol.rol_id)) {
+        return prev.filter(selected => selected.rol_id !== rol.rol_id);
+      } else {
+        return [...prev, rol];
+      }
+    });
+  };
+
   return (
     <div className="space-y-5">
       {error && (
@@ -172,7 +266,7 @@ const Usuarios: React.FC = () => {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
-                {["Nombre", "Correo", "Roles", "Permisos", "Editar", "Estado", "Modificar"].map((column, index) => (
+                {["Nombre", "Correo", "Roles", "Permisos", "Estado", "Modificar", "Editar"].map((column, index) => (
                   <th key={index} className="px-4 py-4 text-center font-normal text-white dark:text-zinc-100">
                     {column}
                   </th>
@@ -215,15 +309,16 @@ const Usuarios: React.FC = () => {
                       ) : (
                         <Typography variant="body2" className="text-red-500">-</Typography>
                       )}
+                      <IconButton className="text-inherit dark:text-white" onClick={() => handleOpenAddRoleDialog(usuario)}>
+                        <Add />
+                      </IconButton>
+                      <IconButton className="text-inherit dark:text-white" onClick={() => handleOpenRemoveRoleDialog(usuario)}>
+                        <Delete />
+                      </IconButton>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <IconButton className="text-inherit dark:text-white" onClick={() => handleViewPermissions(usuario)}>
                         <Visibility />
-                      </IconButton>
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <IconButton className="text-inherit dark:text-white" onClick={() => handleEditUser(usuario)}>
-                        <Edit />
                       </IconButton>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
@@ -234,6 +329,11 @@ const Usuarios: React.FC = () => {
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <IconButton onClick={() => handleToggleUserStatus(usuario)} className="text-blue-500">
                         <PowerSettingsNew />
+                      </IconButton>
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      <IconButton className="text-inherit dark:text-white" onClick={() => handleEditUser(usuario)}>
+                        <Edit />
                       </IconButton>
                     </td>
                   </tr>
@@ -330,6 +430,96 @@ const Usuarios: React.FC = () => {
         <DialogActions>
           <Button onClick={handleCloseViewPermissionsDialog} color="primary">
             Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openAddRoleDialog} onClose={handleCloseAddRoleDialog}>
+        <DialogTitle>Agregar Roles</DialogTitle>
+        <DialogContent>
+          <TextField
+            margin="dense"
+            label="Buscar Rol"
+            fullWidth
+            variant="outlined"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton>
+                    <Search />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <div className="my-2">
+            {selectedRoles.map(rol => (
+              <Chip
+                key={rol.rol_id}
+                label={rol.nombre}
+                onDelete={() => handleToggleRole(rol)}
+                deleteIcon={<Close />}
+                color="primary"
+                variant="outlined"
+                className="mr-1 mb-1"
+              />
+            ))}
+          </div>
+          <List>
+            {filteredRoles.filter(rol => !selectedUser?.roles.some(userRole => userRole.rol_id === rol.rol_id)).map(rol => (
+              <ListItem key={rol.rol_id} button onClick={() => handleToggleRole(rol)}>
+                <ListItemIcon>
+                  {rol.nombre.includes("admin") ? <Shield /> : rol.nombre.includes("key") ? <Build /> : <Assignment />}
+                </ListItemIcon>
+                <ListItemText primary={rol.nombre} />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddRoleDialog} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleAddRole} color="primary">
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openRemoveRoleDialog} onClose={handleCloseRemoveRoleDialog}>
+        <DialogTitle>Quitar Roles</DialogTitle>
+        <DialogContent>
+          <div className="my-2">
+            {removeRoles.map(rol => (
+              <Chip
+                key={rol.rol_id}
+                label={rol.nombre}
+                onDelete={() => handleToggleRemoveRole(rol)}
+                deleteIcon={<Close className="text-red-500" />}
+                className="mr-1 mb-1 border-red-500 text-red-500"
+                variant="outlined"
+              />
+            ))}
+          </div>
+          <List>
+            {selectedUser?.roles.map(rol => (
+              <ListItem key={rol.rol_id} button onClick={() => handleToggleRemoveRole(rol)}>
+                <ListItemIcon>
+                  {rol.nombre.includes("admin") ? <Shield /> : rol.nombre.includes("key") ? <Build /> : <Assignment />}
+                </ListItemIcon>
+                <ListItemText primary={rol.nombre} />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseRemoveRoleDialog} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleRemoveRole} color="primary">
+            Guardar
           </Button>
         </DialogActions>
       </Dialog>
