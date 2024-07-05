@@ -12,6 +12,7 @@ import TablaExpandida from "./TablaExpandida";
 import "@/css/checkbox.css";
 import { SelectChangeEvent } from '@mui/material/Select';
 import '@/css/delete-icon.css';
+import { Delete } from "@mui/icons-material";
 
 export interface Orden {
   hilanderia: string;
@@ -582,13 +583,9 @@ const ProgramacionTintoreria: React.FC = () => {
                       </Select>
                     </td>
                     <td className="relative border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <button
-                        onClick={() => handleEliminarPartida(index)}
-                        className={`px-4 py-2 rounded text-white transition focus:outline-none focus:ring-2 focus:ring-opacity-50 bg-red-600 hover:bg-red-500 focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-400`}
-                      >
-                        Quitar
-                      </button>
-                      
+                      <IconButton className="text-inherit dark:text-white" onClick={() => handleEliminarPartida(index)}>
+                        <Delete />
+                      </IconButton>
                     </td>
                   </tr>
                 ))
