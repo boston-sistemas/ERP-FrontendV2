@@ -102,14 +102,20 @@ const CrearUsuario: React.FC = () => {
   };
 
   const generarPassword = () => {
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*";
-    const length = 16;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$";
+    const length = 10;
     let generatedPassword = "";
     for (let i = 0; i < length; i++) {
       const randomIndex = Math.floor(Math.random() * charset.length);
       generatedPassword += charset[randomIndex];
     }
     setPassword(generatedPassword);
+    setErrors(prev => ({ ...prev, password: false }));
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
     setErrors(prev => ({ ...prev, password: false }));
   };
 
@@ -162,7 +168,7 @@ const CrearUsuario: React.FC = () => {
                       <div className="flex items-center">
                         <FaUser className="text-blue-800 dark:text-white mr-3" />
                         <label className="mb-1 block text-sm font-medium text-black dark:text-white flex items-center">
-                          Usuario
+                          Username
                         </label>
                       </div>
                       <input
@@ -181,7 +187,7 @@ const CrearUsuario: React.FC = () => {
                       <div className="flex items-center">
                         <FaUserShield className="text-blue-800 dark:text-white mr-3" />
                         <label className="mb-1 block text-sm font-medium text-black dark:text-white flex items-center">
-                          Nombre
+                          Display Name
                         </label>
                       </div>
                       <input
@@ -228,9 +234,9 @@ const CrearUsuario: React.FC = () => {
                         <input
                           type="text"
                           value={password}
-                          readOnly
-                          placeholder="Generar contraseña"
-                          className={`w-50 flex-1 rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black dark:text-white outline-none transition focus:border-blue-800 active:border-blue-800 dark:border-form-strokedark dark:bg-form-input dark:focus:border-blue-800 ${errors.password ? "border-red-500" : ""}`}
+                          onChange={handlePasswordChange}
+                          placeholder="Contraseña"
+                          className={`w-40 flex-1 rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black dark:text-white outline-none transition focus:border-blue-800 active:border-blue-800 dark:border-form-strokedark dark:bg-form-input dark:focus:border-blue-800 ${errors.password ? "border-red-500" : ""}`}
                         />
                         <button
                           type="button"
@@ -403,7 +409,7 @@ const CrearUsuario: React.FC = () => {
                       Crear
                     </button>
                   </div>
-                  {isSubmitting && <p className="text-blac dark:text-white mt-2">Creando usuario...</p>}
+                  {isSubmitting && <p className="text-black dark:text-white mt-2">Creando usuario...</p>}
                 </div>
               )}
             </form>
