@@ -3,10 +3,26 @@
 
 import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { TablePagination, IconButton, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, ListItemIcon, TextField } from "@mui/material";
-import { Edit, Visibility, Assignment, Shield, Build } from "@mui/icons-material";
+import {
+  TablePagination,
+  IconButton,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  TextField,
+  InputAdornment,
+  Chip,
+} from "@mui/material";
+import { Edit, Visibility, Assignment, Shield, Build, Add, Delete, Close } from "@mui/icons-material";
+import SearchIcon from '@mui/icons-material/Search';
 import "@/css/checkbox.css";
 
 const TIMEOUT = 1000;
@@ -32,7 +48,13 @@ const Roles: React.FC = () => {
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openViewPermissionsDialog, setOpenViewPermissionsDialog] = useState(false);
+  const [openAddAccessDialog, setOpenAddAccessDialog] = useState(false);
+  const [openRemoveAccessDialog, setOpenRemoveAccessDialog] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Rol | null>(null);
+  const [accesos, setAccesos] = useState<Acceso[]>([]);
+  const [selectedAccesos, setSelectedAccesos] = useState<Acceso[]>([]);
+  const [removeAccesos, setRemoveAccesos] = useState<Acceso[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
 
   const fetchRoles = async () => {
@@ -48,8 +70,18 @@ const Roles: React.FC = () => {
     }
   };
 
+  const fetchAccesos = async () => {
+    try {
+      const response = await instance.get('/security/v1/accesos/');
+      setAccesos(response.data.accesos);
+    } catch (error) {
+      console.error('Error fetching accesos', error);
+    }
+  };
+
   useEffect(() => {
     fetchRoles();
+    fetchAccesos();
   }, []);
 
   const handleCambiarPagina = (event: any, newPage: any) => {
@@ -83,6 +115,27 @@ const Roles: React.FC = () => {
     setOpenViewPermissionsDialog(false);
   };
 
+  const handleOpenAddAccessDialog = (rol: Rol) => {
+    setSelectedRole(rol);
+    setOpenAddAccessDialog(true);
+  };
+
+  const handleCloseAddAccessDialog = () => {
+    setOpenAddAccessDialog(false);
+    setSelectedAccesos([]);
+    setSearchTerm("");
+  };
+
+  const handleOpenRemoveAccessDialog = (rol: Rol) => {
+    setSelectedRole(rol);
+    setOpenRemoveAccessDialog(true);
+  };
+
+  const handleCloseRemoveAccessDialog = () => {
+    setOpenRemoveAccessDialog(false);
+    setRemoveAccesos([]);
+  };
+
   const handleSaveRole = async () => {
     if (selectedRole) {
       try {
@@ -100,6 +153,73 @@ const Roles: React.FC = () => {
     }
   };
 
+  const handleToggleRoleStatus = async (rol: Rol) => {
+    try {
+      await instance.put(`/security/v1/roles/${rol.rol_id}`, {
+        is_active: !rol.is_active
+      });
+      fetchRoles();
+    } catch (error) {
+      console.error('Error toggling role status', error);
+    }
+  };
+
+  const handleAddAccess = async () => {
+    if (selectedRole) {
+      try {
+        await instance.post(`/security/v1/roles/${selectedRole.rol_id}/accesos/`, {
+          acceso_ids: selectedAccesos.map(acceso => acceso.acceso_id)
+        });
+        fetchRoles();
+        handleCloseAddAccessDialog();
+      } catch (error) {
+        console.error('Error adding access', error);
+      }
+    }
+  };
+
+  const handleRemoveAccess = async () => {
+    if (selectedRole) {
+      try {
+        await instance.delete(`/security/v1/roles/${selectedRole.rol_id}/accesos/`, {
+          data: { acceso_ids: removeAccesos.map(acceso => acceso.acceso_id) }
+        });
+        fetchRoles();
+        handleCloseRemoveAccessDialog();
+      } catch (error) {
+        console.error('Error removing access', error);
+      }
+    }
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const filteredAccesos = accesos.filter(acceso =>
+    acceso.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleToggleAcceso = (acceso: Acceso) => {
+    setSelectedAccesos(prev => {
+      if (prev.some(selected => selected.acceso_id === acceso.acceso_id)) {
+        return prev.filter(selected => selected.acceso_id !== acceso.acceso_id);
+      } else {
+        return [...prev, acceso];
+      }
+    });
+  };
+
+  const handleToggleRemoveAcceso = (acceso: Acceso) => {
+    setRemoveAccesos(prev => {
+      if (prev.some(selected => selected.acceso_id === acceso.acceso_id)) {
+        return prev.filter(selected => selected.acceso_id !== acceso.acceso_id);
+      } else {
+        return [...prev, acceso];
+      }
+    });
+  };
+
   return (
     <div className="space-y-5">
       {error && (
@@ -107,13 +227,13 @@ const Roles: React.FC = () => {
       )}
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
         <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
-          Roles 
+          Lista de roles 
         </h4>
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
-                {["Nombre", "Estado", "Accesos", "Editar"].map((column, index) => (
+                {["Nombre", "Estado", "Accesos", "Cantidad", "Editar", "Modificar"].map((column, index) => (
                   <th key={index} className="px-4 py-4 text-center font-normal text-white dark:text-zinc-100">
                     {column}
                   </th>
@@ -123,13 +243,13 @@ const Roles: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="pt-5 pb-5 text-center text-black dark:text-white">
+                  <td colSpan={6} className="pt-5 pb-5 text-center text-black dark:text-white">
                     Cargando...
                   </td>
                 </tr>
               ) : roles.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="pt-5 pb-5 text-center text-black dark:text-white">
+                  <td colSpan={6} className="pt-5 pb-5 text-center text-black dark:text-white">
                     No existen roles
                   </td>
                 </tr>
@@ -148,11 +268,32 @@ const Roles: React.FC = () => {
                       <IconButton className="text-inherit dark:text-white" onClick={() => handleViewPermissions(rol)}>
                         <Visibility />
                       </IconButton>
+                      <IconButton className="text-inherit dark:text-white" onClick={() => handleOpenAddAccessDialog(rol)}>
+                        <Add />
+                      </IconButton>
+                      <IconButton className="text-inherit dark:text-white" onClick={() => handleOpenRemoveAccessDialog(rol)}>
+                        <Delete />
+                      </IconButton>
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      <Typography variant="body1" className="text-black dark:text-white">{rol.accesos.length}</Typography>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <IconButton className="text-inherit dark:text-white" onClick={() => handleEditRole(rol)}>
                         <Edit />
                       </IconButton>
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                    <button
+                      onClick={() => handleToggleRoleStatus(rol)}
+                      className={`px-4 py-2 rounded text-white transition focus:outline-none focus:ring-2 focus:ring-opacity-50 ${
+                        rol.is_active
+                          ? "bg-red-600 hover:bg-red-500 focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-400"
+                          : "bg-green-600 hover:bg-green-500 focus:ring-green-500 dark:bg-green-500 dark:hover:bg-green-400"
+                      }`}
+                    >
+                      {rol.is_active ? "Desactivar" : "Activar"}
+                    </button>
                     </td>
                   </tr>
                 ))
@@ -207,23 +348,132 @@ const Roles: React.FC = () => {
       </Dialog>
 
       <Dialog open={openViewPermissionsDialog} onClose={handleCloseViewPermissionsDialog}>
+        <DialogTitle>Accesos del Rol</DialogTitle>
         <DialogContent>
-          {selectedRole && (
+          {selectedRole && selectedRole.accesos.length > 0 ? (
             <List>
               {selectedRole.accesos.map(acceso => (
                 <ListItem key={acceso.acceso_id}>
                   <ListItemIcon>
                     {acceso.nombre.includes("admin") ? <Shield /> : acceso.nombre.includes("key") ? <Build /> : <Assignment />}
                   </ListItemIcon>
-                  <ListItemText primary={acceso.nombre} />
+                  <ListItemText primary={acceso.nombre} secondary={acceso.is_active ? "Activo" : "Inactivo"} />
                 </ListItem>
               ))}
             </List>
+          ) : (
+            <Typography>No hay accesos para mostrar.</Typography>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseViewPermissionsDialog} color="primary">
             Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openAddAccessDialog} onClose={handleCloseAddAccessDialog}>
+        <DialogTitle>Agregar Accesos</DialogTitle>
+        <DialogContent>
+          {selectedRole && (
+            <>
+              <TextField
+                margin="dense"
+                label="Buscar Acceso"
+                fullWidth
+                variant="outlined"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton>
+                        <SearchIcon />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <div className="my-2">
+                {selectedAccesos.map(acceso => (
+                  <Chip
+                    key={acceso.acceso_id}
+                    label={acceso.nombre}
+                    onDelete={() => handleToggleAcceso(acceso)}
+                    deleteIcon={<Close />}
+                    color="primary"
+                    variant="outlined"
+                    className="mr-1 mb-1"
+                  />
+                ))}
+              </div>
+              <List>
+                {filteredAccesos.filter(acceso => !selectedRole.accesos.some(roleAcceso => roleAcceso.acceso_id === acceso.acceso_id)).map(acceso => (
+                  <ListItem key={acceso.acceso_id} button onClick={() => handleToggleAcceso(acceso)}>
+                    <ListItemIcon>
+                      {acceso.nombre.includes("admin") ? <Shield /> : acceso.nombre.includes("key") ? <Build /> : <Assignment />}
+                    </ListItemIcon>
+                    <ListItemText primary={acceso.nombre} secondary={acceso.is_active ? "Activo" : "Inactivo"} />
+                  </ListItem>
+                ))}
+              </List>
+              {filteredAccesos.length === 0 && (
+                <div className="text-center my-4">
+                  <Typography>No hay accesos para mostrar.</Typography>
+                </div>
+              )}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddAccessDialog} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleAddAccess} color="primary">
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openRemoveAccessDialog} onClose={handleCloseRemoveAccessDialog}>
+        <DialogTitle>Quitar Accesos</DialogTitle>
+        <DialogContent>
+          {selectedRole && (
+            <>
+              <div className="my-2">
+                {removeAccesos.map(acceso => (
+                  <Chip
+                    key={acceso.acceso_id}
+                    label={acceso.nombre}
+                    onDelete={() => handleToggleRemoveAcceso(acceso)}
+                    deleteIcon={<Close className="text-red-500" />}
+                    className="mr-1 mb-1 border-red-500 text-red-500"
+                    variant="outlined"
+                  />
+                ))}
+              </div>
+              <List>
+                {selectedRole.accesos.map(acceso => (
+                  <ListItem key={acceso.acceso_id} button onClick={() => handleToggleRemoveAcceso(acceso)}>
+                    <ListItemIcon>
+                      {acceso.nombre.includes("admin") ? <Shield /> : acceso.nombre.includes("key") ? <Build /> : <Assignment />}
+                    </ListItemIcon>
+                    <ListItemText primary={acceso.nombre} secondary={acceso.is_active ? "Activo" : "Inactivo"} />
+                  </ListItem>
+                ))}
+              </List>
+              {selectedRole.accesos.length === 0 && (
+                <Typography>No hay accesos para mostrar.</Typography>
+              )}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseRemoveAccessDialog} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleRemoveAccess} color="primary">
+            Guardar
           </Button>
         </DialogActions>
       </Dialog>
