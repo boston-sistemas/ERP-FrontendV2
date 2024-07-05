@@ -13,7 +13,6 @@ import "@/css/checkbox.css";
 import { SelectChangeEvent } from '@mui/material/Select';
 import '@/css/delete-icon.css';
 
-
 export interface Orden {
   hilanderia: string;
   rollos: number;
@@ -517,7 +516,7 @@ const ProgramacionTintoreria: React.FC = () => {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
-                {["Partida", "Hilanderia", "Suborden", "A Disponer", "Rollos", "Peso", "Tintoreria", "Color"].map((column, index) => (
+                {["Partida", "Hilanderia", "Suborden", "A Disponer", "Rollos", "Peso", "Tintoreria", "Color", "Quitar"].map((column, index) => (
                   <th key={index} className="px-4 py-4 text-center font-normal text-white dark:text-zinc-100">
                     {column}
                   </th>
@@ -527,13 +526,13 @@ const ProgramacionTintoreria: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="pt-5 pb-5 text-center text-black dark:text-white">
+                  <td colSpan={9} className="pt-5 pb-5 text-center text-black dark:text-white">
                     Cargando...
                   </td>
                 </tr>
               ) : partidas.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="pt-5 pb-5 text-center text-black dark:text-white">
+                  <td colSpan={9} className="pt-5 pb-5 text-center text-black dark:text-white">
                     No existen partidas para mostrar
                   </td>
                 </tr>
@@ -583,12 +582,13 @@ const ProgramacionTintoreria: React.FC = () => {
                       </Select>
                     </td>
                     <td className="relative border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <IconButton
+                      <button
                         onClick={() => handleEliminarPartida(index)}
-                        className="delete-icon"
+                        className={`px-4 py-2 rounded text-white transition focus:outline-none focus:ring-2 focus:ring-opacity-50 bg-red-600 hover:bg-red-500 focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-400`}
                       >
-                        <span className="text-gray-500">X</span>
-                      </IconButton>
+                        Quitar
+                      </button>
+                      
                     </td>
                   </tr>
                 ))
