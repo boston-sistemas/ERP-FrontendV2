@@ -324,9 +324,19 @@ const ProgramacionTintoreria: React.FC = () => {
 
   const handleEliminarPartida = (index: number) => {
     const nuevasPartidas = [...partidas];
+    const partida = nuevasPartidas[index];
+    const idSuborden = partida.suborden;
+    const rollosDevueltos = partida.rollos;
+
+    // Devolver los rollos a la cantidad disponible
+    setRollosDisponibles(prev => ({
+      ...prev,
+      [idSuborden]: (prev[idSuborden] ?? 0) + rollosDevueltos
+    }));
+
     nuevasPartidas.splice(index, 1);
     setPartidas(nuevasPartidas);
-  };  
+  }; 
 
   return (
     <div className="space-y-5">
