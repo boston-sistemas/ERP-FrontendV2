@@ -130,6 +130,18 @@ const Usuarios: React.FC = () => {
     setOpenEditDialog(false);
   };
 
+  const handleDeleteUser = async () => {
+    if (selectedUser) {
+      try {
+        await instance.delete(`/security/v1/usuarios/${selectedUser.usuario_id}`);
+        fetchUsuarios();
+        handleCloseEditDialog();
+      } catch (error) {
+        console.error('Error deleting user', error);
+      }
+    }
+  };
+
   const handleViewPermissions = async (usuario: Usuario) => {
     setSelectedRoleAccesses([]);
     setSelectedUser(null);
@@ -260,7 +272,7 @@ const Usuarios: React.FC = () => {
       )}
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
         <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
-          Usuarios
+          Lista de usuarios
         </h4>
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
@@ -299,7 +311,7 @@ const Usuarios: React.FC = () => {
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <Typography variant="body2" className="text-black dark:text-white">{usuario.email}</Typography>
                     </td>
-                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                    <td className="max-w-50 border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       {usuario.roles.length > 0 ? (
                         usuario.roles.map((role, index) => (
                           <span
@@ -398,6 +410,9 @@ const Usuarios: React.FC = () => {
           )}
         </DialogContent>
         <DialogActions>
+        <Button onClick={handleDeleteUser} color="error">
+            Eliminar
+          </Button>
           <Button onClick={handleCloseEditDialog} color="primary">
             Cancelar
           </Button>

@@ -152,6 +152,18 @@ const Roles: React.FC = () => {
     }
   };
 
+  const handleDeleteRole = async () => {
+    if (selectedRole) {
+      try {
+        await instance.delete(`/security/v1/roles/${selectedRole.rol_id}`);
+        fetchRoles();
+        handleCloseEditDialog();
+      } catch (error) {
+        console.error('Error deleting role', error);
+      }
+    }
+  };
+
   const handleToggleRoleStatus = async (rol: Rol) => {
     try {
       await instance.put(`/security/v1/roles/${rol.rol_id}`, {
@@ -328,8 +340,12 @@ const Roles: React.FC = () => {
               />
             </>
           )}
+          
         </DialogContent>
         <DialogActions>
+        <Button onClick={handleDeleteRole} color="error">
+            Eliminar
+          </Button>
           <Button onClick={handleCloseEditDialog} color="primary">
             Cancelar
           </Button>
