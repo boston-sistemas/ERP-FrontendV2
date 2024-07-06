@@ -255,6 +255,7 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
                             </p>
                           </div>
                           <Menu anchorEl={anchorEl} open={anchorEl !== null && currentRow === index} onClose={() => handleEstadoClose()}>
+                            <MenuItem onClick={() => handleEstadoClose("NO INICIADO")}>NO INICIADO</MenuItem>
                             <MenuItem onClick={() => handleEstadoClose("EN CURSO")}>EN CURSO</MenuItem>
                             <MenuItem onClick={() => handleEstadoClose("LISTO")}>LISTO</MenuItem>
                             <MenuItem onClick={() => handleEstadoClose("DETENIDO")}>DETENIDO</MenuItem>
