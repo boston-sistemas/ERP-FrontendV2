@@ -309,7 +309,15 @@ const ProgramacionTintoreria: React.FC = () => {
 
   const handleColorChange = (index: number, value: string) => {
     const newPartidas = [...partidas];
-    newPartidas[index].color = value;
+    const partidaId = newPartidas[index].id;
+
+    //cambiar el color para todas las partidas con el mismo id
+    newPartidas.forEach((partida,i) => {
+      if (partida.id === partidaId){
+        newPartidas[i].color = value;
+      }
+    });
+
     setPartidas(newPartidas);
   };
 
