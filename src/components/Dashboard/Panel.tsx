@@ -74,6 +74,15 @@ const Panel: React.FC = () => {
     );
   }, 0).toFixed(2);
 
+  const totalReporteTejeduriaCantidadKg = revisionStock.ordenes_pendientes.reduce((total, orden) => {
+    return (
+      total +
+      orden.detalles.reduce((subtotal, detalle) => {
+        return subtotal + parseFloat(detalle.reporte_tejeduria_cantidad_kg);
+      }, 0)
+    );
+  }, 0).toFixed(2);
+
   return (
     <>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
@@ -149,8 +158,8 @@ const Panel: React.FC = () => {
           </svg>
         </CardDataStats>
         <CardDataStats
-          title="Total Kg Consumidos"
-          total={`${totalKgConsumidos} Kg`}
+          title="Total Kg Reportados"
+          total={`${totalReporteTejeduriaCantidadKg} Kg`}
           rate="-"
         >
           <svg

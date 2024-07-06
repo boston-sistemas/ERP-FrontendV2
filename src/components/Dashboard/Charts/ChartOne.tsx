@@ -97,7 +97,7 @@ const options: ApexOptions = {
       },
     },
     min: 0,
-    max: 10000,
+    max: 5000,
   },
 };
 
@@ -113,11 +113,11 @@ const ChartOne: React.FC = () => {
     series: [
       {
         name: "Total Kg Ordenes",
-        data: [2300, 1113, 2200, 2700, 1300, 2200, 3700, 2100],
+        data: [2300, 1113, 2200, 2700, 1300, 2200, 3700],
       },
       {
         name: "Total Kg Merma",
-        data: [130, 250, 360, 300, 100, 350, 640, 520],
+        data: [130, 250, 360, 300, 100, 350, 640],
       },
     ],
   });
