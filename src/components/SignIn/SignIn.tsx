@@ -38,10 +38,10 @@ const SignIn: React.FC = () => {
 
   useEffect(() => {
     const script = document.createElement('script');
-    script.src = `https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`;
+    script.src = `https://www.google.com/recaptcha/api.js?render=6LfCcQkqAAAAAB6HHUbipse57yi_DXwXGILHcGJS`;
     script.async = true;
     document.body.appendChild(script);
-  
+
     script.onload = () => {
       if (window.grecaptcha) {
         window.grecaptcha.ready(() => {
@@ -53,7 +53,7 @@ const SignIn: React.FC = () => {
         console.error('grecaptcha not loaded');
       }
     };
-  
+
     return () => {
       document.body.removeChild(script);
     };
@@ -112,75 +112,81 @@ const SignIn: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-wrap min-h-screen">
-      <div className="md:w-1/2 w-full bg-blue-900 p-4 md:order-1 flex items-center justify-center">
-        <div className="flex flex-col items-start max-w-md">
-          <div style={{ width: 150, height: 30, position: 'relative' }}>
-            <Image
-              src="/images/boston/logo-boston-color.png"
-              alt="Logo de Boston"
-              fill
-              priority
-              placeholder="blur"
-              blurDataURL="/images/boston/logo-boston-color.png"
-            />
+    <div className="flex flex-col min-h-screen">
+      <div className="flex flex-wrap flex-1">
+        <div className="md:w-1/2 w-full bg-blue-900 p-4 md:order-1 flex items-center justify-center">
+          <div className="flex flex-col items-start max-w-md">
+            <div style={{ width: 150, height: 30, position: 'relative' }}>
+              <Image
+                src="/images/boston/logo-boston-color.png"
+                alt="Logo de Boston"
+                fill
+                priority
+                placeholder="blur"
+                blurDataURL="/images/boston/logo-boston-color.png"
+              />
+            </div>
+            <p className="text-white mt-4 text-xl">
+              UN <span className="font-bold">PRODUCTO</span> ORIGINAL <br /><span className="font-bold">DEJA</span> <span className="font-bold">HUELLA</span>
+            </p>
           </div>
-          <p className="text-white mt-4 text-xl">
-            UN <span className="font-bold">PRODUCTO</span> ORIGINAL <br /><span className="font-bold">DEJA</span> <span className="font-bold">HUELLA</span>
-          </p>
         </div>
-      </div>
-      <div className="flex flex-col justify-center items-center w-full bg-white p-4 md:w-1/2 md:order-2">
-        <div className="w-full max-w-md px-2 sm:px-6">
-          <div className="flex flex-col items-center">
-            <form className="w-full" onSubmit={handleSubmit}>
-              <TextField
-                type="text" id="username" label="Usuario" variant="standard" margin="normal" fullWidth value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-              <TextField
-                type={showPassword ? 'text' : 'password'} id="password" label="Contraseña" variant="standard" margin="normal" fullWidth
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton aria-label="toggle password visibility" onClick={toggleShowPassword}>
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <button
-                type="submit"
-                className="mt-4 w-full bg-red-600 text-white py-2 rounded hover:bg-red-500 transition duration-300 ease-in-out flex justify-center items-center"
-              >
-                Ingresar
-              </button>
-              <div className="flex justify-around mt-4">
-                <a href="https://www.instagram.com/bostonropainterior/" target="_blank" rel="noopener noreferrer">
-                  <IconButton aria-label="Instagram" color="primary">
-                    <InstagramIcon />
-                  </IconButton>
-                </a>
-                <a href="https://www.facebook.com/BostonOficial/" target="_blank" rel="noopener noreferrer">
-                  <IconButton aria-label="Facebook" color="primary">
-                    <FacebookIcon />
-                  </IconButton>
-                </a>
-                <a href="https://www.boston.com.pe/" target="_blank" rel="noopener noreferrer">
-                  <IconButton aria-label="Web page" color="primary">
-                    <LanguageIcon />
-                  </IconButton>
-                </a>
-              </div>
-            </form>
+        <div className="flex flex-col justify-center items-center w-full bg-white p-4 md:w-1/2 md:order-2">
+          <div className="w-full max-w-md px-2 sm:px-6">
+            <div className="flex flex-col items-center">
+              <form className="w-full" onSubmit={handleSubmit}>
+                <TextField
+                  type="text" id="username" label="Usuario" variant="standard" margin="normal" fullWidth value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+                <TextField
+                  type={showPassword ? 'text' : 'password'} id="password" label="Contraseña" variant="standard" margin="normal" fullWidth
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton aria-label="toggle password visibility" onClick={toggleShowPassword}>
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <button
+                  type="submit"
+                  className="mt-4 w-full bg-red-600 text-white py-2 rounded hover:bg-red-500 transition duration-300 ease-in-out flex justify-center items-center"
+                >
+                  Ingresar
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
+      <footer className="w-full p-1 bg-zinc-800 text-white flex justify-center items-center mt-auto">
+        <span>© {new Date().getFullYear()} MECSA. Todos los derechos reservados.</span>
+        <div className="ml-4 mr-4"></div>
+        <div className="flex space-x-4">
+          <a href="https://www.instagram.com/bostonropainterior/" target="_blank" rel="noopener noreferrer">
+            <IconButton aria-label="Instagram" color="inherit">
+              <InstagramIcon />
+            </IconButton>
+          </a>
+          <a href="https://www.facebook.com/BostonOficial/" target="_blank" rel="noopener noreferrer">
+            <IconButton aria-label="Facebook" color="inherit">
+              <FacebookIcon />
+            </IconButton>
+          </a>
+          <a href="https://www.boston.com.pe/" target="_blank" rel="noopener noreferrer">
+            <IconButton aria-label="Web page" color="inherit">
+              <LanguageIcon />
+            </IconButton>
+          </a>
+        </div>
+      </footer>
       <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-        <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%', alignItems: 'center'}}>
+        <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%', alignItems: 'center' }}>
           {snackbarMessage}
         </Alert>
       </Snackbar>

@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     const data = response.data;
     console.log(data.score)
-    if (data.success && data.score >= 0.8) { // Ajusta el umbral de score según tus necesidades
+    if (data.success && data.score >= 0.6) { // Umbral de score
       return NextResponse.json({ message: 'Token is valid', score: data.score });
     } else {
       return NextResponse.json({ message: 'Invalid token', score: data.score }, { status: 400 });
