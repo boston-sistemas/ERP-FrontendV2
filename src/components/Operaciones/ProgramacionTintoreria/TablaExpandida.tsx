@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
 import { Suborden } from "./ProgramacionTintoreria";
 
 interface ExpandidaProps {
   data: Suborden[];
   onSeleccionar: (suborden: Suborden, seleccionado: boolean) => void;
+  subordenesSeleccionadas: Suborden[];
 }
 
 const columnsExpandida = [
@@ -29,8 +30,17 @@ const minWidthsExpandida = [
   "min-w-[130px]", // Estado
 ];
 
-const TablaExpandida = ({ data, onSeleccionar }: ExpandidaProps) => {
+const TablaExpandida = ({ data, onSeleccionar, subordenesSeleccionadas}: ExpandidaProps) => {
   const [selecciones, setSelecciones] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const nuevasSelecciones: Record<string, boolean> = {};
+    subordenesSeleccionadas.forEach(suborden => {
+      const idSuborden = `${suborden.tejido}-${suborden.densidad}-${suborden.ancho}`;
+      nuevasSelecciones[idSuborden] = true;
+    });
+    setSelecciones(nuevasSelecciones);
+  }, [subordenesSeleccionadas]);
 
   const manejarSeleccion = (suborden: Suborden) => {
     const idSuborden = `${suborden.tejido}-${suborden.densidad}-${suborden.ancho}`;
