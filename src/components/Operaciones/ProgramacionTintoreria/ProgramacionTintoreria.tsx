@@ -184,6 +184,7 @@ const ProgramacionTintoreria: React.FC = () => {
     setCerradaData([]);
     setError('');
     setSubordenesSeleccionadas([]);
+    setPartidas([]); //quitar partidas si se selecciona otra tejeduria
   };
 
   const handleUltimoStock = () => {
@@ -415,6 +416,7 @@ const ProgramacionTintoreria: React.FC = () => {
                   onChange={handleTintoreriaChange}
                   displayEmpty
                   className="w-60 h-12 rounded border-[1.5px] border-stroke bg-transparent px-2 py-3 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                  disabled = {partidas.length>0} //desactivar cuando hay partidas seleccionadas
                 >
                   <MenuItem value="" disabled>Selecciona una opción</MenuItem>
                   {tintorerias.map(tintoreria => (
