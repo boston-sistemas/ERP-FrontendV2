@@ -244,6 +244,7 @@ const ProgramacionTintoreria: React.FC = () => {
     });
   
     setPartidas([...partidas, ...nuevasPartidas]);
+    setSubordenesSeleccionadas([]);
   };
     
 
@@ -524,7 +525,7 @@ const ProgramacionTintoreria: React.FC = () => {
                         <tr className="bg-gray-100 dark:bg-gray-700">
                           <td colSpan={6} className="p-0">
                             <Collapse in={filasExpandidas.includes(index)} timeout="auto" unmountOnExit>
-                              <TablaExpandida data={data.expandida} onSeleccionar={onSeleccionar} />
+                              <TablaExpandida data={data.expandida} onSeleccionar={onSeleccionar} subordenesSeleccionadas={subordenesSeleccionadas}/>
                             </Collapse>
                           </td>
                         </tr>
