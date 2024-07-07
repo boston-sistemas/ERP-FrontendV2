@@ -51,6 +51,7 @@ interface Partida {
   kg_por_rollo: number;
   tintoreria: string;
   color: string;
+  color_id: number; // Añadir color_id a la interfaz
 }
 
 export const roundToTwo = (num: number) => Math.round(num * 100) / 100;
@@ -239,14 +240,14 @@ const ProgramacionTintoreria: React.FC = () => {
         peso: 0,
         kg_por_rollo: suborden.kg_por_rollo,
         tintoreria: tintoreria,
-        color: ''
+        color: '', // Inicializa con un valor vacío
+        color_id: 0 // Inicializa con 0
       };
     });
   
     setPartidas([...partidas, ...nuevasPartidas]);
-    setSubordenesSeleccionadas([]);
+    setSubordenesSeleccionadas([]);  // Limpiar las subordenes seleccionadas
   };
-    
 
   const handleExpandirFila = (index: number) => {
     if (filasExpandidas.includes(index)) {
@@ -313,10 +314,15 @@ const ProgramacionTintoreria: React.FC = () => {
     const newPartidas = [...partidas];
     const partidaId = newPartidas[index].id;
 
-    //cambiar el color para todas las partidas con el mismo id
-    newPartidas.forEach((partida,i) => {
-      if (partida.id === partidaId){
+    // Convert the color name to its corresponding color_id
+    const selectedColor = colores.find(color => color.color_id.toString() === value);
+    const colorId = selectedColor ? selectedColor.color_id : 0;
+
+    // Change the color_id for all partidas with the same id
+    newPartidas.forEach((partida, i) => {
+      if (partida.id === partidaId) {
         newPartidas[i].color = value;
+        newPartidas[i].color_id = colorId; // Asignar el color_id
       }
     });
 
@@ -371,15 +377,85 @@ const ProgramacionTintoreria: React.FC = () => {
   
     setPartidas(partidasRenumeradas);
   };
-  
-  
-  
 
+  const handleCrearPartida = async () => {
+    if (!tejeduria || !tintoreria || partidas.length === 0) {
+      setError('Por favor, selecciona una tejeduría, una tintorería y agrega al menos una partida');
+      return;
+    }
   
+    // Obtener los IDs de tejeduria y tintoreria
+    const from_tejeduria_id = tejedurias.find(t => t.alias === tejeduria)?.proveedor_id || '';
+    const to_tintoreria_id = tintorerias.find(t => t.alias === tintoreria)?.proveedor_id || '';
   
+    if (!from_tejeduria_id || !to_tintoreria_id) {
+      setError('IDs de tejeduría o tintorería no encontrados');
+      return;
+    }
   
+    // Agrupar detalles por nro_partida
+    const detallesMap = new Map();
+    partidas.forEach(partida => {
+      const detalles = pendienteData
+        .filter(orden => orden.expandida.some(suborden => `${suborden.tejido}-${suborden.densidad}-${suborden.ancho}` === partida.suborden))
+        .flatMap(orden =>
+          orden.expandida
+            .filter(suborden => `${suborden.tejido}-${suborden.densidad}-${suborden.ancho}` === partida.suborden)
+            .map(suborden => ({
+              orden_servicio_tejeduria_id: orden.orden,
+              crudo_id: `${suborden.tejido}${suborden.densidad}${suborden.ancho}`,
+              nro_rollos: partida.rollos, // Actualizado para usar el número de rollos de la partida
+              cantidad_kg: partida.peso, // Actualizado para usar el peso de la partida
+            }))
+        );
+  
+      if (detallesMap.has(partida.id)) {
+        detallesMap.get(partida.id).push(...detalles);
+      } else {
+        detallesMap.set(partida.id, detalles);
+      }
+    });
+  
+    const payload = {
+      from_tejeduria_id: from_tejeduria_id,
+      to_tintoreria_id: to_tintoreria_id,
+      partidas: Array.from(detallesMap.entries()).map(([nro_partida, detalles]) => {
+        const partida = partidas.find(p => p.id === nro_partida);
+        return {
+          nro_partida: nro_partida,
+          color_id: partida ? partida.color_id : 0,
+          detalles: detalles,
+        };
+      }),
+    };
+  
+    // Validar que todos los color_id sean correctos
+    for (const partida of payload.partidas) {
+      if (partida.color_id === 0) {
+        setError(`Color no encontrado para la partida ${partida.nro_partida}`);
+        return;
+      }
+    }
+  
+    console.log("Payload:", JSON.stringify(payload, null, 2)); // Log payload for debugging
+  
+    try {
+      const response = await instance.post('/operations/v1/programacion-tintoreria', payload);
+      if (response.status === 201 || response.status === 200) {
+        // Manejar respuesta exitosa, limpiar estado si es necesario
+        setPartidas([]);
+        setPendienteData([]);
+        setCerradaData([]);
+        setError(null);
+        alert('Partida creada exitosamente');
+      }
+    } catch (error) {
+      console.error('Error creating partida', error);
+      setError('Error creando la partida');
+    }
+  };
 
-  return (
+  return ( 
     <div className="space-y-5">
       <div className="overflow-x-auto mb-6">
         <div className="flex items-start space-x-6 min-w-max">
@@ -525,7 +601,7 @@ const ProgramacionTintoreria: React.FC = () => {
                         <tr className="bg-gray-100 dark:bg-gray-700">
                           <td colSpan={6} className="p-0">
                             <Collapse in={filasExpandidas.includes(index)} timeout="auto" unmountOnExit>
-                              <TablaExpandida data={data.expandida} onSeleccionar={onSeleccionar} subordenesSeleccionadas={subordenesSeleccionadas}/>
+                              <TablaExpandida data={data.expandida} onSeleccionar={onSeleccionar} subordenesSeleccionadas={subordenesSeleccionadas} />
                             </Collapse>
                           </td>
                         </tr>
@@ -620,20 +696,20 @@ const ProgramacionTintoreria: React.FC = () => {
                       {partida.tintoreria}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <Select
-                        value={partida.color}
-                        onChange={(e) => handleColorChange(index, e.target.value as string)}
-                        displayEmpty
-                        className="w-60 h-12 rounded border-[1.5px] border-stroke bg-transparent px-2 py-3 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
-                      >
-                        <MenuItem value="" disabled>Selecciona color</MenuItem>
-                        {colores.map(color => (
-                          <MenuItem key={color.color_id} value={color.nombre}>
-                            {color.nombre}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </td>
+                    <Select
+                      value={partida.color} // Use partida.color directly
+                      onChange={(e) => handleColorChange(index, e.target.value)}
+                      displayEmpty
+                      className="w-60 h-12 rounded border-[1.5px] border-stroke bg-transparent px-2 py-3 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                    >
+                      <MenuItem value="" disabled>Selecciona color</MenuItem>
+                      {colores.map(color => (
+                        <MenuItem key={color.color_id} value={color.color_id.toString()}>
+                          {color.nombre}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </td>
                     <td className="relative border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <IconButton className="text-inherit dark:text-white" onClick={() => handleEliminarPartida(index)}>
                         <Delete />
@@ -645,6 +721,12 @@ const ProgramacionTintoreria: React.FC = () => {
             </tbody>
           </table>
         </div>
+        <button
+          onClick={handleCrearPartida}
+          className="mt-4 w-full border px-5 py-3 text-white transition focus:outline-none focus:ring-2 focus:ring-opacity-50 bg-blue-800 hover:bg-blue-700 focus:ring-blue-500 border-gray-400 dark:bg-blue-500 dark:hover:bg-blue-400"
+        >
+          Crear Partida
+        </button>
       </div>
     </div>
   );
