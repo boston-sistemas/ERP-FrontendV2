@@ -66,7 +66,7 @@ const SignIn: React.FC = () => {
   const handleRecaptcha = async () => {
     return new Promise<string>((resolve) => {
       window.grecaptcha.ready(() => {
-        window.grecaptcha.execute(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY, { action: 'submit' }).then((token: string) => {
+        window.grecaptcha.execute('6LdqRw0qAAAAADHZQrRe1MoZRXn7NVG6IG5aFu2H', { action: 'submit' }).then((token: string) => {
           resolve(token);
         });
       });
