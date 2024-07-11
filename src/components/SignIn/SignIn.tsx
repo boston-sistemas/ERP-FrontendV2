@@ -38,14 +38,14 @@ const SignIn: React.FC = () => {
 
   useEffect(() => {
     const script = document.createElement('script');
-    script.src = `https://www.google.com/recaptcha/api.js?render=6LfCcQkqAAAAAB6HHUbipse57yi_DXwXGILHcGJS`;
+    script.src = `https://www.google.com/recaptcha/api.js?render=6LdqRw0qAAAAADHZQrRe1MoZRXn7NVG6IG5aFu2H`;
     script.async = true;
     document.body.appendChild(script);
 
     script.onload = () => {
       if (window.grecaptcha) {
         window.grecaptcha.ready(() => {
-          window.grecaptcha.execute(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY, { action: 'login' }).then((token: string) => {
+          window.grecaptcha.execute('6LdqRw0qAAAAADHZQrRe1MoZRXn7NVG6IG5aFu2H', { action: 'login' }).then((token: string) => {
             setRecaptchaToken(token);
           });
         });
