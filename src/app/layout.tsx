@@ -5,8 +5,8 @@ import "@/css/satoshi.css";
 import "@/css/style.css";
 import React, { useEffect, useState } from "react";
 import Loader from "@/components/common/Loader";
-import { AuthProvider, useAuthContext } from '../context/AuthContext';
-import { AxiosInterceptor } from '../config/AxiosConfig';
+
+
 
 export default function RootLayout({
   children,
@@ -33,12 +33,9 @@ export default function RootLayout({
       <body suppressHydrationWarning={true}>
         <div className="dark:bg-boxdark-2 dark:text-bodydark">
           <Loader loading={loading} />
-          <AuthProvider>
-            <AxiosInterceptor />
             <div className={`${loading ? "hidden" : "block"} relative`}>
               {children}
             </div>
-          </AuthProvider>
         </div>
       </body>
     </html>

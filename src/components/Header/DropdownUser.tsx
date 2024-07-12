@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from 'next/navigation';
-import { useAuthContext } from '../../context/AuthContext';
+import instance from "@/config/AxiosConfig";
+
 
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const trigger = useRef<any>(null);
   const dropdown = useRef<any>(null);
-  const { logout } = useAuthContext();
   const router = useRouter();
 
   // close on click outside
@@ -39,8 +39,8 @@ const DropdownUser = () => {
 
   const handleLogout = async () => {
     try {
-      await logout();
-      router.push('/'); // Redirige al usuario a la página de inicio 
+      await instance.post('/security/v1/auth/logout');
+      router.push('/');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     }

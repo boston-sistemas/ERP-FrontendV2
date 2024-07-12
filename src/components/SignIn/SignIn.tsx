@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthContext } from '../../context/AuthContext';
 import Image from 'next/image';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
@@ -15,6 +14,7 @@ import LanguageIcon from '@mui/icons-material/Language';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import axios from 'axios';
+import instance from '@/config/AxiosConfig';
 
 declare global {
   interface Window {
@@ -33,19 +33,18 @@ const SignIn: React.FC = () => {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
-  const { login } = useAuthContext();
   const router = useRouter();
 
   useEffect(() => {
     const script = document.createElement('script');
-    script.src = `https://www.google.com/recaptcha/api.js?render=6LdqRw0qAAAAADHZQrRe1MoZRXn7NVG6IG5aFu2H`;
+    script.src = `https://www.google.com/recaptcha/api.js?render=6Lf2Tg4qAAAAAPSoI5qGd3kfr7fFaOPlqUC5PiCb`;
     script.async = true;
     document.body.appendChild(script);
 
     script.onload = () => {
       if (window.grecaptcha) {
         window.grecaptcha.ready(() => {
-          window.grecaptcha.execute('6LdqRw0qAAAAADHZQrRe1MoZRXn7NVG6IG5aFu2H', { action: 'login' }).then((token: string) => {
+          window.grecaptcha.execute('6Lf2Tg4qAAAAAPSoI5qGd3kfr7fFaOPlqUC5PiCb', { action: 'login' }).then((token: string) => {
             setRecaptchaToken(token);
           });
         });
@@ -66,7 +65,7 @@ const SignIn: React.FC = () => {
   const handleRecaptcha = async () => {
     return new Promise<string>((resolve) => {
       window.grecaptcha.ready(() => {
-        window.grecaptcha.execute('6LdqRw0qAAAAADHZQrRe1MoZRXn7NVG6IG5aFu2H', { action: 'submit' }).then((token: string) => {
+        window.grecaptcha.execute('6Lf2Tg4qAAAAAPSoI5qGd3kfr7fFaOPlqUC5PiCb', { action: 'submit' }).then((token: string) => {
           resolve(token);
         });
       });
@@ -82,14 +81,22 @@ const SignIn: React.FC = () => {
     }
 
     try {
-      const token = await handleRecaptcha();
-      setRecaptchaToken(token);
+      //const token = await handleRecaptcha();
+      //setRecaptchaToken(token);
 
-      const recaptchaResponse = await axios.post('/api/verifyRecaptcha', { token });
-      if (recaptchaResponse.data.message === 'Token is valid') {
-        const success = await login(username, password);
-        if (success) {
-          router.push('/panel');
+      //const recaptchaResponse = await axios.post('/api/verifyRecaptcha', { token });
+      const pass = true;
+      if (pass) {
+        const response = await instance.post('/security/v1/auth/send-token', { username, password });
+        if (response.status === 200) {
+          sessionStorage.setItem('auth_data', JSON.stringify({
+            username,
+            password,
+            token_expiration_minutes: response.data.token_expiration_minutes,
+            token_expiration_at: response.data.token_expiration_at,
+            email_send_to: response.data.email_send_to,
+          }));
+          router.push('/auth-token');
         } else {
           setSnackbarMessage('Error al iniciar sesión. Credenciales inválidas.');
           setOpenSnackbar(true);

@@ -1,10 +1,10 @@
 import { Metadata } from "next";
-import SignIn from '@/components/SignIn/SignIn';
+import AuthToken from "@/components/AuthToken/AuthToken";
 
 export const metadata: Metadata = {
-  title: "Login Boston ERP",
+  title: "2FA Boston ERP",
 };
 
-export default function SignInPage() {
-  return <SignIn />;
+export default function AuthPage() {
+  return <AuthToken />;
 }
