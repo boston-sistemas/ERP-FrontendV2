@@ -6,7 +6,6 @@ import Image from 'next/image';
 import TextField from '@mui/material/TextField';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
-import axios from 'axios';
 import instance from '@/config/AxiosConfig';
 import { IconButton } from '@mui/material';
 import InstagramIcon from '@mui/icons-material/Instagram';
@@ -70,10 +69,12 @@ const AuthToken: React.FC = () => {
     try {
       const response = await instance.post('/security/v1/auth/login', { username, password, token: code });
       if (response.status === 200) {
-        const { access_token } = response.data;
+        const { access_token, usuario } = response.data;
         localStorage.setItem('access_token', access_token);
+        localStorage.setItem('user_display_name', usuario.display_name);
+        localStorage.setItem('user_email', usuario.email);
         sessionStorage.removeItem('auth_data');
-        router.push('/panel');
+        router.push('/home');
       } else {
         setSnackbarMessage('Error al verificar el código. Inténtelo de nuevo.');
         setOpenSnackbar(true);

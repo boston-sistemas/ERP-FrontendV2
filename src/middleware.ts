@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+const dev = true;
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('refresh_token')?.value;
 
-  if (!token) {
+  if (!token && dev!=true) {
     console.log('No se encontró el token, redirigiendo al login.');
     return NextResponse.redirect(new URL('/session-expired', request.url));
   }

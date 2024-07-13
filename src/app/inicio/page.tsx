@@ -1,17 +1,16 @@
-import Panel from "@/components/Dashboard/Panel";
 import { Metadata } from "next";
+import Inicio from '@/components/Inicio/Inicio';
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 
 export const metadata: Metadata = {
-  title:
-    "Panel Boston ERP"
+  title: "Inicio",
 };
 
-export default function Home() {
+export default function InicioPage() {
   return (
     <>
       <DefaultLayout>
-        <Panel />
+        <Inicio />
       </DefaultLayout>
     </>
   );

@@ -4,12 +4,22 @@ import Image from "next/image";
 import { useRouter } from 'next/navigation';
 import instance from "@/config/AxiosConfig";
 
-
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [displayName, setDisplayName] = useState("Anonymous");
+  const [email, setEmail] = useState("");
   const trigger = useRef<any>(null);
   const dropdown = useRef<any>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedDisplayName = localStorage.getItem('user_display_name') || "Anonymous";
+      const storedEmail = localStorage.getItem('user_email') || "";
+      setDisplayName(storedDisplayName);
+      setEmail(storedEmail);
+    }
+  }, []);
 
   // close on click outside
   useEffect(() => {
@@ -56,9 +66,11 @@ const DropdownUser = () => {
       >
         <span className="hidden text-right lg:block">
           <span className="block text-sm font-medium text-black dark:text-white">
-            Anonymus
+            {displayName}
           </span>
-          <span className="block text-xs">Sistemas</span>
+          <span className="block text-xs">
+            {email}
+          </span>
         </span>
 
         <span className="h-12 w-12 rounded-full">
