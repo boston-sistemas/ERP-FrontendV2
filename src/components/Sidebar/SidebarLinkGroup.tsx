@@ -1,21 +1,19 @@
 "use client";
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 
 interface SidebarLinkGroupProps {
   children: (handleClick: () => void, open: boolean) => ReactNode;
   activeCondition: boolean;
+  open: boolean;
+  handleClick: () => void;
 }
 
 const SidebarLinkGroup = ({
   children,
   activeCondition,
+  open,
+  handleClick,
 }: SidebarLinkGroupProps) => {
-  const [open, setOpen] = useState<boolean>(activeCondition);
-
-  const handleClick = () => {
-    setOpen(!open);
-  };
-
   return <li>{children(handleClick, open)}</li>;
 };
 
