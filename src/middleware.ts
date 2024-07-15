@@ -18,12 +18,11 @@ interface DecodedToken {
   exp: number;
 }
 
-const dev = true;
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('accesos')?.value;
+  const token = request.cookies.get('access_token')?.value;
 
-  if (!token && !dev) {
+  if (!token) {
     console.log('No se encontró el token, redirigiendo al login.');
     return NextResponse.redirect(new URL('/session-expired', request.url));
   }

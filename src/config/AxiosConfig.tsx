@@ -1,6 +1,4 @@
 import axios from 'axios';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 
 const server = 'http://localhost:8000';
 

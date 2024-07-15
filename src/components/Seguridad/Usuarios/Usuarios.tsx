@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import {
   TablePagination,
   IconButton,
@@ -13,30 +12,17 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
   TextField,
-  Chip,
-  InputAdornment,
 } from "@mui/material";
-import { Edit, Visibility, Assignment, Shield, Build, PowerSettingsNew, Add, Delete, Close, Search } from "@mui/icons-material";
+import { Edit, Visibility, Add, Delete, PowerSettingsNew } from "@mui/icons-material";
 import "@/css/checkbox.css";
 
 const TIMEOUT = 1000;
 
-interface Acceso {
-  acceso_id: number;
-  nombre: string;
-  is_active: boolean;
-}
-
 interface Rol {
-  rol_id: number;
   nombre: string;
   is_active: boolean;
-  accesos: Acceso[];
+  rol_color: string;
 }
 
 interface Usuario {
@@ -45,28 +31,19 @@ interface Usuario {
   email: string;
   display_name: string;
   is_active: boolean;
-  blocked_until: string;
+  blocked_until: string | null;
   roles: Rol[];
 }
 
 const Usuarios: React.FC = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [roles, setRoles] = useState<Rol[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [openEditDialog, setOpenEditDialog] = useState(false);
-  const [openViewPermissionsDialog, setOpenViewPermissionsDialog] = useState(false);
-  const [openAddRoleDialog, setOpenAddRoleDialog] = useState(false);
-  const [openRemoveRoleDialog, setOpenRemoveRoleDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Usuario | null>(null);
-  const [selectedRoleAccesses, setSelectedRoleAccesses] = useState<Rol[]>([]);
   const [originalUser, setOriginalUser] = useState<Usuario | null>(null);
-  const [selectedRoles, setSelectedRoles] = useState<Rol[]>([]);
-  const [removeRoles, setRemoveRoles] = useState<Rol[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const router = useRouter();
 
   const fetchUsuarios = async () => {
     try {
@@ -81,28 +58,8 @@ const Usuarios: React.FC = () => {
     }
   };
 
-  const fetchRoles = async () => {
-    try {
-      const response = await instance.get('/security/v1/roles/');
-      setRoles(response.data.roles);
-    } catch (error) {
-      console.error('Error fetching roles', error);
-    }
-  };
-
-  const fetchRoleAccesses = async (role_id: number) => {
-    try {
-      const response = await instance.get(`/security/v1/roles/${role_id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching role accesses', error);
-      return null;
-    }
-  };
-
   useEffect(() => {
     fetchUsuarios();
-    fetchRoles();
   }, []);
 
   const handleCambiarPagina = (event: any, newPage: any) => {
@@ -112,10 +69,6 @@ const Usuarios: React.FC = () => {
   const handleCambiarFilasPorPagina = (event: any) => {
     setFilasPorPagina(parseInt(event.target.value, 10));
     setPagina(0);
-  };
-
-  const handleCrearUsuario = () => {
-    router.push('/seguridad/usuarios/crear-usuario');
   };
 
   const handleEditUser = (usuario: Usuario) => {
@@ -130,32 +83,6 @@ const Usuarios: React.FC = () => {
     setOpenEditDialog(false);
   };
 
-  const handleDeleteUser = async () => {
-    if (selectedUser) {
-      try {
-        await instance.delete(`/security/v1/usuarios/${selectedUser.usuario_id}`);
-        fetchUsuarios();
-        handleCloseEditDialog();
-      } catch (error) {
-        console.error('Error deleting user', error);
-      }
-    }
-  };
-
-  const handleViewPermissions = async (usuario: Usuario) => {
-    setSelectedRoleAccesses([]);
-    setSelectedUser(null);
-    const roleAccessesPromises = usuario.roles.map(rol => fetchRoleAccesses(rol.rol_id));
-    const roleAccesses = await Promise.all(roleAccessesPromises);
-    setSelectedRoleAccesses(roleAccesses.filter(access => access !== null));
-    setSelectedUser(usuario);
-    setOpenViewPermissionsDialog(true);
-  };
-
-  const handleCloseViewPermissionsDialog = () => {
-    setOpenViewPermissionsDialog(false);
-  };
-
   const handleSaveUser = async () => {
     if (selectedUser) {
       try {
@@ -163,8 +90,6 @@ const Usuarios: React.FC = () => {
         if (selectedUser.username !== originalUser?.username) updatedUser.username = selectedUser.username;
         if (selectedUser.email !== originalUser?.email) updatedUser.email = selectedUser.email;
         if (selectedUser.display_name !== originalUser?.display_name) updatedUser.display_name = selectedUser.display_name;
-        if (selectedUser.is_active !== originalUser?.is_active) updatedUser.is_active = selectedUser.is_active;
-        if (selectedUser.blocked_until !== originalUser?.blocked_until) updatedUser.blocked_until = selectedUser.blocked_until;
 
         if (Object.keys(updatedUser).length > 0) {
           await instance.put(`/security/v1/usuarios/${selectedUser.usuario_id}`, updatedUser);
@@ -175,94 +100,6 @@ const Usuarios: React.FC = () => {
         console.error('Error updating user', error);
       }
     }
-  };
-
-  const handleToggleUserStatus = async (usuario: Usuario) => {
-    try {
-      await instance.put(`/security/v1/usuarios/${usuario.usuario_id}`, {
-        is_active: !usuario.is_active,
-      });
-      fetchUsuarios();
-    } catch (error) {
-      console.error('Error toggling user status', error);
-    }
-  };
-
-  const handleOpenAddRoleDialog = (usuario: Usuario) => {
-    setSelectedUser(usuario);
-    setOpenAddRoleDialog(true);
-  };
-
-  const handleCloseAddRoleDialog = () => {
-    setOpenAddRoleDialog(false);
-    setSelectedRoles([]);
-    setSearchTerm("");
-  };
-
-  const handleOpenRemoveRoleDialog = (usuario: Usuario) => {
-    setSelectedUser(usuario);
-    setOpenRemoveRoleDialog(true);
-  };
-
-  const handleCloseRemoveRoleDialog = () => {
-    setOpenRemoveRoleDialog(false);
-    setRemoveRoles([]);
-  };
-
-  const handleAddRole = async () => {
-    if (selectedUser) {
-      try {
-        await instance.post(`/security/v1/usuarios/${selectedUser.usuario_id}/roles/`, {
-          rol_ids: selectedRoles.map(rol => rol.rol_id)
-        });
-        fetchUsuarios();
-        handleCloseAddRoleDialog();
-      } catch (error) {
-        console.error('Error adding role', error);
-      }
-    }
-  };
-
-  const handleRemoveRole = async () => {
-    if (selectedUser) {
-      try {
-        await instance.delete(`/security/v1/usuarios/${selectedUser.usuario_id}/roles/`, {
-          data: { rol_ids: removeRoles.map(rol => rol.rol_id) }
-        });
-        fetchUsuarios();
-        handleCloseRemoveRoleDialog();
-      } catch (error) {
-        console.error('Error removing role', error);
-      }
-    }
-  };
-
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
-
-  const filteredRoles = roles.filter(rol =>
-    rol.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleToggleRole = (rol: Rol) => {
-    setSelectedRoles(prev => {
-      if (prev.some(selected => selected.rol_id === rol.rol_id)) {
-        return prev.filter(selected => selected.rol_id !== rol.rol_id);
-      } else {
-        return [...prev, rol];
-      }
-    });
-  };
-
-  const handleToggleRemoveRole = (rol: Rol) => {
-    setRemoveRoles(prev => {
-      if (prev.some(selected => selected.rol_id === rol.rol_id)) {
-        return prev.filter(selected => selected.rol_id !== rol.rol_id);
-      } else {
-        return [...prev, rol];
-      }
-    });
   };
 
   return (
@@ -279,7 +116,7 @@ const Usuarios: React.FC = () => {
             <thead>
               <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
                 <th className="px-4 py-4"></th>
-                {["Nombre", "Correo", "Roles", "Permisos", "Estado", " ", "Editar"].map((column, index) => (
+                {["Nombre", "Correo", "Roles", "Estado", "Editar"].map((column, index) => (
                   <th key={index} className="px-4 py-4 text-center font-normal text-white dark:text-zinc-100">
                     {column}
                   </th>
@@ -289,13 +126,13 @@ const Usuarios: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="pt-5 pb-5 text-center text-black dark:text-white">
+                  <td colSpan={5} className="pt-5 pb-5 text-center text-black dark:text-white">
                     Cargando...
                   </td>
                 </tr>
               ) : usuarios.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="pt-5 pb-5 text-center text-black dark:text-white">
+                  <td colSpan={5} className="pt-5 pb-5 text-center text-black dark:text-white">
                     No existen usuarios
                   </td>
                 </tr>
@@ -316,7 +153,8 @@ const Usuarios: React.FC = () => {
                         usuario.roles.map((role, index) => (
                           <span
                             key={index}
-                            className={`inline-block ml-1 mr-1 px-2 py-1 text-xs font-medium text-white ${role.nombre === "MECSA_OPERACIONES" ? "bg-blue-500" : role.nombre === "PROVEEDOR" ? "bg-teal-500" : "bg-green-500"} rounded-full`}
+                            style={{ backgroundColor: role.rol_color }}
+                            className="inline-block ml-1 mr-1 px-2 py-1 text-xs font-medium text-white rounded-full"
                           >
                             {role.nombre}
                           </span>
@@ -326,25 +164,9 @@ const Usuarios: React.FC = () => {
                       )}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <IconButton className="text-inherit dark:text-white" onClick={() => handleViewPermissions(usuario)}>
-                        <Visibility />
-                      </IconButton>
-                      <IconButton className="text-inherit dark:text-white" onClick={() => handleOpenAddRoleDialog(usuario)}>
-                        <Add />
-                      </IconButton>
-                      <IconButton className="text-inherit dark:text-white" onClick={() => handleOpenRemoveRoleDialog(usuario)}>
-                        <Delete />
-                      </IconButton>
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <span className={`text-sm ${usuario.is_active ? "text-green-500" : "text-red-500"}`}>
                         {usuario.is_active ? "Habilitado" : "Deshabilitado"}
                       </span>
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <IconButton onClick={() => handleToggleUserStatus(usuario)} className="text-blue-500">
-                        <PowerSettingsNew />
-                      </IconButton>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <IconButton className="text-inherit dark:text-white" onClick={() => handleEditUser(usuario)}>
@@ -370,12 +192,6 @@ const Usuarios: React.FC = () => {
           sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : 'inherit' }}
         />
       </div>
-      <button
-        onClick={handleCrearUsuario}
-        className={`mt-4 w-full border border-gray-300 px-5 py-3 text-white transition bg-blue-900 hover:bg-blue-700 focus:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 dark:bg-blue-500 dark:hover:bg-blue-400`}
-      >
-        Crear Usuario
-      </button>
 
       <Dialog open={openEditDialog} onClose={handleCloseEditDialog}>
         <DialogTitle>Editar Usuario</DialogTitle>
@@ -410,133 +226,10 @@ const Usuarios: React.FC = () => {
           )}
         </DialogContent>
         <DialogActions>
-        <Button onClick={handleDeleteUser} color="error">
-            Eliminar
-          </Button>
           <Button onClick={handleCloseEditDialog} color="primary">
             Cancelar
           </Button>
           <Button onClick={handleSaveUser} color="primary">
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={openViewPermissionsDialog} onClose={handleCloseViewPermissionsDialog}>
-        <DialogTitle>Ver Permisos</DialogTitle>
-        <DialogContent>
-          {selectedRoleAccesses.length > 0 && (
-            <List>
-              {selectedRoleAccesses.map(role => (
-                <div key={role.rol_id} className="mb-4">
-                  <Typography variant="h6">{role.nombre}</Typography>
-                  <List>
-                    {role.accesos.map(acceso => (
-                      <ListItem key={acceso.acceso_id}>
-                        <ListItemIcon>
-                          {acceso.nombre.includes("admin") ? <Shield /> : acceso.nombre.includes("key") ? <Build /> : <Assignment />}
-                        </ListItemIcon>
-                        <ListItemText primary={acceso.nombre} />
-                      </ListItem>
-                    ))}
-                  </List>
-                </div>
-              ))}
-            </List>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseViewPermissionsDialog} color="primary">
-            Cerrar
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={openAddRoleDialog} onClose={handleCloseAddRoleDialog}>
-        <DialogTitle>Agregar Roles</DialogTitle>
-        <DialogContent>
-          <TextField
-            margin="dense"
-            label="Buscar Rol"
-            fullWidth
-            variant="outlined"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton>
-                    <Search />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          <div className="my-2">
-            {selectedRoles.map(rol => (
-              <Chip
-                key={rol.rol_id}
-                label={rol.nombre}
-                onDelete={() => handleToggleRole(rol)}
-                deleteIcon={<Close />}
-                color="primary"
-                variant="outlined"
-                className="mr-1 mb-1"
-              />
-            ))}
-          </div>
-          <List>
-            {filteredRoles.filter(rol => !selectedUser?.roles.some(userRole => userRole.rol_id === rol.rol_id)).map(rol => (
-              <ListItem key={rol.rol_id} button onClick={() => handleToggleRole(rol)}>
-                <ListItemIcon>
-                  {rol.nombre.includes("admin") ? <Shield /> : rol.nombre.includes("key") ? <Build /> : <Assignment />}
-                </ListItemIcon>
-                <ListItemText primary={rol.nombre} />
-              </ListItem>
-            ))}
-          </List>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseAddRoleDialog} color="primary">
-            Cancelar
-          </Button>
-          <Button onClick={handleAddRole} color="primary">
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={openRemoveRoleDialog} onClose={handleCloseRemoveRoleDialog}>
-        <DialogTitle>Quitar Roles</DialogTitle>
-        <DialogContent>
-          <div className="my-2">
-            {removeRoles.map(rol => (
-              <Chip
-                key={rol.rol_id}
-                label={rol.nombre}
-                onDelete={() => handleToggleRemoveRole(rol)}
-                deleteIcon={<Close className="text-red-500" />}
-                className="mr-1 mb-1 border-red-500 text-red-500"
-                variant="outlined"
-              />
-            ))}
-          </div>
-          <List>
-            {selectedUser?.roles.map(rol => (
-              <ListItem key={rol.rol_id} button onClick={() => handleToggleRemoveRole(rol)}>
-                <ListItemIcon>
-                  {rol.nombre.includes("admin") ? <Shield /> : rol.nombre.includes("key") ? <Build /> : <Assignment />}
-                </ListItemIcon>
-                <ListItemText primary={rol.nombre} />
-              </ListItem>
-            ))}
-          </List>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseRemoveRoleDialog} color="primary">
-            Cancelar
-          </Button>
-          <Button onClick={handleRemoveRole} color="primary">
             Guardar
           </Button>
         </DialogActions>
@@ -546,3 +239,11 @@ const Usuarios: React.FC = () => {
 };
 
 export default Usuarios;
+
+
+
+
+
+
+
+

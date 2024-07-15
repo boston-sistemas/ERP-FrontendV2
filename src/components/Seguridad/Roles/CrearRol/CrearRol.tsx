@@ -5,6 +5,7 @@ import instance from "@/config/AxiosConfig";
 import { useRouter } from 'next/navigation';
 import { TablePagination } from "@mui/material";
 import { FaUserShield } from 'react-icons/fa';
+import ROL_COLORES from "./Rol_Color";
 import { TIMEOUT } from "@/components/Parametros/Parametros";
 
 interface Acceso {
@@ -16,6 +17,7 @@ interface Acceso {
 const CrearRol: React.FC = () => {
   const [step, setStep] = useState(1);
   const [nombre, setNombre] = useState("");
+  const [color, setColor] = useState(ROL_COLORES[0].valor);
   const [errors, setErrors] = useState({ nombre: false, accesos: false });
   const [accesos, setAccesos] = useState<Acceso[]>([]);
   const [selectedAccesos, setSelectedAccesos] = useState<number[]>([]);
@@ -64,6 +66,8 @@ const CrearRol: React.FC = () => {
         try {
           await instance.post('/security/v1/roles/', {
             nombre,
+            is_active: true,
+            rol_color: color,
             acceso_ids: selectedAccesos
           });
           setTimeout(() => {
@@ -146,6 +150,26 @@ const CrearRol: React.FC = () => {
                         className={`w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black dark:text-white outline-none transition focus:border-blue-800 active:border-blue-800 dark:border-form-strokedark dark:bg-form-input dark:focus:border-blue-800 ${errors.nombre ? "border-red-500" : ""}`}
                       />
                       {errors.nombre && <span className="text-red-500 text-sm">Campo requerido</span>}
+                    </div>
+                    <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md w-full">
+                      <div className="flex items-center">
+                        <FaUserShield className="text-blue-800 dark:text-white mr-3" />
+                        <label className="mb-1 block text-sm font-medium text-black dark:text-white flex items-center">
+                          Color del rol
+                        </label>
+                      </div>
+                      <div className="relative">
+                        <div className="flex flex-wrap">
+                          {ROL_COLORES.map((colorItem: { valor: any; }, index: React.Key | null | undefined) => (
+                            <div
+                              key={index}
+                              onClick={() => setColor(colorItem.valor)}
+                              className="w-8 h-8 rounded-full m-1 cursor-pointer"
+                              style={{ backgroundColor: colorItem.valor, border: color === colorItem.valor ? '2px solid #000' : 'none' }}
+                            ></div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -248,6 +272,13 @@ const CrearRol: React.FC = () => {
                         <p className="text-black dark:text-white"><strong>Nombre del rol:</strong></p>
                       </div>
                       <p className="text-black dark:text-white">{nombre}</p>
+                    </div>
+                    <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md overflow-x-auto">
+                      <div className="flex items-center">
+                        <FaUserShield className="text-blue-800 dark:text-white mr-3" />
+                        <p className="text-black dark:text-white"><strong>Color del rol:</strong></p>
+                      </div>
+                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: color }}></div>
                     </div>
                     <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md col-span-1 sm:col-span-2 overflow-x-auto">
                       <div className="flex items-center">
