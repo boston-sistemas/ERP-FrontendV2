@@ -11,8 +11,6 @@ import { IconButton } from '@mui/material';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import LanguageIcon from '@mui/icons-material/Language';
-import jwtDecode from 'jwt-decode';
-import Cookies from 'js-cookie';
 
 declare global {
   interface Window {
@@ -91,9 +89,6 @@ const AuthToken: React.FC = () => {
         localStorage.setItem('access_token', access_token);
         localStorage.setItem('user_display_name', usuario.display_name);
         localStorage.setItem('user_email', usuario.email);
-
-        // Almacenar el token completo en una cookie
-        Cookies.set('accesos', access_token, { secure: true, sameSite: 'strict' });
 
         sessionStorage.removeItem('auth_data');
         router.push('/inicio');
