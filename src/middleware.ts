@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtDecode } from 'jwt-decode';
+import instance from '@/config/AxiosConfig';
 
 interface SystemModule {
   nombre: string;
@@ -18,39 +19,75 @@ interface DecodedToken {
   exp: number;
 }
 
+function redirectTo(baseUrl: string, path: string) {
+  return NextResponse.redirect(new URL(path, baseUrl));
+}
 
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get('access_token')?.value;
-
-  if (!token) {
-    console.log('No se encontró el token, redirigiendo al login.');
-    return NextResponse.redirect(new URL('/session-expired', request.url));
-  }
-
-  if (token) {
-    try {
-      const decoded: DecodedToken = jwtDecode<DecodedToken>(token);
-      const urlPath = request.nextUrl.pathname;
-      const allowedPaths: { [key: string]: SystemModule[] } = decoded.system_modules;
-      const isPathAllowed = Object.values(allowedPaths).some((modules) =>
-        modules.some((module) => urlPath.startsWith(module.path))
-      );
-
-      if (!isPathAllowed) {
-        console.log(`Acceso denegado para la ruta: ${urlPath}`);
-        return NextResponse.redirect(new URL('/access-denied', request.url));
-      }
-
-      console.log('Token encontrado y acceso permitido.');
-      return NextResponse.next();
-    } catch (error) {
-      console.error("Error decoding token:", error);
-      return NextResponse.redirect(new URL('/session-expired', request.url));
+async function refreshAccessToken(refreshToken: string, response: NextResponse) {
+  const refresh_response = await instance.post('/security/v1/auth/refresh', null, {
+    headers: {
+      'Cookie': `refresh_token=${refreshToken}`
     }
+  });
+
+  const accessToken = refresh_response.data.access_token;
+  const expirationAt = new Date(refresh_response.data.access_token_expiration_at);
+
+  response.cookies.set("access_token", accessToken, {
+    httpOnly: true,
+    secure: false, // true en produccion
+    expires: expirationAt,
+    sameSite: "lax",
+  });
+
+  return accessToken;
+}
+
+function decodeToken(accessToken: string): DecodedToken {
+  return jwtDecode<DecodedToken>(accessToken);
+}
+
+function isAccessAllowed(decoded: DecodedToken, urlPath: string): boolean {
+  return Object.values(decoded.system_modules).some((system_module) =>
+    system_module.some((acceso) => urlPath === acceso.path)
+  );
+}
+
+export async function middleware(request: NextRequest) {
+  const refreshToken = request.cookies.get('refresh_token')?.value; 
+  let accessToken = request.cookies.get('access_token')?.value;
+  
+  const baseUrl = request.nextUrl.origin;
+  const urlPath = request.nextUrl.pathname;
+  const response = NextResponse.next();
+  // console.log({request})
+  if (refreshToken && (urlPath === "/" || urlPath === "/auth-token"))
+    return redirectTo(baseUrl, '/inicio');
+
+  if (!refreshToken) {
+    console.log('No se encontró el refresh token, redirigiendo al login.');
+    return redirectTo(baseUrl, '/');
   }
 
-  console.log('Token encontrado, permitiendo el acceso.');
-  return NextResponse.next();
+  if (!accessToken) {
+    accessToken = await refreshAccessToken(refreshToken, response);
+  }
+
+  try {
+    if (!accessToken || typeof accessToken !== "string")
+      return redirectTo(baseUrl, '/access-denied');
+    
+    const decoded = decodeToken(accessToken);
+    if (!isAccessAllowed(decoded, urlPath)) {
+      console.log(`Acceso denegado para la ruta: ${urlPath}`);
+      return redirectTo(baseUrl, '/access-denied');
+    }
+    console.log('Token encontrado y acceso permitido.');
+    return response;
+  } catch (error) {
+    console.error("Error decoding token:", error);
+    return redirectTo(baseUrl, '/session-expired');
+  }
 }
 
 export const config = {
