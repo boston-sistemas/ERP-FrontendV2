@@ -12,6 +12,8 @@ import {
   TextField,
   MenuItem,
   Select,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -40,10 +42,10 @@ const minWidths = [
 ];
 
 const movimientosData = [
-    { id: 1, os: "FRA1492", tejido: "RBV165", ancho: 39, tejeduria: "Tejeduria", fecha_movimiento: "2024-01-08", rollos: 39, peso: 39 },
-    { id: 2, os: "FRA1492", tejido: "RBV165", ancho: 36, tejeduria: "Tejeduria", fecha_movimiento: "2024-01-08", rollos: 39, peso: 39 },
-    { id: 3, os: "FRA1493", tejido: "RLK240", ancho: 80, tejeduria: "Tejeduria", fecha_movimiento: "2024-01-08", rollos: 39, peso: 39 },
-    { id: 4, os: "FRA1493", tejido: "RBV165", ancho: 41, tejeduria: "Tejeduria", fecha_movimiento: "2024-01-11", rollos: 39, peso: 39 }
+    { id: 1, os: "TIR1492", tejido: "RBV165", ancho: 39, tejeduria: "Tejeduria1", fecha_movimiento: "2024-01-08", rollos: 39, peso: 39 },
+    { id: 2, os: "TIR1492", tejido: "RBV165", ancho: 36, tejeduria: "Tejeduria2", fecha_movimiento: "2024-01-08", rollos: 39, peso: 39 },
+    { id: 3, os: "FRA1493", tejido: "RLK240", ancho: 80, tejeduria: "Tejeduria3", fecha_movimiento: "2024-01-08", rollos: 39, peso: 39 },
+    { id: 4, os: "FRA1493", tejido: "RBV165", ancho: 41, tejeduria: "Tejeduria2", fecha_movimiento: "2024-01-11", rollos: 39, peso: 39 }
   ];
 
 const TablaMovimientos: React.FC = () => {
@@ -154,21 +156,39 @@ const TablaMovimientos: React.FC = () => {
   return (
     <div>
       <div className="flex items-center gap-4 mb-4">
-        <Select
-          value={tejeduriaFilter}
-          onChange={(e) => setTejeduriaFilter(e.target.value)}
-          displayEmpty
-          fullWidth
-        >
-          <MenuItem value="">Tejeduria</MenuItem>
-          <MenuItem value="Tejeduria">Tejeduria</MenuItem>
-          {/* Agregar más opciones aquí */}
-        </Select>
+        <FormControl fullWidth variant="outlined" size="small">
+          <InputLabel className="dark:text-zinc-100">Tejeduria</InputLabel>
+          <Select
+            value={tejeduriaFilter}
+            onChange={(e) => setTejeduriaFilter(e.target.value)}
+            label="Tejeduria"
+            className="dark:text-zinc-100"
+            MenuProps={{
+              PaperProps: {
+                className: "dark:bg-boxdark",
+              },
+            }}
+          >
+            <MenuItem className="dark:text-zinc-100" value="">---</MenuItem>
+            <MenuItem className="dark:text-zinc-100" value="Tejeduria1">Tejeduria1</MenuItem>
+            <MenuItem className="dark:text-zinc-100" value="Tejeduria2">Tejeduria2</MenuItem>
+            <MenuItem className="dark:text-zinc-100" value="Tejeduria3">Tejeduria3</MenuItem>
+          </Select>
+        </FormControl>
         <TextField
           label="OS"
           value={osFilter}
           onChange={(e) => setOsFilter(e.target.value)}
           fullWidth
+          variant="outlined"
+          size="small"
+          className="dark:text-zinc-100"
+          InputLabelProps={{
+            className: "dark:text-zinc-100",
+          }}
+          InputProps={{
+            className: "dark:text-zinc-100",
+          }}
         />
       </div>
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
@@ -254,7 +274,7 @@ const TablaMovimientos: React.FC = () => {
                 variant="outlined"
                 value={selectedMovimiento.os}
                 onChange={(e) => setSelectedMovimiento({ ...selectedMovimiento, os: e.target.value })}
-              />
+              />  
               <TextField
                 margin="dense"
                 label="Tejido"
