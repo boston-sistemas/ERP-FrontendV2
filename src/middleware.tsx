@@ -24,6 +24,7 @@ function redirectTo(baseUrl: string, path: string) {
 }
 
 async function refreshAccessToken(refreshToken: string, response: NextResponse) {
+  console.log("refreshing");
   const refresh_response = await instance.post('/security/v1/auth/refresh', null, {
     headers: {
       'Cookie': `refresh_token=${refreshToken}`
@@ -34,7 +35,7 @@ async function refreshAccessToken(refreshToken: string, response: NextResponse) 
   const expirationAt = new Date(refresh_response.data.access_token_expiration_at);
 
   response.cookies.set("access_token", accessToken, {
-    httpOnly: true,
+    httpOnly: false,
     secure: false, // true en produccion
     expires: expirationAt,
     sameSite: "lax",
@@ -61,7 +62,7 @@ export async function middleware(request: NextRequest) {
   const urlPath = request.nextUrl.pathname;
   const response = NextResponse.next();
   // console.log({request})
-  if (refreshToken && (urlPath === "/" || urlPath === "/auth-token" || "/inicio" || "/change-password"))
+  if (refreshToken && (urlPath === "/" || urlPath === "/auth-token"))
     return redirectTo(baseUrl, '/inicio');
 
   if (!refreshToken) {
@@ -92,7 +93,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/inicio/',
+    // '/',
     '/operaciones/panel/',
     '/operaciones/revision-stock/',
     '/operaciones/programacion-tintoreria/',

@@ -440,7 +440,7 @@ const ProgramacionTintoreria: React.FC = () => {
     console.log("Payload:", JSON.stringify(payload, null, 2)); // Log payload for debugging
   
     try {
-      const response = await instance.patch('/operations/v1/programacion-tintoreria', payload);
+      const response = await instance.post('/operations/v1/programacion-tintoreria', payload);
       if (response.status === 201 || response.status === 200) {
         // Manejar respuesta exitosa, limpiar estado si es necesario
         setPartidas([]);

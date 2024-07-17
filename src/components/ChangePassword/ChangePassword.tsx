@@ -50,7 +50,7 @@ const ChangePassword: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await instance.post("/security/v1/usuarios/me/password", {
+      const response = await instance.put("/security/v1/usuarios/me/password", {
         new_password: newPassword,
       });
 

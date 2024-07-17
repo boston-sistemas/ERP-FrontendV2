@@ -14,6 +14,8 @@ import LanguageIcon from '@mui/icons-material/Language';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import instance from '@/config/AxiosConfig';
+import ReCAPTCHA from "react-google-recaptcha";
+import axios from 'axios';
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -22,13 +24,19 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props,
 const SignIn: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleRecaptchaChange = (token: string | null) => {
+    setRecaptchaToken(token);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,7 +47,23 @@ const SignIn: React.FC = () => {
       return;
     }
 
+    if (!recaptchaToken) {
+      setSnackbarMessage('Por favor, complete el reCAPTCHA.');
+      setOpenSnackbar(true);
+      return;
+    }
+
+    setLoading(true);
+
     try {
+      // Verifica el token de reCAPTCHA
+      const recaptchaResponse = await axios.post('/api/verify-recaptcha', { token: recaptchaToken });
+      const recaptchaData = recaptchaResponse.data;
+      if (!recaptchaData.success) {
+        throw new Error('Invalid reCAPTCHA');
+      }
+
+      // Procede con el login
       const response = await instance.post('/security/v1/auth/send-token', { username, password });
       if (response.status === 200) {
         sessionStorage.setItem('auth_data', JSON.stringify({
@@ -57,6 +81,8 @@ const SignIn: React.FC = () => {
     } catch (error) {
       setSnackbarMessage('Error al iniciar sesión. Inténtelo de nuevo.');
       setOpenSnackbar(true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -109,11 +135,16 @@ const SignIn: React.FC = () => {
                     ),
                   }}
                 />
+                <ReCAPTCHA
+                  sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+                  onChange={handleRecaptchaChange}
+                />
                 <button
                   type="submit"
                   className="mt-4 w-full bg-red-600 text-white py-2 rounded hover:bg-red-500 transition duration-300 ease-in-out flex justify-center items-center"
+                  disabled={loading}
                 >
-                  Ingresar
+                  {loading ? "Cargando..." : "Ingresar"}
                 </button>
               </form>
             </div>
