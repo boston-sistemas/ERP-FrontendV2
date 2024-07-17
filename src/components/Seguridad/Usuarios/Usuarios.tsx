@@ -171,6 +171,18 @@ const Usuarios: React.FC = () => {
     }
   };
 
+  const handleResetPassword = async () => {
+    if (selectedUser) {
+      try {
+        await instance.post(`/security/v1/usuarios/${selectedUser.usuario_id}/reset-password`);
+        alert('Contraseña reseteada exitosamente');
+      } catch (error) {
+        console.error('Error reseteando contraseña', error);
+        alert('Error reseteando contraseña');
+      }
+    }
+  };
+
   return (
     <div className="space-y-5">
       {error && (
@@ -338,6 +350,9 @@ const Usuarios: React.FC = () => {
           </Button>
           <Button onClick={handleSaveUser} color="primary">
             Guardar
+          </Button>
+          <Button onClick={handleResetPassword} color="error">
+            Resetear Contraseña
           </Button>
         </DialogActions>
       </Dialog>
