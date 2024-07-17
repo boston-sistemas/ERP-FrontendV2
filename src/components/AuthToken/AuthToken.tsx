@@ -85,11 +85,10 @@ const AuthToken: React.FC = () => {
     try {
       const response = await instance.post('/security/v1/auth/login', { username, password, token: code });
       if (response.status === 200) {
-        const { access_token, usuario } = response.data;
-        localStorage.setItem('access_token', access_token);
+        const { usuario } = response.data;
         localStorage.setItem('user_display_name', usuario.display_name);
         localStorage.setItem('user_email', usuario.email);
-
+        localStorage.setItem('reset_password_at',usuario.reset_password_at)
         sessionStorage.removeItem('auth_data');
         router.push('/inicio');
       } else {

@@ -61,7 +61,7 @@ export async function middleware(request: NextRequest) {
   const urlPath = request.nextUrl.pathname;
   const response = NextResponse.next();
   // console.log({request})
-  if (refreshToken && (urlPath === "/" || urlPath === "/auth-token"))
+  if (refreshToken && (urlPath === "/" || urlPath === "/auth-token" || "/inicio" || "/change-password"))
     return redirectTo(baseUrl, '/inicio');
 
   if (!refreshToken) {
@@ -92,12 +92,14 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/inicio/',
     '/operaciones/panel/',
     '/operaciones/revision-stock/',
     '/operaciones/programacion-tintoreria/',
     '/tejeduria/reporte-stock/',
-    '/seguridad/usuarios',
-    '/seguridad/usuarios/crear-usuario',
+    '/seguridad/usuarios/',
+    '/seguridad/usuarios/crear-usuario/',
     '/seguridad/roles/',
+    '/seguridad/roles/crear-rol/'
   ],
 };

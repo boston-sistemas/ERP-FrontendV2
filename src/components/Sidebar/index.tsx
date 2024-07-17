@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import SidebarLinkGroup from "./SidebarLinkGroup";
 import { jwtDecode } from 'jwt-decode';
+import Cookies from "js-cookie";
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -30,7 +31,7 @@ interface DecodedToken {
 
 const getSystemModulesFromToken = (): { [key: string]: SystemModule[] } | null => {
   if (typeof window === 'undefined') return null; 
-  const token = localStorage.getItem('access_token');
+  const token = Cookies.get('access_token');
   if (!token) return null;
   try {
     const decoded: DecodedToken = jwtDecode(token);

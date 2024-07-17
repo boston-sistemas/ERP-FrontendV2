@@ -147,7 +147,7 @@ const ProgramacionTintoreria: React.FC = () => {
 
   const handleParametrosTejTinCol = async () => {
     try {
-      const response = await instance.get('/operations/v1/programacion-tintoreria');
+      const response = await instance.get('/operations/v1/programacion-tintoreria/parametros');
       const data = response.data;
       setTejedurias(data.tejedurias);
       setTintorerias(data.tintorerias);
@@ -424,7 +424,7 @@ const ProgramacionTintoreria: React.FC = () => {
         return {
           nro_partida: nro_partida,
           color_id: partida ? partida.color_id : 0,
-          detalles: detalles,
+          detalle: detalles,
         };
       }),
     };
