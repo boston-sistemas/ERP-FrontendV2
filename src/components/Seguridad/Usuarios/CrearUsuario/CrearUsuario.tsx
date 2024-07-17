@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
 import { useRouter } from 'next/navigation';
 import { TablePagination } from "@mui/material";
-import { FaUser, FaEnvelope, FaKey, FaUserShield } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaUserShield } from 'react-icons/fa';
 import { TIMEOUT } from "@/components/Parametros/Parametros";
 
 interface Acceso {
@@ -25,8 +25,7 @@ const CrearUsuario: React.FC = () => {
   const [nombre, setNombre] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState({ nombre: false, displayName: false, email: false, password: false, roles: false });
+  const [errors, setErrors] = useState({ nombre: false, displayName: false, email: false, roles: false });
   const [roles, setRoles] = useState<Rol[]>([]);
   const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -62,7 +61,6 @@ const CrearUsuario: React.FC = () => {
       nombre: !nombre, 
       displayName: !displayName, 
       email: !email, 
-      password: !password, 
       roles: step === 2 && selectedRoles.length === 0 
     };
     setErrors(newErrors);
@@ -80,7 +78,6 @@ const CrearUsuario: React.FC = () => {
             email,
             display_name: displayName,
             is_active: true,
-            password,
             rol_ids: selectedRoles
           });
           setTimeout(() => {
@@ -99,24 +96,6 @@ const CrearUsuario: React.FC = () => {
     if (step > 1) {
       setStep(step - 1);
     }
-  };
-
-  const generarPassword = () => {
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$";
-    const length = 10;
-    let generatedPassword = "";
-    for (let i = 0; i < length; i++) {
-      const randomIndex = Math.floor(Math.random() * charset.length);
-      generatedPassword += charset[randomIndex];
-    }
-    setPassword(generatedPassword);
-    setErrors(prev => ({ ...prev, password: false }));
-  };
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newPassword = e.target.value;
-    setPassword(newPassword);
-    setErrors(prev => ({ ...prev, password: false }));
   };
 
   const handleRoleSelection = (rol_id: number) => {
@@ -221,32 +200,6 @@ const CrearUsuario: React.FC = () => {
                         className={`w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black dark:text-white outline-none transition focus:border-blue-800 active:border-blue-800 dark:border-form-strokedark dark:bg-form-input dark:focus:border-blue-800 ${errors.email ? "border-red-500" : ""}`}
                       />
                       {errors.email && <span className="text-red-500 text-sm">Campo requerido</span>}
-                    </div>
-
-                    <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md">
-                      <div className="flex items-center">
-                        <FaKey className="text-blue-800 dark:text-white mr-3" />
-                        <label className="mb-1 block text-sm font-medium text-black dark:text-white flex items-center">
-                          Password
-                        </label>
-                      </div>
-                      <div className="flex">
-                        <input
-                          type="text"
-                          value={password}
-                          onChange={handlePasswordChange}
-                          placeholder="Contraseña"
-                          className={`w-40 flex-1 rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black dark:text-white outline-none transition focus:border-blue-800 active:border-blue-800 dark:border-form-strokedark dark:bg-form-input dark:focus:border-blue-800 ${errors.password ? "border-red-500" : ""}`}
-                        />
-                        <button
-                          type="button"
-                          onClick={generarPassword}
-                          className="ml-2 bg-black px-5 py-3 text-white border border-black hover:bg-zinc-600"
-                        >
-                          Generar
-                        </button>
-                      </div>
-                      {errors.password && <span className="text-red-500 text-sm">Campo requerido</span>}
                     </div>
                   </div>
 
@@ -373,13 +326,6 @@ const CrearUsuario: React.FC = () => {
                         <p className="text-black dark:text-white"><strong>Email:</strong></p>
                       </div>
                       <p className="text-black dark:text-white">{email}</p>
-                    </div>
-                    <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md overflow-x-auto">
-                      <div className="flex items-center">
-                        <FaKey className="text-blue-800 dark:text-white mr-3" />
-                        <p className="text-black dark:text-white"><strong>Password:</strong></p>
-                      </div>
-                      <p className="text-black dark:text-white">{password}</p>
                     </div>
                     <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md col-span-1 sm:col-span-2 overflow-x-auto">
                       <div className="flex items-center">

@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import { Edit, Add, Delete, PowerSettingsNew } from "@mui/icons-material";
 import "@/css/checkbox.css";
+import { useRouter } from "next/navigation";
 
 const TIMEOUT = 1000;
 
@@ -39,6 +40,7 @@ interface Usuario {
 }
 
 const Usuarios: React.FC = () => {
+  const router = useRouter();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -183,6 +185,10 @@ const Usuarios: React.FC = () => {
     }
   };
 
+  const handleCrearUsuario = async () => {
+    router.push('/seguridad/usuarios/crear-usuario')
+  }
+
   return (
     <div className="space-y-5">
       {error && (
@@ -278,7 +284,12 @@ const Usuarios: React.FC = () => {
           sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : 'inherit' }}
         />
       </div>
-
+      <button
+        onClick={handleCrearUsuario}
+        className={`mt-4 w-full border border-gray-300 px-5 py-3 text-white transition bg-blue-900 hover:bg-blue-700 focus:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 dark:bg-blue-500 dark:hover:bg-blue-400`}
+      >
+        Crear Usuario
+      </button>
       <Dialog open={openEditDialog} onClose={handleCloseEditDialog}>
         <DialogTitle>Editar Usuario</DialogTitle>
         <DialogContent>
