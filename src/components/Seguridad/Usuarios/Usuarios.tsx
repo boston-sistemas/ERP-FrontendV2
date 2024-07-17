@@ -16,7 +16,7 @@ import {
   FormControlLabel,
   Checkbox,
 } from "@mui/material";
-import { Edit, Add, Delete } from "@mui/icons-material";
+import { Edit, Add, Delete, PowerSettingsNew } from "@mui/icons-material";
 import "@/css/checkbox.css";
 
 const TIMEOUT = 1000;
@@ -110,7 +110,7 @@ const Usuarios: React.FC = () => {
         if (selectedUser.display_name !== originalUser?.display_name) updatedUser.display_name = selectedUser.display_name;
 
         if (Object.keys(updatedUser).length > 0) {
-          await instance.put(`/security/v1/usuarios/${selectedUser.usuario_id}`, updatedUser);
+          await instance.patch(`/security/v1/usuarios/${selectedUser.usuario_id}`, updatedUser);
         }
         fetchUsuarios();
         handleCloseEditDialog();
@@ -160,6 +160,17 @@ const Usuarios: React.FC = () => {
     }
   };
 
+  const handleToggleUserStatus = async (usuario: Usuario) => {
+    try {
+      await instance.patch(`/security/v1/usuarios/${usuario.usuario_id}`, {
+        is_active: !usuario.is_active
+      });
+      fetchUsuarios();
+    } catch (error) {
+      console.error('Error toggling user status', error);
+    }
+  };
+
   return (
     <div className="space-y-5">
       {error && (
@@ -174,7 +185,7 @@ const Usuarios: React.FC = () => {
             <thead>
               <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
                 <th className="px-4 py-4"></th>
-                {["Nombre", "Correo", "Roles", "Estado", "Editar"].map((column, index) => (
+                {["Nombre", "Correo", "Roles", "Estado", " ", "Editar"].map((column, index) => (
                   <th key={index} className="px-4 py-4 text-center font-normal text-white dark:text-zinc-100">
                     {column}
                   </th>
@@ -225,6 +236,11 @@ const Usuarios: React.FC = () => {
                       <span className={`text-sm ${usuario.is_active ? "text-green-500" : "text-red-500"}`}>
                         {usuario.is_active ? "Habilitado" : "Deshabilitado"}
                       </span>
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      <IconButton onClick={() => handleToggleUserStatus(usuario)} className="text-blue-500">
+                        <PowerSettingsNew />
+                      </IconButton>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <IconButton className="text-inherit dark:text-white" onClick={() => handleEditUser(usuario)}>
