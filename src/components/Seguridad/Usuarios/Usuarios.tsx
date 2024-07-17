@@ -13,13 +13,16 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
-import { Edit, Visibility, Add, Delete, PowerSettingsNew } from "@mui/icons-material";
+import { Edit, Add, Delete, PowerSettingsNew } from "@mui/icons-material";
 import "@/css/checkbox.css";
 
 const TIMEOUT = 1000;
 
 interface Rol {
+  rol_id: number;
   nombre: string;
   is_active: boolean;
   rol_color: string;
@@ -44,6 +47,11 @@ const Usuarios: React.FC = () => {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Usuario | null>(null);
   const [originalUser, setOriginalUser] = useState<Usuario | null>(null);
+  const [openAddRoleDialog, setOpenAddRoleDialog] = useState(false);
+  const [openRemoveRoleDialog, setOpenRemoveRoleDialog] = useState(false);
+  const [allRoles, setAllRoles] = useState<Rol[]>([]);
+  const [rolesToAdd, setRolesToAdd] = useState<number[]>([]);
+  const [rolesToRemove, setRolesToRemove] = useState<number[]>([]);
 
   const fetchUsuarios = async () => {
     try {
@@ -58,8 +66,18 @@ const Usuarios: React.FC = () => {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const response = await instance.get('/security/v1/roles/');
+      setAllRoles(response.data.roles);
+    } catch (error) {
+      console.error('Error fetching roles', error);
+    }
+  };
+
   useEffect(() => {
     fetchUsuarios();
+    fetchRoles();
   }, []);
 
   const handleCambiarPagina = (event: any, newPage: any) => {
@@ -92,12 +110,75 @@ const Usuarios: React.FC = () => {
         if (selectedUser.display_name !== originalUser?.display_name) updatedUser.display_name = selectedUser.display_name;
 
         if (Object.keys(updatedUser).length > 0) {
-          await instance.put(`/security/v1/usuarios/${selectedUser.usuario_id}`, updatedUser);
+          await instance.patch(`/security/v1/usuarios/${selectedUser.usuario_id}`, updatedUser);
         }
         fetchUsuarios();
         handleCloseEditDialog();
       } catch (error) {
         console.error('Error updating user', error);
+      }
+    }
+  };
+
+  const handleAddRoleClick = () => {
+    setRolesToAdd([]);
+    setOpenAddRoleDialog(true);
+  };
+
+  const handleRemoveRoleClick = () => {
+    setRolesToRemove([]);
+    setOpenRemoveRoleDialog(true);
+  };
+
+  const handleAddRolesToUser = async () => {
+    if (selectedUser) {
+      try {
+        await instance.post(`/security/v1/usuarios/${selectedUser.usuario_id}/roles/`, {
+          rol_ids: rolesToAdd,
+        });
+        const updatedRoles = [...selectedUser.roles, ...allRoles.filter(role => rolesToAdd.includes(role.rol_id))];
+        setSelectedUser({ ...selectedUser, roles: updatedRoles });
+        setOpenAddRoleDialog(false);
+      } catch (error) {
+        console.error('Error adding roles to user', error);
+      }
+    }
+  };
+
+  const handleRemoveRolesFromUser = async () => {
+    if (selectedUser) {
+      try {
+        await instance.delete(`/security/v1/usuarios/${selectedUser.usuario_id}/roles/`, {
+          data: { rol_ids: rolesToRemove },
+        });
+        const updatedRoles = selectedUser.roles.filter(role => !rolesToRemove.includes(role.rol_id));
+        setSelectedUser({ ...selectedUser, roles: updatedRoles });
+        setOpenRemoveRoleDialog(false);
+      } catch (error) {
+        console.error('Error removing roles from user', error);
+      }
+    }
+  };
+
+  const handleToggleUserStatus = async (usuario: Usuario) => {
+    try {
+      await instance.patch(`/security/v1/usuarios/${usuario.usuario_id}`, {
+        is_active: !usuario.is_active
+      });
+      fetchUsuarios();
+    } catch (error) {
+      console.error('Error toggling user status', error);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (selectedUser) {
+      try {
+        await instance.post(`/security/v1/usuarios/${selectedUser.usuario_id}/reset-password`);
+        alert('Contraseña reseteada exitosamente');
+      } catch (error) {
+        console.error('Error reseteando contraseña', error);
+        alert('Error reseteando contraseña');
       }
     }
   };
@@ -116,7 +197,7 @@ const Usuarios: React.FC = () => {
             <thead>
               <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
                 <th className="px-4 py-4"></th>
-                {["Nombre", "Correo", "Roles", "Estado", "Editar"].map((column, index) => (
+                {["Nombre", "Correo", "Roles", "Estado", " ", "Editar"].map((column, index) => (
                   <th key={index} className="px-4 py-4 text-center font-normal text-white dark:text-zinc-100">
                     {column}
                   </th>
@@ -167,6 +248,11 @@ const Usuarios: React.FC = () => {
                       <span className={`text-sm ${usuario.is_active ? "text-green-500" : "text-red-500"}`}>
                         {usuario.is_active ? "Habilitado" : "Deshabilitado"}
                       </span>
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                      <IconButton onClick={() => handleToggleUserStatus(usuario)} className="text-blue-500">
+                        <PowerSettingsNew />
+                      </IconButton>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
                       <IconButton className="text-inherit dark:text-white" onClick={() => handleEditUser(usuario)}>
@@ -225,12 +311,110 @@ const Usuarios: React.FC = () => {
             </>
           )}
         </DialogContent>
+        <DialogTitle>Roles</DialogTitle>
+        <DialogContent>
+          {selectedUser && (
+            <>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '16px' }}>
+                {selectedUser.roles.map((role, index) => (
+                  <span
+                    key={index}
+                    style={{
+                      backgroundColor: role.rol_color,
+                      color: '#fff',
+                      borderRadius: '12px',
+                      padding: '4px 12px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      display: 'inline-block',
+                    }}
+                  >
+                    {role.nombre}
+                  </span>
+                ))}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+                <IconButton onClick={handleAddRoleClick}>
+                  <Add />
+                </IconButton>
+                <IconButton onClick={handleRemoveRoleClick}>
+                  <Delete />
+                </IconButton>
+              </div>
+            </>
+          )}
+        </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseEditDialog} color="primary">
             Cancelar
           </Button>
           <Button onClick={handleSaveUser} color="primary">
             Guardar
+          </Button>
+          <Button onClick={handleResetPassword} color="error">
+            Resetear Contraseña
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openAddRoleDialog} onClose={() => setOpenAddRoleDialog(false)}>
+        <DialogTitle>Añadir Roles</DialogTitle>
+        <DialogContent>
+          {allRoles.filter(role => !selectedUser?.roles.some(userRole => userRole.nombre === role.nombre)).map((role, index) => (
+            <FormControlLabel
+              key={index}
+              control={
+                <Checkbox
+                  checked={rolesToAdd.includes(role.rol_id)}
+                  onChange={(e) => {
+                    const newRolesToAdd = e.target.checked
+                      ? [...rolesToAdd, role.rol_id]
+                      : rolesToAdd.filter(id => id !== role.rol_id);
+                    setRolesToAdd(newRolesToAdd);
+                  }}
+                />
+              }
+              label={role.nombre}
+            />
+          ))}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenAddRoleDialog(false)} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleAddRolesToUser} color="primary">
+            Añadir
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openRemoveRoleDialog} onClose={() => setOpenRemoveRoleDialog(false)}>
+        <DialogTitle>Eliminar Roles</DialogTitle>
+        <DialogContent>
+          {selectedUser?.roles.map((role, index) => (
+            <FormControlLabel
+              key={index}
+              control={
+                <Checkbox
+                  checked={rolesToRemove.includes(role.rol_id)}
+                  onChange={(e) => {
+                    const newRolesToRemove = e.target.checked
+                      ? [...rolesToRemove, role.rol_id]
+                      : rolesToRemove.filter(id => id !== role.rol_id);
+                    setRolesToRemove(newRolesToRemove);
+                  }}
+                />
+              }
+              label={role.nombre}
+            />
+          ))}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenRemoveRoleDialog(false)} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleRemoveRolesFromUser} color="primary">
+            Eliminar
           </Button>
         </DialogActions>
       </Dialog>
@@ -239,11 +423,3 @@ const Usuarios: React.FC = () => {
 };
 
 export default Usuarios;
-
-
-
-
-
-
-
-

@@ -36,6 +36,7 @@ interface Rol {
   rol_id: number;
   nombre: string;
   is_active: boolean;
+  rol_color: string;
   accesos: Acceso[];
 }
 
@@ -138,12 +139,13 @@ const Roles: React.FC = () => {
   const handleSaveRole = async () => {
     if (selectedRole) {
       try {
-        const updatedRole: Partial<Rol> = {
+        const updatedRole = {
           nombre: selectedRole.nombre,
           is_active: selectedRole.is_active,
+          rol_color: selectedRole.rol_color,
         };
 
-        await instance.put(`/security/v1/roles/${selectedRole.rol_id}`, updatedRole);
+        await instance.patch(`/security/v1/roles/${selectedRole.rol_id}`, updatedRole);
         fetchRoles();
         handleCloseEditDialog();
       } catch (error) {
@@ -166,7 +168,7 @@ const Roles: React.FC = () => {
 
   const handleToggleRoleStatus = async (rol: Rol) => {
     try {
-      await instance.put(`/security/v1/roles/${rol.rol_id}`, {
+      await instance.patch(`/security/v1/roles/${rol.rol_id}`, {
         is_active: !rol.is_active
       });
       fetchRoles();
@@ -338,12 +340,20 @@ const Roles: React.FC = () => {
                 value={selectedRole.nombre}
                 onChange={(e) => setSelectedRole({ ...selectedRole, nombre: e.target.value })}
               />
+              <TextField
+                margin="dense"
+                label="Color del Rol"
+                fullWidth
+                variant="outlined"
+                value={selectedRole.rol_color}
+                onChange={(e) => setSelectedRole({ ...selectedRole, rol_color: e.target.value })}
+              />
             </>
           )}
           
         </DialogContent>
         <DialogActions>
-        <Button onClick={handleDeleteRole} color="error">
+          <Button onClick={handleDeleteRole} color="error">
             Eliminar
           </Button>
           <Button onClick={handleCloseEditDialog} color="primary">
