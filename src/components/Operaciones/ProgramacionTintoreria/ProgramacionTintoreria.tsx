@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import instance from "@/config/AxiosConfig";
 import { TIMEOUT } from "@/components/Parametros/Parametros";
-import { Select, MenuItem, Card, CardContent, Typography, IconButton, Collapse, TablePagination } from "@mui/material";
+import { Select, MenuItem, Card, CardContent, Typography, IconButton, Collapse, TablePagination, Snackbar, Alert, AlertColor } from "@mui/material";
 import { TbTruckDelivery } from "react-icons/tb";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -115,6 +115,9 @@ const ProgramacionTintoreria: React.FC = () => {
   const [rollosDisponibles, setRollosDisponibles] = useState<Record<string, number>>({});
   const [mensajeError, setMensajeError] = useState<string | null>(null);
   const [desvaneciendo, setDesvaneciendo] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<AlertColor>('success');
 
   const fetchData = async (tejeduriaId: string) => {
     try {
@@ -447,12 +450,21 @@ const ProgramacionTintoreria: React.FC = () => {
         setPendienteData([]);
         setCerradaData([]);
         setError(null);
-        alert('Partida creada exitosamente');
+        setSnackbarMessage('Partida creada exitosamente');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
       }
     } catch (error) {
       console.error('Error creating partida', error);
       setError('Error creando la partida');
+      setSnackbarMessage('Error creando la partida');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
   };
 
   return ( 
@@ -728,6 +740,11 @@ const ProgramacionTintoreria: React.FC = () => {
           Crear Partida
         </button>
       </div>
+      <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleSnackbarClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
