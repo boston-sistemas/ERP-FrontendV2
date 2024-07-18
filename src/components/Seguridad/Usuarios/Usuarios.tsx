@@ -15,6 +15,8 @@ import {
   TextField,
   FormControlLabel,
   Checkbox,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Edit, Add, Delete, PowerSettingsNew } from "@mui/icons-material";
 import "@/css/checkbox.css";
@@ -54,6 +56,9 @@ const Usuarios: React.FC = () => {
   const [allRoles, setAllRoles] = useState<Rol[]>([]);
   const [rolesToAdd, setRolesToAdd] = useState<number[]>([]);
   const [rolesToRemove, setRolesToRemove] = useState<number[]>([]);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
   const fetchUsuarios = async () => {
     try {
@@ -176,18 +181,26 @@ const Usuarios: React.FC = () => {
   const handleResetPassword = async () => {
     if (selectedUser) {
       try {
-        await instance.post(`/security/v1/usuarios/${selectedUser.usuario_id}/reset-password`);
-        alert('Contraseña reseteada exitosamente');
+        await instance.put(`/security/v1/usuarios/${selectedUser.usuario_id}/reset-password`);
+        setSnackbarSeverity("success");
+        setSnackbarMessage("Contraseña reseteada exitosamente");
+        setSnackbarOpen(true);
       } catch (error) {
         console.error('Error reseteando contraseña', error);
-        alert('Error reseteando contraseña');
+        setSnackbarSeverity("error");
+        setSnackbarMessage("Error reseteando contraseña");
+        setSnackbarOpen(true);
       }
     }
-  };
+  };  
 
   const handleCrearUsuario = async () => {
     router.push('/seguridad/usuarios/crear-usuario')
   }
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
 
   return (
     <div className="space-y-5">
@@ -213,13 +226,13 @@ const Usuarios: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="pt-5 pb-5 text-center text-black dark:text-white">
+                  <td colSpan={7} className="pt-5 pb-5 text-center text-black dark:text-white">
                     Cargando...
                   </td>
                 </tr>
               ) : usuarios.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="pt-5 pb-5 text-center text-black dark:text-white">
+                  <td colSpan={7} className="pt-5 pb-5 text-center text-black dark:text-white">
                     No existen usuarios
                   </td>
                 </tr>
@@ -429,6 +442,17 @@ const Usuarios: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%', alignItems: 'center' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
