@@ -29,6 +29,7 @@ const ChangePassword: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -43,6 +44,7 @@ const ChangePassword: React.FC = () => {
 
     if (newPassword !== confirmPassword) {
       setSnackbarMessage("Las contraseñas no coinciden.");
+      setSnackbarSeverity("error");
       setOpenSnackbar(true);
       return;
     }
@@ -57,6 +59,7 @@ const ChangePassword: React.FC = () => {
       if (response.status === 200) {
         localStorage.removeItem("reset_password_at");
         setSnackbarMessage("Contraseña cambiada correctamente.");
+        setSnackbarSeverity("success");
         setOpenSnackbar(true);
         setTimeout(() => {
           router.push("/inicio");
@@ -66,6 +69,7 @@ const ChangePassword: React.FC = () => {
       }
     } catch (error) {
       setSnackbarMessage("Error al cambiar la contraseña.");
+      setSnackbarSeverity("error");
       setOpenSnackbar(true);
       setIsLoading(false);
     }
@@ -177,7 +181,7 @@ const ChangePassword: React.FC = () => {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: "100%", alignItems: "center" }}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: "100%", alignItems: "center" }}>
           {snackbarMessage}
         </Alert>
       </Snackbar>
