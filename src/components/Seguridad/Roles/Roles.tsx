@@ -19,6 +19,10 @@ import {
   TextField,
   InputAdornment,
   Chip,
+  Snackbar,
+  Alert,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import { Edit, Visibility, Assignment, Shield, Build, Add, Delete, Close, PowerSettingsNew } from "@mui/icons-material";
 import SearchIcon from '@mui/icons-material/Search';
@@ -55,6 +59,10 @@ const Roles: React.FC = () => {
   const [selectedAccesos, setSelectedAccesos] = useState<Acceso[]>([]);
   const [removeAccesos, setRemoveAccesos] = useState<Acceso[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+  const [openDeleteConfirmation, setOpenDeleteConfirmation] = useState(false);
   const router = useRouter();
 
   const fetchRoles = async () => {
@@ -160,10 +168,19 @@ const Roles: React.FC = () => {
         await instance.delete(`/security/v1/roles/${selectedRole.rol_id}`);
         fetchRoles();
         handleCloseEditDialog();
+        setOpenDeleteConfirmation(false);
       } catch (error) {
         console.error('Error deleting role', error);
       }
     }
+  };
+
+  const handleOpenDeleteConfirmation = () => {
+    setOpenDeleteConfirmation(true);
+  };
+
+  const handleCloseDeleteConfirmation = () => {
+    setOpenDeleteConfirmation(false);
   };
 
   const handleToggleRoleStatus = async (rol: Rol) => {
@@ -350,10 +367,9 @@ const Roles: React.FC = () => {
               />
             </>
           )}
-          
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDeleteRole} color="error">
+          <Button onClick={handleOpenDeleteConfirmation} color="error">
             Eliminar
           </Button>
           <Button onClick={handleCloseEditDialog} color="primary">
@@ -361,6 +377,21 @@ const Roles: React.FC = () => {
           </Button>
           <Button onClick={handleSaveRole} color="primary">
             Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openDeleteConfirmation} onClose={handleCloseDeleteConfirmation}>
+        <DialogTitle>Confirmar Eliminación</DialogTitle>
+        <DialogContent>
+          <Typography>¿Estás seguro de que quieres eliminar este rol?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteConfirmation} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleDeleteRole} color="error">
+            Eliminar
           </Button>
         </DialogActions>
       </Dialog>
@@ -391,107 +422,57 @@ const Roles: React.FC = () => {
       </Dialog>
 
       <Dialog open={openAddAccessDialog} onClose={handleCloseAddAccessDialog}>
-        <DialogTitle>Agregar Accesos</DialogTitle>
+        <DialogTitle>Añadir Accesos</DialogTitle>
         <DialogContent>
-          {selectedRole && (
-            <>
-              <TextField
-                margin="dense"
-                label="Buscar Acceso"
-                fullWidth
-                variant="outlined"
-                value={searchTerm}
-                onChange={handleSearchChange}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton>
-                        <SearchIcon />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <div className="my-2">
-                {selectedAccesos.map(acceso => (
-                  <Chip
-                    key={acceso.acceso_id}
-                    label={acceso.nombre}
-                    onDelete={() => handleToggleAcceso(acceso)}
-                    deleteIcon={<Close />}
-                    color="primary"
-                    variant="outlined"
-                    className="mr-1 mb-1"
-                  />
-                ))}
-              </div>
-              <List>
-                {filteredAccesos.filter(acceso => !selectedRole.accesos.some(roleAcceso => roleAcceso.acceso_id === acceso.acceso_id)).map(acceso => (
-                  <ListItem key={acceso.acceso_id} button onClick={() => handleToggleAcceso(acceso)}>
-                    <ListItemIcon>
-                      {acceso.nombre.includes("admin") ? <Shield /> : acceso.nombre.includes("key") ? <Build /> : <Assignment />}
-                    </ListItemIcon>
-                    <ListItemText primary={acceso.nombre} secondary={acceso.is_active ? "Habilitado" : "Deshabilitado"} />
-                  </ListItem>
-                ))}
-              </List>
-              {filteredAccesos.length === 0 && (
-                <div className="text-center my-4">
-                  <Typography>No hay accesos para mostrar.</Typography>
-                </div>
-              )}
-            </>
-          )}
+          {selectedRole && accesos.filter(access => !selectedRole.accesos.some(roleAccess => roleAccess.nombre === access.nombre)).map((access, index) => (
+            <FormControlLabel
+              key={index}
+              control={
+                <Checkbox
+                  checked={selectedAccesos.some(selected => selected.acceso_id === access.acceso_id)}
+                  onChange={(e) => {
+                    handleToggleAcceso(access);
+                  }}
+                />
+              }
+              label={access.nombre}
+            />
+          ))}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseAddAccessDialog} color="primary">
+          <Button onClick={() => setOpenAddAccessDialog(false)} color="primary">
             Cancelar
           </Button>
           <Button onClick={handleAddAccess} color="primary">
-            Guardar
+            Añadir
           </Button>
         </DialogActions>
       </Dialog>
 
       <Dialog open={openRemoveAccessDialog} onClose={handleCloseRemoveAccessDialog}>
-        <DialogTitle>Quitar Accesos</DialogTitle>
+        <DialogTitle>Eliminar Accesos</DialogTitle>
         <DialogContent>
-          {selectedRole && (
-            <>
-              <div className="my-2">
-                {removeAccesos.map(acceso => (
-                  <Chip
-                    key={acceso.acceso_id}
-                    label={acceso.nombre}
-                    onDelete={() => handleToggleRemoveAcceso(acceso)}
-                    deleteIcon={<Close className="text-red-500" />}
-                    className="mr-1 mb-1 border-red-500 text-red-500"
-                    variant="outlined"
-                  />
-                ))}
-              </div>
-              <List>
-                {selectedRole.accesos.map(acceso => (
-                  <ListItem key={acceso.acceso_id} button onClick={() => handleToggleRemoveAcceso(acceso)}>
-                    <ListItemIcon>
-                      {acceso.nombre.includes("admin") ? <Shield /> : acceso.nombre.includes("key") ? <Build /> : <Assignment />}
-                    </ListItemIcon>
-                    <ListItemText primary={acceso.nombre} secondary={acceso.is_active ? "Habilitado" : "Deshabilitado"} />
-                  </ListItem>
-                ))}
-              </List>
-              {selectedRole.accesos.length === 0 && (
-                <Typography>No hay accesos para mostrar.</Typography>
-              )}
-            </>
-          )}
+          {selectedRole?.accesos.map((access, index) => (
+            <FormControlLabel
+              key={index}
+              control={
+                <Checkbox
+                  checked={removeAccesos.some(selected => selected.acceso_id === access.acceso_id)}
+                  onChange={(e) => {
+                    handleToggleRemoveAcceso(access);
+                  }}
+                />
+              }
+              label={access.nombre}
+            />
+          ))}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseRemoveAccessDialog} color="primary">
+          <Button onClick={() => setOpenRemoveAccessDialog(false)} color="primary">
             Cancelar
           </Button>
           <Button onClick={handleRemoveAccess} color="primary">
-            Guardar
+            Eliminar
           </Button>
         </DialogActions>
       </Dialog>
