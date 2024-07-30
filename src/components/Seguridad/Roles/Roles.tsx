@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import instance from "@/config/AxiosConfig";
+import { useRouter } from "next/navigation";
 import {
   TablePagination,
   IconButton,
@@ -26,7 +27,6 @@ import {
 import { Edit, Visibility, Assignment, Shield, Build, Add, Delete, Close, PowerSettingsNew } from "@mui/icons-material";
 import SearchIcon from '@mui/icons-material/Search';
 import "@/css/checkbox.css";
-import { useRouter } from "next/navigation";
 
 const TIMEOUT = 1000;
 
@@ -55,9 +55,9 @@ const Roles: React.FC = () => {
   const [openAddAccessDialog, setOpenAddAccessDialog] = useState(false);
   const [openRemoveAccessDialog, setOpenRemoveAccessDialog] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Rol | null>(null);
-  const [allAccess, setAllAccess] = useState<Acceso[]>([]);
-  const [accessToAdd, setAccessToAdd] = useState<number[]>([]);
-  const [accessToRemove, setAccessToRemove] = useState<number[]>([]);
+  const [accesos, setAccesos] = useState<Acceso[]>([]);
+  const [selectedAccesos, setSelectedAccesos] = useState<Acceso[]>([]);
+  const [removeAccesos, setRemoveAccesos] = useState<Acceso[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -78,10 +78,10 @@ const Roles: React.FC = () => {
     }
   };
 
-  const fetchAccess = async () => {
+  const fetchAccesos = async () => {
     try {
       const response = await instance.get('/security/v1/accesos/');
-      setAllAccess(response.data.accesos);
+      setAccesos(response.data.accesos);
     } catch (error) {
       console.error('Error fetching accesos', error);
     }
@@ -89,7 +89,7 @@ const Roles: React.FC = () => {
 
   useEffect(() => {
     fetchRoles();
-    fetchAccess();
+    fetchAccesos();
   }, []);
 
   const handleCambiarPagina = (event: any, newPage: any) => {
@@ -130,7 +130,7 @@ const Roles: React.FC = () => {
 
   const handleCloseAddAccessDialog = () => {
     setOpenAddAccessDialog(false);
-    setAccessToAdd([]);
+    setSelectedAccesos([]);
     setSearchTerm("");
   };
 
@@ -141,7 +141,7 @@ const Roles: React.FC = () => {
 
   const handleCloseRemoveAccessDialog = () => {
     setOpenRemoveAccessDialog(false);
-    setAccessToRemove([]);
+    setRemoveAccesos([]);
   };
 
   const handleSaveRole = async () => {
@@ -198,20 +198,12 @@ const Roles: React.FC = () => {
     if (selectedRole) {
       try {
         await instance.post(`/security/v1/roles/${selectedRole.rol_id}/accesos/`, {
-          acceso_ids: accessToAdd,
+          acceso_ids: selectedAccesos.map(acceso => acceso.acceso_id)
         });
-        const updatedAccess = [...selectedRole.accesos, ...allAccess.filter(access => accessToAdd.includes(access.acceso_id))];
-        setSelectedRole({ ...selectedRole, accesos: updatedAccess });
         fetchRoles();
         handleCloseAddAccessDialog();
-        setSnackbarSeverity("success");
-        setSnackbarMessage("Accesos añadidos exitosamente");
-        setSnackbarOpen(true);
       } catch (error) {
-        console.error('Error adding access to role', error);
-        setSnackbarSeverity("error");
-        setSnackbarMessage("Error al añadir accesos");
-        setSnackbarOpen(true);
+        console.error('Error adding access', error);
       }
     }
   };
@@ -220,20 +212,12 @@ const Roles: React.FC = () => {
     if (selectedRole) {
       try {
         await instance.delete(`/security/v1/roles/${selectedRole.rol_id}/accesos/`, {
-          data: { acceso_ids: accessToRemove },
+          data: { acceso_ids: removeAccesos.map(acceso => acceso.acceso_id) }
         });
-        const updatedAccess = selectedRole.accesos.filter(access => !accessToRemove.includes(access.acceso_id));
-        setSelectedRole({ ...selectedRole, accesos: updatedAccess });
         fetchRoles();
         handleCloseRemoveAccessDialog();
-        setSnackbarSeverity("success");
-        setSnackbarMessage("Accesos eliminados exitosamente");
-        setSnackbarOpen(true);
       } catch (error) {
-        console.error('Error removing access from role', error);
-        setSnackbarSeverity("error");
-        setSnackbarMessage("Error al eliminar accesos");
-        setSnackbarOpen(true);
+        console.error('Error removing access', error);
       }
     }
   };
@@ -242,32 +226,28 @@ const Roles: React.FC = () => {
     setSearchTerm(event.target.value);
   };
 
-  const filteredAccess = allAccess.filter(access =>
-    access.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredAccesos = accesos.filter(acceso =>
+    acceso.nombre.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleToggleAccess = (access: Acceso) => {
-    setAccessToAdd(prev => {
-      if (prev.includes(access.acceso_id)) {
-        return prev.filter(id => id !== access.acceso_id);
+  const handleToggleAcceso = (acceso: Acceso) => {
+    setSelectedAccesos(prev => {
+      if (prev.some(selected => selected.acceso_id === acceso.acceso_id)) {
+        return prev.filter(selected => selected.acceso_id !== acceso.acceso_id);
       } else {
-        return [...prev, access.acceso_id];
+        return [...prev, acceso];
       }
     });
   };
 
-  const handleToggleRemoveAccess = (access: Acceso) => {
-    setAccessToRemove(prev => {
-      if (prev.includes(access.acceso_id)) {
-        return prev.filter(id => id !== access.acceso_id);
+  const handleToggleRemoveAcceso = (acceso: Acceso) => {
+    setRemoveAccesos(prev => {
+      if (prev.some(selected => selected.acceso_id === acceso.acceso_id)) {
+        return prev.filter(selected => selected.acceso_id !== acceso.acceso_id);
       } else {
-        return [...prev, access.acceso_id];
+        return [...prev, acceso];
       }
     });
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbarOpen(false);
   };
 
   return (
@@ -277,7 +257,7 @@ const Roles: React.FC = () => {
       )}
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
         <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
-          Lista de roles
+          Lista de roles 
         </h4>
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
@@ -496,17 +476,6 @@ const Roles: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%', alignItems: 'center' }}>
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
     </div>
   );
 };
