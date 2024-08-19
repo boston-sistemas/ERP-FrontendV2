@@ -1,10 +1,10 @@
-import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import RevisionStock from "@/components/Operaciones/RevisionStock/RevisionStock";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+﻿import Breadcrumb from "@/common/components/Breadcrumb/Breadcrumb";
+import RevisionStock from "../components/RevisionStock";
+import DefaultLayout from "@/common/components/Layouts/DefaultLayout";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Revision de Stock ERP",
+  title: "Revisión de Stock ERP",
 };
 
 const TablesPage = () => {
