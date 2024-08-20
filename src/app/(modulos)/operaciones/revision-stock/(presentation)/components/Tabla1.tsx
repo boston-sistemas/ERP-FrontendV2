@@ -7,7 +7,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
 import TablaExpandida from "./TablaExpandida";
-import { Orden } from "../../use-cases/processOrderData";
+import { Orden } from "../../models/orderModel";
 import { MAX_HEIGHT, minWidths1, TIMEOUTFETCH } from "@/components/Parametros/Parametros";
 import "@/css/checkbox.css";
 
@@ -72,6 +72,7 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
     setFilasExpandidas(newFilasExpandidas);
   };
 
+  //puente para handleCerrarOrden
   const handleCerrarOrdenAction = () => {
     handleCerrarOrden(data, filasSeleccionadas, fetchData, TIMEOUTFETCH, setMensajeError, setMensajeExito, setEnviando);
   };

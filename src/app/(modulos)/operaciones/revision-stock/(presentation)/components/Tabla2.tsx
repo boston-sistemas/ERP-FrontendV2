@@ -7,7 +7,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
 import TablaExpandida from "./TablaExpandida";
-import { Orden } from "../../use-cases/processOrderData";
+import { Orden } from "../../models/orderModel";
 import { MAX_HEIGHT, minWidths2 } from "@/components/Parametros/Parametros";
 import "@/css/checkbox.css";
 

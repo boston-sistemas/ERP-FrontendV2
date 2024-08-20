@@ -7,3 +7,4 @@ export const fetchOrdersData = () => {
 export const closeOrdersRequest = (ordenesSeleccionadas: any[]) => {
     return instance.put('/operations/v1/revision-stock/ordenes', { ordenes: ordenesSeleccionadas });
 };
+

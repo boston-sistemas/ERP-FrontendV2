@@ -1,4 +1,4 @@
-﻿import { fetchOrdersData } from "../services/orderService";
+﻿import { fetchOrdersData } from "../services/revisionStockService";
 export async function fetchOrders() {
     try {
         const response = await fetchOrdersData();

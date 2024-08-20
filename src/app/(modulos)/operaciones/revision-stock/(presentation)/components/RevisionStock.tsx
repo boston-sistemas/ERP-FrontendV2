@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { fetchOrders } from "../../use-cases/fetchOrders";
-import { Orden, processOrderData } from "../../use-cases/processOrderData";
+import { processOrderData } from "../../use-cases/processOrderData";
+import { Orden } from "../../models/orderModel";
 import Tabla1 from "./Tabla1";
 import Tabla2 from "./Tabla2";
 import { TIMEOUT } from "@/components/Parametros/Parametros";

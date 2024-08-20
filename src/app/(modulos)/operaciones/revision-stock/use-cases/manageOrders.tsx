@@ -1,4 +1,4 @@
-﻿import { closeOrdersRequest } from "../services/orderService";
+﻿import { closeOrdersRequest } from "../services/revisionStockService";
 
 export const handleSelectAll = (selectAll: boolean, data: any[]) => {
     const newSelectAll = !selectAll;
