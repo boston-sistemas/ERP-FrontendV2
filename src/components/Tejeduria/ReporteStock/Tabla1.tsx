@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import instance from "@/config/AxiosConfig";
+import instance from "@/infrastructure/config/AxiosConfig";
 import { TablePagination, LinearProgress, Menu, MenuItem } from "@mui/material";
 import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
 import { Suborden } from "./ReporteStock";

@@ -1,14 +1,13 @@
-"use client"
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
-import instance from "@/infrastructure/config/AxiosConfig";
-import { IconButton, Collapse } from "@mui/material";
-import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
-import TablaExpandida from "./TablaExpandida";
+import { handleSelectAll, handleCerrarOrden, handleSelectFila, handleExpandirFila } from "../../use-cases/manageOrders";
+import { IconButton, Collapse, TablePagination, LinearProgress } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { Orden } from "./RevisionStock";
-import { TablePagination, LinearProgress } from '@mui/material';
+import { ColorDeEstadoOrden } from "@/components/Parametros/ColorDeEstadoOrden";
+import TablaExpandida from "./TablaExpandida";
+import { Orden } from "../../models/orderModel";
 import { MAX_HEIGHT, minWidths1, TIMEOUTFETCH } from "@/components/Parametros/Parametros";
 import "@/css/checkbox.css";
 
@@ -56,65 +55,35 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
     }
   }, [mensajeError, mensajeExito]);
 
-  const handleSelectAll = () => {
-    const newSelectAll = !selectAll;
+  const handleSelectAllAction = () => {
+    const { newSelectAll, newFilasSeleccionadas } = handleSelectAll(selectAll, data);
     setSelectAll(newSelectAll);
-    setFilasSeleccionadas(new Array(data.length).fill(newSelectAll));
+    setFilasSeleccionadas(newFilasSeleccionadas);
   };
 
-  const handleSelectFila = (index: number) => {
-    const newfilasSeleccionadas = [...filasSeleccionadas];
-    newfilasSeleccionadas[index] = !newfilasSeleccionadas[index];
+  const handleSelectFilaAction = (index: number) => {
+    const newfilasSeleccionadas = handleSelectFila(index, filasSeleccionadas);
     setFilasSeleccionadas(newfilasSeleccionadas);
     setSelectAll(newfilasSeleccionadas.every(row => row));
   };
 
-  const handleExpandirFila= (index: number) => {
-    if (filasExpandidas.includes(index)) {
-      setFilasExpandidas(filasExpandidas.filter(rowIndex => rowIndex !== index));
-    } else {
-      setFilasExpandidas([...filasExpandidas, index]);
-    }
+  const handleExpandirFilaAction = (index: number) => {
+    const newFilasExpandidas = handleExpandirFila(index, filasExpandidas);
+    setFilasExpandidas(newFilasExpandidas);
+  };
+
+  //puente para handleCerrarOrden
+  const handleCerrarOrdenAction = () => {
+    handleCerrarOrden(data, filasSeleccionadas, fetchData, TIMEOUTFETCH, setMensajeError, setMensajeExito, setEnviando);
   };
 
   const handleCambiarPagina = (event: any, newPage: any) => {
     setPagina(newPage);
   };
-  
+
   const handleCambiarFilasPorPagina = (event: any) => {
     setFilasPorPagina(parseInt(event.target.value, 10));
-    setPagina(0); 
-  };
-
-  const handleCerrarOrden = async () => {
-    setEnviando(true);
-
-    const ordenesSeleccionadas = data.filter((_, index) => filasSeleccionadas[index]).map((item) => ({
-      orden_servicio_tejeduria_id: item.orden,
-      estado: "CERRADO",
-    }));
-
-    if (ordenesSeleccionadas.length === 0) {
-      setMensajeError("Ninguna orden seleccionada. Por favor, seleccione las órdenes que desea cerrar.");
-      setTimeout(() => setEnviando(false), TIMEOUTFETCH);
-      return;
-    }
-
-    const detallesOrden = ordenesSeleccionadas.map((orden) => `OS: ${orden.orden_servicio_tejeduria_id}`).join(", ");
-
-    setMensajeError(null); // Resetear mensaje de error si todo está correcto
-
-    try {
-      await instance.put('/operations/v1/revision-stock/ordenes', { ordenes: ordenesSeleccionadas });
-      setMensajeExito(detallesOrden);
-      setFilasSeleccionadas(new Array(data.length).fill(false)); // Resetear selección
-      setSelectAll(false); // Deseleccionar todo
-      fetchData(); // Actualizar datos
-    } catch (error) {
-      setMensajeError(`Error cerrando las órdenes. Conflictos: ${detallesOrden}`);
-    }
-
-    setTimeout(() => setEnviando(false), TIMEOUTFETCH);
+    setPagina(0);
   };
 
   return (
@@ -132,7 +101,7 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
                     type="checkbox"
                     className="checkbox-large"
                     checked={selectAll}
-                    onChange={handleSelectAll}
+                    onChange={handleSelectAllAction}
                   />
                 </th>
                 <th className="px-4 py-4 font-normal text-white dark:text-white"></th>
@@ -160,95 +129,95 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
                 data
                   .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
                   .map((data, index) => (
-                  <React.Fragment key={index}>
-                    <tr className={`${filasSeleccionadas[index] ? "bg-blue-100 dark:bg-blue-900" : ""} text-center`}>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <input
-                          type="checkbox"
-                          className="checkbox-large"
-                          checked={filasSeleccionadas[index]}
-                          onChange={() => handleSelectFila(index)}
-                        />
-                      </td>
-                      <td className="border-b border-[#eee] px-8 py-5 dark:border-strokedark">
-                        <IconButton 
-                          onClick={() => handleExpandirFila(index)} 
-                          className="text-inherit dark:text-white w-10"
-                        >
-                          {filasExpandidas.includes(index) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                        </IconButton>
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="font-normal text-black dark:text-white">{data.orden}</p>
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="font-normal text-black dark:text-white">{data.fecha}</p>
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="font-normal text-black dark:text-white">{data.tejeduria}</p>
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="font-normal text-black dark:text-white">{data.programado} kg</p>
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="font-normal text-black dark:text-white">{data.consumido} kg</p>
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="font-normal text-black dark:text-white">{data.restante} kg</p>
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="font-normal text-black dark:text-white">{data.merma}</p>
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <div className="flex flex-col items-center">
-                          <span className="text-sm font-medium text-blue-700 dark:text-blue-500">
-                            {data.progreso}
-                          </span>
-                          <LinearProgress
-                            variant="determinate"
-                            value={parseInt(data.progreso.replace("%", ""), 10)}
-                            style={{ width: "100%" }}
+                    <React.Fragment key={index}>
+                      <tr className={`${filasSeleccionadas[index] ? "bg-blue-100 dark:bg-blue-900" : ""} text-center`}>
+                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                          <input
+                            type="checkbox"
+                            className="checkbox-large"
+                            checked={filasSeleccionadas[index]}
+                            onChange={() => handleSelectFilaAction(index)}
                           />
-                        </div>
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p
-                          className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(
-                            data.estado
-                          )}`}
-                        >
-                          {data.estado}
-                        </p>
-                      </td>
-                    </tr>
-                    <tr className="bg-gray-100 dark:bg-gray-700">
-                      <td colSpan={columns.length + 2} className="p-0">
-                        <Collapse in={filasExpandidas.includes(index)} timeout="auto" unmountOnExit>
-                          <TablaExpandida data={data.expandida} />
-                        </Collapse>
-                      </td>
-                    </tr>
-                  </React.Fragment>
-                ))
+                        </td>
+                        <td className="border-b border-[#eee] px-8 py-5 dark:border-strokedark">
+                          <IconButton
+                            onClick={() => handleExpandirFilaAction(index)}
+                            className="text-inherit dark:text-white w-10"
+                          >
+                            {filasExpandidas.includes(index) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                          </IconButton>
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                          <p className="font-normal text-black dark:text-white">{data.orden}</p>
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                          <p className="font-normal text-black dark:text-white">{data.fecha}</p>
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                          <p className="font-normal text-black dark:text-white">{data.tejeduria}</p>
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                          <p className="font-normal text-black dark:text-white">{data.programado} kg</p>
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                          <p className="font-normal text-black dark:text-white">{data.consumido} kg</p>
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                          <p className="font-normal text-black dark:text-white">{data.restante} kg</p>
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                          <p className="font-normal text-black dark:text-white">{data.merma}</p>
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                          <div className="flex flex-col items-center">
+                            <span className="text-sm font-medium text-blue-700 dark:text-blue-500">
+                              {data.progreso}
+                            </span>
+                            <LinearProgress
+                              variant="determinate"
+                              value={parseInt(data.progreso.replace("%", ""), 10)}
+                              style={{ width: "100%" }}
+                            />
+                          </div>
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                          <p
+                            className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${ColorDeEstadoOrden(
+                              data.estado
+                            )}`}
+                          >
+                            {data.estado}
+                          </p>
+                        </td>
+                      </tr>
+                      <tr className="bg-gray-100 dark:bg-gray-700">
+                        <td colSpan={columns.length + 2} className="p-0">
+                          <Collapse in={filasExpandidas.includes(index)} timeout="auto" unmountOnExit>
+                            <TablaExpandida data={data.expandida} />
+                          </Collapse>
+                        </td>
+                      </tr>
+                    </React.Fragment>
+                  ))
               )}
             </tbody>
           </table>
         </div>
         <TablePagination
-        rowsPerPageOptions={[10, 25, 50]}
-        component="div"
-        count={data.length}
-        rowsPerPage={filasPorPagina}
-        page={pagina}
-        onPageChange={handleCambiarPagina}
-        onRowsPerPageChange={handleCambiarFilasPorPagina}
-        labelRowsPerPage="Filas por página:"
-        labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
-        sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : 'inherit'}}
+          rowsPerPageOptions={[10, 25, 50]}
+          component="div"
+          count={data.length}
+          rowsPerPage={filasPorPagina}
+          page={pagina}
+          onPageChange={handleCambiarPagina}
+          onRowsPerPageChange={handleCambiarFilasPorPagina}
+          labelRowsPerPage="Filas por página:"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
+          sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : 'inherit' }}
         />
       </div>
       <button
-        onClick={handleCerrarOrden}
+        onClick={handleCerrarOrdenAction}
         className={`mt-4 w-full border border-gray-300 px-5 py-3 text-white transition ${enviando ? 'bg-blue-600' : 'bg-blue-800 hover:bg-blue-700'} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 dark:bg-blue-500 dark:hover:bg-blue-400`}
         disabled={enviando}
       >
@@ -275,7 +244,7 @@ const Tabla1: React.FC<Tabla1Props> = ({ data, loading, fetchData }) => {
               {mensajeError.includes("Ninguna orden seleccionada") ? "Ninguna orden seleccionada" : "Error cerrando las órdenes"}
             </h5>
             <p className="leading-relaxed text-[#D0915C]">
-              {mensajeError.includes("Ninguna orden seleccionada") 
+              {mensajeError.includes("Ninguna orden seleccionada")
                 ? "Por favor, seleccione las órdenes que desea cerrar."
                 : `Conflictos: ${mensajeError.split('Conflictos: ')[1]}`}
             </p>

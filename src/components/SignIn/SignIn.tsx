@@ -13,7 +13,7 @@ import FacebookIcon from '@mui/icons-material/Facebook';
 import LanguageIcon from '@mui/icons-material/Language';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
-import instance from '@/config/AxiosConfig';
+import instance from '@/infrastructure/config/AxiosConfig';
 import ReCAPTCHA from "react-google-recaptcha";
 import axios from 'axios';
 

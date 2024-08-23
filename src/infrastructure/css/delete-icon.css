@@ -1,0 +1,12 @@
+﻿.delete-icon {
+    position: absolute;
+    right: 10px; /* Ajusta según sea necesario */
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d; /* Color gris */
+  }
+  
+  .delete-icon:hover {
+    color: #495057; /* Color gris más oscuro en hover */
+  }
+  

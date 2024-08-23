@@ -4,7 +4,7 @@ import ChartOne from "./Charts/ChartOne";
 import ChartThree from "./Charts/ChartThree";
 import ChartTwo from "./Charts/ChartTwo";
 import CardDataStats from "./CardDataStats";
-import instance from "@/config/AxiosConfig";
+import instance from "@/infrastructure/config/AxiosConfig";
 
 interface Orden {
   orden_servicio_tejeduria_id: string;

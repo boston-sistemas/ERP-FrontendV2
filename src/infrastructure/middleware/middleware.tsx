@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtDecode } from 'jwt-decode';
-import instance from '@/config/AxiosConfig';
+import instance from '@/infrastructure/config/AxiosConfig';
 
 interface SystemModule {
   nombre: string;
@@ -99,8 +99,8 @@ export const config = {
     '/operaciones/programacion-tintoreria/',
     '/tejeduria/reporte-stock/',
     '/seguridad/usuarios/',
-    '/seguridad/usuarios/crear-usuario/',
+    //'/seguridad/usuarios/crear-usuario/',
     '/seguridad/roles/',
-    '/seguridad/roles/crear-rol/'
+    //'/seguridad/roles/crear-rol/'
   ],
 };

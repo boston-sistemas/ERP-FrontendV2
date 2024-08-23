@@ -6,7 +6,7 @@ import Image from 'next/image';
 import TextField from '@mui/material/TextField';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
-import instance from '@/config/AxiosConfig';
+import instance from '@/infrastructure/config/AxiosConfig';
 import { IconButton } from '@mui/material';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import FacebookIcon from '@mui/icons-material/Facebook';

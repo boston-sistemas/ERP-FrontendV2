@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import instance from "@/config/AxiosConfig";
+import instance from "@/infrastructure/config/AxiosConfig";
 import Tabla1 from "./Tabla1";
 import { TIMEOUT } from "@/components/Parametros/Parametros";
 

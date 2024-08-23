@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import instance from "@/config/AxiosConfig";
+import instance from "@/infrastructure/config/AxiosConfig";
 import { TIMEOUT } from "@/components/Parametros/Parametros";
 import { Select, MenuItem, Card, CardContent, Typography, IconButton, Collapse, TablePagination, Snackbar, Alert, AlertColor } from "@mui/material";
 import { TbTruckDelivery } from "react-icons/tb";
