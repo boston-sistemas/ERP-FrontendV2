@@ -1,5 +1,5 @@
-import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import CrearRol from "@/components/Seguridad/Roles/CrearRol/CrearRol";
+﻿import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
+import CrearRol from "../components/crearRol";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { Metadata } from "next"; 
 
@@ -7,16 +7,15 @@ export const metadata: Metadata = {
   title: "Crear Rol",
 };
 
-
-const TablesPage = () => {
+const CrearRolPage = () => {
   return (
     <DefaultLayout>
       <Breadcrumb pageName="Crear Rol" />
       <div className="flex flex-col gap-10">
-        <CrearRol/>
+        <CrearRol />
       </div>
     </DefaultLayout>
   );
 };
 
-export default TablesPage;
+export default CrearRolPage;

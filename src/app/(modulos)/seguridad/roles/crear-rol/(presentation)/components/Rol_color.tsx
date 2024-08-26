@@ -1,4 +1,4 @@
-const ROL_COLORES = [
+﻿const ROL_COLORES = [
     { nombre: "Gris", valor: "rgb(201, 198, 197)" },
     { nombre: "Rojo", valor: "rgb(240, 66, 66)" },
     { nombre: "Naranja", valor: "rgb(240, 124, 66)" },
@@ -7,4 +7,3 @@ const ROL_COLORES = [
   ];
   
   export default ROL_COLORES;
-  

@@ -1,5 +1,5 @@
-import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import Roles from "@/components/Seguridad/Roles/Roles";
+﻿import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
+import Roles from "../components/Roles";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { Metadata } from "next"; 
 

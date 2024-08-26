@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import instance from "@/infrastructure/config/AxiosConfig";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 import { TablePagination } from "@mui/material";
-import { FaUserShield } from 'react-icons/fa';
-import ROL_COLORES from "./Rol_Color";
+import { FaUserShield } from "react-icons/fa";
+import ROL_COLORES from "./Rol_color";
 import { TIMEOUT } from "@/components/Parametros/Parametros";
 
 interface Acceso {
@@ -28,17 +28,18 @@ const CrearRol: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
-  const filteredAccesos = accesos.filter(acceso =>
+  const filteredAccesos = accesos.filter((acceso) =>
     acceso.nombre.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   useEffect(() => {
     if (step === 2) {
-      instance.get("/security/v1/accesos/")
-        .then(response => {
+      instance
+        .get("/security/v1/accesos/")
+        .then((response) => {
           setAccesos(response.data.accesos);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error("Error fetching accesos:", error);
         });
     }
@@ -50,9 +51,9 @@ const CrearRol: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors = { 
-      nombre: !nombre, 
-      accesos: step === 2 && selectedAccesos.length === 0 
+    const newErrors = {
+      nombre: !nombre,
+      accesos: step === 2 && selectedAccesos.length === 0,
     };
     setErrors(newErrors);
 
@@ -64,15 +65,15 @@ const CrearRol: React.FC = () => {
       } else {
         setIsSubmitting(true);
         try {
-          await instance.post('/security/v1/roles/', {
+          await instance.post("/security/v1/roles/", {
             nombre,
             is_active: true,
             rol_color: color,
-            acceso_ids: selectedAccesos
+            acceso_ids: selectedAccesos,
           });
           setTimeout(() => {
             setIsSubmitting(false);
-            router.push('/seguridad/roles');
+            router.push("/seguridad/roles");
           }, TIMEOUT);
         } catch (error) {
           console.error("Error creating rol:", error);
@@ -89,19 +90,19 @@ const CrearRol: React.FC = () => {
   };
 
   const handleAccesoSelection = (acceso_id: number) => {
-    setSelectedAccesos(prevSelectedAccesos =>
+    setSelectedAccesos((prevSelectedAccesos) =>
       prevSelectedAccesos.includes(acceso_id)
-        ? prevSelectedAccesos.filter(id => id !== acceso_id)
+        ? prevSelectedAccesos.filter((id) => id !== acceso_id)
         : [...prevSelectedAccesos, acceso_id]
     );
-    setErrors(prev => ({ ...prev, accesos: false }));  // Clear acceso selection error when a acceso is selected
+    setErrors((prev) => ({ ...prev, accesos: false }));
   };
 
   const handleSelectAll = () => {
     if (selectAll) {
       setSelectedAccesos([]);
     } else {
-      setSelectedAccesos(filteredAccesos.map(acceso => acceso.acceso_id));
+      setSelectedAccesos(filteredAccesos.map((acceso) => acceso.acceso_id));
     }
     setSelectAll(!selectAll);
   };
@@ -115,15 +116,23 @@ const CrearRol: React.FC = () => {
     setPage(0);
   };
 
-  const selectedAccesoNames = accesos.filter(acceso => selectedAccesos.includes(acceso.acceso_id)).map(acceso => acceso.nombre);
+  const selectedAccesoNames = accesos
+    .filter((acceso) => selectedAccesos.includes(acceso.acceso_id))
+    .map((acceso) => acceso.nombre);
 
   return (
     <div className="flex flex-col lg:flex-row bg-gray-100 dark:bg-gray-900 min-h-screen">
       <div className="w-full lg:w-1/4 bg-white dark:bg-boxdark shadow-md p-4 lg:sticky lg:top-0 h-full lg:h-32">
         <ul className="space-y-2">
-          <li className={`font-medium ${step === 1 ? "text-blue-700" : "text-gray-500"}`}>Paso 1: Detalles del rol</li>
-          <li className={`font-medium ${step === 2 ? "text-blue-700" : "text-gray-500"}`}>Paso 2: Asignar Accesos</li>
-          <li className={`font-medium ${step === 3 ? "text-blue-700" : "text-gray-500"}`}>Paso 3: Revisar y crear</li>
+          <li className={`font-medium ${step === 1 ? "text-blue-700" : "text-gray-500"}`}>
+            Paso 1: Detalles del rol
+          </li>
+          <li className={`font-medium ${step === 2 ? "text-blue-700" : "text-gray-500"}`}>
+            Paso 2: Asignar Accesos
+          </li>
+          <li className={`font-medium ${step === 3 ? "text-blue-700" : "text-gray-500"}`}>
+            Paso 3: Revisar y crear
+          </li>
         </ul>
       </div>
       <div className="flex-1 flex flex-col items-center">
@@ -145,7 +154,7 @@ const CrearRol: React.FC = () => {
                         value={nombre}
                         onChange={(e) => {
                           setNombre(e.target.value);
-                          setErrors(prev => ({ ...prev, nombre: false }));
+                          setErrors((prev) => ({ ...prev, nombre: false }));
                         }}
                         className={`w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black dark:text-white outline-none transition focus:border-blue-800 active:border-blue-800 dark:border-form-strokedark dark:bg-form-input dark:focus:border-blue-800 ${errors.nombre ? "border-red-500" : ""}`}
                       />
@@ -160,12 +169,15 @@ const CrearRol: React.FC = () => {
                       </div>
                       <div className="relative">
                         <div className="flex flex-wrap">
-                          {ROL_COLORES.map((colorItem: { valor: any; }, index: React.Key | null | undefined) => (
+                          {ROL_COLORES.map((colorItem, index) => (
                             <div
                               key={index}
                               onClick={() => setColor(colorItem.valor)}
                               className="w-8 h-8 rounded-full m-1 cursor-pointer"
-                              style={{ backgroundColor: colorItem.valor, border: color === colorItem.valor ? '2px solid #000' : 'none' }}
+                              style={{
+                                backgroundColor: colorItem.valor,
+                                border: color === colorItem.valor ? "2px solid #000" : "none",
+                              }}
                             ></div>
                           ))}
                         </div>
@@ -204,7 +216,7 @@ const CrearRol: React.FC = () => {
                       className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black dark:text-white outline-none transition focus:border-blue-800 active:border-blue-800 dark:border-form-strokedark dark:bg-form-input dark:focus:border-blue-800"
                     />
                   </div>
-                  <div className="max-w-full overflow-x-auto" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                  <div className="max-w-full overflow-x-auto" style={{ maxHeight: "500px", overflowY: "auto" }}>
                     <table className="w-full table-auto">
                       <thead>
                         <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
@@ -217,18 +229,25 @@ const CrearRol: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white dark:bg-transparent">
-                        {filteredAccesos.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((acceso: Acceso) => (
-                          <tr key={acceso.acceso_id} className="hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                            <td className="px-4 py-4 text-black border-b border-[#eee] dark:text-white dark:border-strokedark">
-                              <input
-                                type="checkbox"
-                                checked={selectedAccesos.includes(acceso.acceso_id)}
-                                onChange={() => handleAccesoSelection(acceso.acceso_id)}
-                              />
-                            </td>
-                            <td className="text-center px-4 py-4 text-black border-b border-[#eee] dark:text-white dark:border-strokedark">{acceso.nombre}</td>
-                          </tr>
-                        ))}
+                        {filteredAccesos
+                          .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                          .map((acceso: Acceso) => (
+                            <tr
+                              key={acceso.acceso_id}
+                              className="hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                            >
+                              <td className="px-4 py-4 text-black border-b border-[#eee] dark:text-white dark:border-strokedark">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedAccesos.includes(acceso.acceso_id)}
+                                  onChange={() => handleAccesoSelection(acceso.acceso_id)}
+                                />
+                              </td>
+                              <td className="text-center px-4 py-4 text-black border-b border-[#eee] dark:text-white dark:border-strokedark">
+                                {acceso.nombre}
+                              </td>
+                            </tr>
+                          ))}
                       </tbody>
                     </table>
                   </div>
@@ -243,7 +262,7 @@ const CrearRol: React.FC = () => {
                     onRowsPerPageChange={handleRowsPerPageChange}
                     labelRowsPerPage="Filas por página:"
                     labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-                    sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : 'inherit' }}
+                    sx={{ color: (theme) => (theme.palette.mode === "dark" ? "#ffffff" : "inherit") }}
                   />
                   <div className="flex justify-between mt-4">
                     <button
@@ -269,21 +288,27 @@ const CrearRol: React.FC = () => {
                     <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md overflow-x-auto">
                       <div className="flex items-center">
                         <FaUserShield className="text-blue-800 dark:text-white mr-3" />
-                        <p className="text-black dark:text-white"><strong>Nombre del rol:</strong></p>
+                        <p className="text-black dark:text-white">
+                          <strong>Nombre del rol:</strong>
+                        </p>
                       </div>
                       <p className="text-black dark:text-white">{nombre}</p>
                     </div>
                     <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md overflow-x-auto">
                       <div className="flex items-center">
                         <FaUserShield className="text-blue-800 dark:text-white mr-3" />
-                        <p className="text-black dark:text-white"><strong>Color del rol:</strong></p>
+                        <p className="text-black dark:text-white">
+                          <strong>Color del rol:</strong>
+                        </p>
                       </div>
                       <div className="w-8 h-8 rounded-full" style={{ backgroundColor: color }}></div>
                     </div>
                     <div className="bg-gray-100 dark:bg-gray-800 p-5 rounded-md shadow-md col-span-1 sm:col-span-2 overflow-x-auto">
                       <div className="flex items-center">
                         <FaUserShield className="text-blue-800 dark:text-white mr-3" />
-                        <p className="text-black dark:text-white"><strong>Accesos Seleccionados:</strong></p>
+                        <p className="text-black dark:text-white">
+                          <strong>Accesos Seleccionados:</strong>
+                        </p>
                       </div>
                       <ul className="list-disc list-inside text-black dark:text-white ml-6">
                         {selectedAccesoNames.map((acceso, index) => (
@@ -305,7 +330,7 @@ const CrearRol: React.FC = () => {
                       className="w-30 bg-blue-800 px-5 py-3 text-white hover:bg-blue-600"
                       disabled={isSubmitting}
                     >
-                      Crear
+                      {isSubmitting ? "Creando..." : "Crear"}
                     </button>
                   </div>
                   {isSubmitting && <p className="text-black dark:text-white mt-2">Creando rol...</p>}
