@@ -1,6 +1,6 @@
-import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import Usuarios from "@/components/Seguridad/Usuarios/Usuarios";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+﻿import Breadcrumb from "@/common/components/Breadcrumb/Breadcrumb";
+import Usuarios from "@/app/(modulos)/seguridad/usuarios/(presentation)/components/Usuarios";
+import DefaultLayout from "@/common/components/Layouts/DefaultLayout";
 import { Metadata } from "next"; 
 
 export const metadata: Metadata = {

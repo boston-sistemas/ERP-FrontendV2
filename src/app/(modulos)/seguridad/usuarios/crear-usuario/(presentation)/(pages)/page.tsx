@@ -1,5 +1,5 @@
-import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import CrearUsuario from "@/components/Seguridad/Usuarios/CrearUsuario/CrearUsuario";
+﻿import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
+import CrearUsuario from "../components/CrearUsuario";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { Metadata } from "next"; 
 

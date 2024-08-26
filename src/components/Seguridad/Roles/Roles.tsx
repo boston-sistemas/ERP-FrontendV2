@@ -30,6 +30,8 @@ import "@/css/checkbox.css";
 
 const TIMEOUT = 1000;
 
+//models
+
 interface Acceso {
   acceso_id: number;
   nombre: string;
@@ -43,6 +45,7 @@ interface Rol {
   rol_color: string;
   accesos: Acceso[];
 }
+//
 
 const Roles: React.FC = () => {
   const [roles, setRoles] = useState<Rol[]>([]);
@@ -65,6 +68,8 @@ const Roles: React.FC = () => {
   const [openDeleteConfirmation, setOpenDeleteConfirmation] = useState(false);
   const router = useRouter();
 
+  //services
+
   const fetchRoles = async () => {
     try {
       setLoading(true);
@@ -86,7 +91,7 @@ const Roles: React.FC = () => {
       console.error('Error fetching accesos', error);
     }
   };
-
+//
   useEffect(() => {
     fetchRoles();
     fetchAccesos();
@@ -101,6 +106,7 @@ const Roles: React.FC = () => {
     setPagina(0);
   };
 
+//use-cases
   const handleCrearRol = () => {
     router.push('/seguridad/roles/crear-rol');
   };

@@ -1,8 +1,8 @@
+﻿// components/Usuarios.tsx
+
 "use client";
 
 import React, { useState, useEffect } from "react";
-import instance from "@/infrastructure/config/AxiosConfig";
-import Image from "next/image";
 import {
   TablePagination,
   IconButton,
@@ -18,28 +18,21 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
+import Image from "next/image";
 import { Edit, Add, Delete, PowerSettingsNew } from "@mui/icons-material";
-import "@/css/checkbox.css";
 import { useRouter } from "next/navigation";
+import { Usuario, Rol } from "../../models/usuario";
+import { 
+  handleFetchUsuarios, 
+  handleFetchRoles, 
+  handleUpdateUser, 
+  handleToggleUserStatus, 
+  handleResetPassword, 
+  handleAddRolesToUser, 
+  handleRemoveRolesFromUser 
+} from "@/app/(modulos)/seguridad/usuarios/use-cases/usuario";
 
 const TIMEOUT = 1000;
-
-interface Rol {
-  rol_id: number;
-  nombre: string;
-  is_active: boolean;
-  rol_color: string;
-}
-
-interface Usuario {
-  usuario_id: number;
-  username: string;
-  email: string;
-  display_name: string;
-  is_active: boolean;
-  blocked_until: string | null;
-  roles: Rol[];
-}
 
 const Usuarios: React.FC = () => {
   const router = useRouter();
@@ -60,31 +53,9 @@ const Usuarios: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
-  const fetchUsuarios = async () => {
-    try {
-      setLoading(true);
-      const response = await instance.get('/security/v1/usuarios/');
-      setUsuarios(response.data.usuarios);
-    } catch (error) {
-      console.error('Error fetching users', error);
-      setError('Error fetching users');
-    } finally {
-      setTimeout(() => setLoading(false), TIMEOUT);
-    }
-  };
-
-  const fetchRoles = async () => {
-    try {
-      const response = await instance.get('/security/v1/roles/');
-      setAllRoles(response.data.roles);
-    } catch (error) {
-      console.error('Error fetching roles', error);
-    }
-  };
-
   useEffect(() => {
-    fetchUsuarios();
-    fetchRoles();
+    handleFetchUsuarios(setUsuarios, setLoading, setError);
+    handleFetchRoles(setAllRoles, setError);
   }, []);
 
   const handleCambiarPagina = (event: any, newPage: any) => {
@@ -97,8 +68,6 @@ const Usuarios: React.FC = () => {
   };
 
   const handleEditUser = (usuario: Usuario) => {
-    setSelectedUser(null);
-    setOriginalUser(null);
     setSelectedUser(usuario);
     setOriginalUser({ ...usuario });
     setOpenEditDialog(true);
@@ -109,21 +78,8 @@ const Usuarios: React.FC = () => {
   };
 
   const handleSaveUser = async () => {
-    if (selectedUser) {
-      try {
-        const updatedUser: Partial<Usuario> = {};
-        if (selectedUser.username !== originalUser?.username) updatedUser.username = selectedUser.username;
-        if (selectedUser.email !== originalUser?.email) updatedUser.email = selectedUser.email;
-        if (selectedUser.display_name !== originalUser?.display_name) updatedUser.display_name = selectedUser.display_name;
-
-        if (Object.keys(updatedUser).length > 0) {
-          await instance.patch(`/security/v1/usuarios/${selectedUser.usuario_id}`, updatedUser);
-        }
-        fetchUsuarios();
-        handleCloseEditDialog();
-      } catch (error) {
-        console.error('Error updating user', error);
-      }
+    if (selectedUser && originalUser) {
+      await handleUpdateUser(selectedUser, originalUser, setUsuarios, () => handleFetchUsuarios(setUsuarios, setLoading, setError), handleCloseEditDialog);
     }
   };
 
@@ -137,66 +93,31 @@ const Usuarios: React.FC = () => {
     setOpenRemoveRoleDialog(true);
   };
 
-  const handleAddRolesToUser = async () => {
+  const handleAddRolesToUserWrapper = async () => {
     if (selectedUser) {
-      try {
-        await instance.post(`/security/v1/usuarios/${selectedUser.usuario_id}/roles/`, {
-          rol_ids: rolesToAdd,
-        });
-        const updatedRoles = [...selectedUser.roles, ...allRoles.filter(role => rolesToAdd.includes(role.rol_id))];
-        setSelectedUser({ ...selectedUser, roles: updatedRoles });
-        setOpenAddRoleDialog(false);
-      } catch (error) {
-        console.error('Error adding roles to user', error);
-      }
+      await handleAddRolesToUser(selectedUser, rolesToAdd, setSelectedUser, setOpenAddRoleDialog, allRoles);
     }
   };
 
-  const handleRemoveRolesFromUser = async () => {
+  const handleRemoveRolesFromUserWrapper = async () => {
     if (selectedUser) {
-      try {
-        await instance.delete(`/security/v1/usuarios/${selectedUser.usuario_id}/roles/`, {
-          data: { rol_ids: rolesToRemove },
-        });
-        const updatedRoles = selectedUser.roles.filter(role => !rolesToRemove.includes(role.rol_id));
-        setSelectedUser({ ...selectedUser, roles: updatedRoles });
-        setOpenRemoveRoleDialog(false);
-      } catch (error) {
-        console.error('Error removing roles from user', error);
-      }
+      await handleRemoveRolesFromUser(selectedUser, rolesToRemove, setSelectedUser, setOpenRemoveRoleDialog);
     }
   };
 
-  const handleToggleUserStatus = async (usuario: Usuario) => {
-    try {
-      await instance.patch(`/security/v1/usuarios/${usuario.usuario_id}`, {
-        is_active: !usuario.is_active
-      });
-      fetchUsuarios();
-    } catch (error) {
-      console.error('Error toggling user status', error);
+  const handleToggleUserStatusWrapper = async (usuario: Usuario) => {
+    await handleToggleUserStatus(usuario, () => handleFetchUsuarios(setUsuarios, setLoading, setError));
+  };
+
+  const handleResetPasswordWrapper = async () => {
+    if (selectedUser) {
+      await handleResetPassword(selectedUser.usuario_id, setSnackbarSeverity, setSnackbarMessage, setSnackbarOpen);
     }
   };
 
-  const handleResetPassword = async () => {
-    if (selectedUser) {
-      try {
-        await instance.put(`/security/v1/usuarios/${selectedUser.usuario_id}/reset-password`);
-        setSnackbarSeverity("success");
-        setSnackbarMessage("Contraseña reseteada exitosamente");
-        setSnackbarOpen(true);
-      } catch (error) {
-        console.error('Error reseteando contraseña', error);
-        setSnackbarSeverity("error");
-        setSnackbarMessage("Error reseteando contraseña");
-        setSnackbarOpen(true);
-      }
-    }
-  };  
-
-  const handleCrearUsuario = async () => {
-    router.push('/seguridad/usuarios/crear-usuario')
-  }
+  const handleCrearUsuario = () => {
+    router.push('/seguridad/usuarios/crear-usuario');
+  };
 
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
@@ -269,7 +190,7 @@ const Usuarios: React.FC = () => {
                       </span>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                      <IconButton onClick={() => handleToggleUserStatus(usuario)} className="text-blue-500">
+                      <IconButton onClick={() => handleToggleUserStatusWrapper(usuario)} className="text-blue-500">
                         <PowerSettingsNew />
                       </IconButton>
                     </td>
@@ -375,7 +296,7 @@ const Usuarios: React.FC = () => {
           <Button onClick={handleSaveUser} color="primary">
             Guardar
           </Button>
-          <Button onClick={handleResetPassword} color="error">
+          <Button onClick={handleResetPasswordWrapper} color="error">
             Resetear Contraseña
           </Button>
         </DialogActions>
@@ -406,7 +327,7 @@ const Usuarios: React.FC = () => {
           <Button onClick={() => setOpenAddRoleDialog(false)} color="primary">
             Cancelar
           </Button>
-          <Button onClick={handleAddRolesToUser} color="primary">
+          <Button onClick={handleAddRolesToUserWrapper} color="primary">
             Añadir
           </Button>
         </DialogActions>
@@ -437,7 +358,7 @@ const Usuarios: React.FC = () => {
           <Button onClick={() => setOpenRemoveRoleDialog(false)} color="primary">
             Cancelar
           </Button>
-          <Button onClick={handleRemoveRolesFromUser} color="primary">
+          <Button onClick={handleRemoveRolesFromUserWrapper} color="primary">
             Eliminar
           </Button>
         </DialogActions>
@@ -458,3 +379,4 @@ const Usuarios: React.FC = () => {
 };
 
 export default Usuarios;
+

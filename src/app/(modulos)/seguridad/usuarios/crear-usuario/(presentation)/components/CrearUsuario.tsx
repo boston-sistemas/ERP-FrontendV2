@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import instance from "@/infrastructure/config/AxiosConfig";
@@ -6,19 +6,7 @@ import { useRouter } from 'next/navigation';
 import { TablePagination } from "@mui/material";
 import { FaUser, FaEnvelope, FaUserShield } from 'react-icons/fa';
 import { TIMEOUT } from "@/components/Parametros/Parametros";
-
-interface Acceso {
-  acceso_id: number;
-  nombre: string;
-  is_active: boolean;
-}
-
-interface Rol {
-  rol_id: number;
-  nombre: string;
-  is_active: boolean;
-  accesos: Acceso[];
-}
+import { Acceso, Rol } from "../../models/crearUsuarioModel";
 
 const CrearUsuario: React.FC = () => {
   const [step, setStep] = useState(1);
@@ -104,7 +92,7 @@ const CrearUsuario: React.FC = () => {
         ? prevSelectedRoles.filter(id => id !== rol_id)
         : [...prevSelectedRoles, rol_id]
     );
-    setErrors(prev => ({ ...prev, roles: false }));  // Clear role selection error when a role is selected
+    setErrors(prev => ({ ...prev, roles: false }));
   };
 
   const handleSelectAll = () => {
