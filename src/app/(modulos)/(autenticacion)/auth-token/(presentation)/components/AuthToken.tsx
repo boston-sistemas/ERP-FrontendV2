@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -6,33 +6,17 @@ import Image from 'next/image';
 import TextField from '@mui/material/TextField';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
-import instance from '@/infrastructure/config/AxiosConfig';
 import { IconButton } from '@mui/material';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import LanguageIcon from '@mui/icons-material/Language';
+import { handleLogin, handleResendToken } from '../../use-cases/auth';
 
 declare global {
-  interface Window {
-    grecaptcha: any;
-  }
-}
-
-interface SystemModule {
-  nombre: string;
-  path: string;
-}
-
-interface DecodedToken {
-  sub: number;
-  username: string;
-  system_modules: {
-    [key: string]: SystemModule[];
-  };
-  aud: string;
-  type: string;
-  exp: number;
-}
+    interface Window {
+      grecaptcha: any;
+    }
+  }  
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -82,49 +66,18 @@ const AuthToken: React.FC = () => {
       return;
     }
 
-    try {
-      const response = await instance.post('/security/v1/auth/login', { username, password, token: code });
-      if (response.status === 200) {
-        const { usuario } = response.data;
-        localStorage.setItem('user_display_name', usuario.display_name);
-        localStorage.setItem('user_email', usuario.email);
-        localStorage.setItem('reset_password_at',usuario.reset_password_at)
-        sessionStorage.removeItem('auth_data');
-        router.push('/inicio');
-      } else {
-        setSnackbarMessage('Error al verificar el código. Inténtelo de nuevo.');
-        setOpenSnackbar(true);
-      }
-    } catch (error) {
-      setSnackbarMessage('Error verificando el código de autenticación.');
-      setOpenSnackbar(true);
+    const loginSuccess = await handleLogin(username, password, code, setSnackbarMessage, setOpenSnackbar);
+
+    if (loginSuccess) {
+      router.push('/inicio');
     }
   };
 
-  const handleResendToken = async () => {
+  const handleResendTokenClick = async () => {
     const authData = JSON.parse(sessionStorage.getItem('auth_data') || '{}');
     const { username, password } = authData;
 
-    try {
-      const response = await instance.post('/security/v1/auth/send-token', { username, password });
-      if (response.status === 200) {
-        sessionStorage.setItem('auth_data', JSON.stringify({
-          username,
-          password,
-          token_expiration_minutes: response.data.token_expiration_minutes,
-          token_expiration_at: response.data.token_expiration_at,
-          email_send_to: response.data.email_send_to,
-        }));
-        setTimeLeft(response.data.token_expiration_minutes * 60);
-        setResendVisible(false);
-      } else {
-        setSnackbarMessage('Error al reenviar el token. Inténtelo de nuevo.');
-        setOpenSnackbar(true);
-      }
-    } catch (error) {
-      setSnackbarMessage('Error al reenviar el token.');
-      setOpenSnackbar(true);
-    }
+    await handleResendToken(username, password, setTimeLeft, setResendVisible, setSnackbarMessage, setOpenSnackbar);
   };
 
   const handleCloseSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
@@ -186,7 +139,7 @@ const AuthToken: React.FC = () => {
               </p>
               {resendVisible && (
                 <button
-                  onClick={handleResendToken}
+                  onClick={handleResendTokenClick}
                   className="mt-4 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-500 transition duration-300 ease-in-out flex justify-center items-center"
                 >
                   Volver a Enviar Token
