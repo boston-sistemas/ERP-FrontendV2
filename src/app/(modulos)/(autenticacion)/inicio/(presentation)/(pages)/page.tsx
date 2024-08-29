@@ -1,6 +1,6 @@
-import { Metadata } from "next";
-import Inicio from "@/components/Inicio/Inicio";
+﻿import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import Inicio from "../components/Inicio";
 
 export const metadata: Metadata = {
   title: "Inicio ERP",

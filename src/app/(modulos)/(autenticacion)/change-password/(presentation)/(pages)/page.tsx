@@ -1,5 +1,5 @@
-import { Metadata } from "next";
-import ChangePassword from "@/components/ChangePassword/ChangePassword";
+﻿import { Metadata } from "next";
+import ChangePassword from "../components/ChangePassword";
 
 export const metadata: Metadata = {
   title: "Cambiar Contraseña",

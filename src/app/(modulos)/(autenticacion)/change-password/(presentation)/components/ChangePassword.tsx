@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -14,7 +14,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import LanguageIcon from "@mui/icons-material/Language";
-import instance from "@/infrastructure/config/AxiosConfig";
+import { handleChangePassword } from "../../use-cases/changePassword";
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
   props,
@@ -51,28 +51,14 @@ const ChangePassword: React.FC = () => {
 
     setIsLoading(true);
 
-    try {
-      const response = await instance.put("/security/v1/usuarios/me/password", {
-        new_password: newPassword,
-      });
-
-      if (response.status === 200) {
-        localStorage.removeItem("reset_password_at");
-        setSnackbarMessage("Contraseña cambiada correctamente.");
-        setSnackbarSeverity("success");
-        setOpenSnackbar(true);
-        setTimeout(() => {
-          router.push("/inicio");
-        }, 2000);
-      } else {
-        throw new Error("Error al cambiar la contraseña.");
-      }
-    } catch (error) {
-      setSnackbarMessage("Error al cambiar la contraseña.");
-      setSnackbarSeverity("error");
-      setOpenSnackbar(true);
-      setIsLoading(false);
-    }
+    await handleChangePassword(
+      newPassword,
+      setSnackbarMessage,
+      setSnackbarSeverity,
+      setOpenSnackbar,
+      setIsLoading,
+      router
+    );
   };
 
   const handleCloseSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
