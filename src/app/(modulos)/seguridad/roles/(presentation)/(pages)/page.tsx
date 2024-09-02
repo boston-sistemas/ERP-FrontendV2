@@ -1,6 +1,6 @@
-﻿import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
+﻿import Breadcrumb from "@/common/components/Breadcrumb/Breadcrumb";
 import Roles from "../components/Roles";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import DefaultLayout from "@/common/components/Layouts/DefaultLayout";
 import { Metadata } from "next"; 
 
 export const metadata: Metadata = {

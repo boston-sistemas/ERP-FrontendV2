@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { TablePagination } from "@mui/material";
 import { FaUserShield } from "react-icons/fa";
 import ROL_COLORES from "./Rol_color";
-import { TIMEOUT } from "@/components/Parametros/Parametros";
+import { TIMEOUT } from "@/common/components/Parametros/Parametros";
 import { Acceso } from "@/app/(modulos)/seguridad/models/models"
 
 const CrearRol: React.FC = () => {

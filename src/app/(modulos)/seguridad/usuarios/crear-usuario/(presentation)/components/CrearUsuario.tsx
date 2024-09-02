@@ -5,7 +5,7 @@ import instance from "@/infrastructure/config/AxiosConfig";
 import { useRouter } from 'next/navigation';
 import { TablePagination } from "@mui/material";
 import { FaUser, FaEnvelope, FaUserShield } from 'react-icons/fa';
-import { TIMEOUT } from "@/components/Parametros/Parametros";
+import { TIMEOUT } from "@/common/components/Parametros/Parametros";
 import { Acceso, Rol } from "@/app/(modulos)/seguridad/models/models";
 
 const CrearUsuario: React.FC = () => {
