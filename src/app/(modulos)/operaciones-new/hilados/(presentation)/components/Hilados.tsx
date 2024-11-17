@@ -16,6 +16,7 @@ import {
   FilterList,
   Search,
 } from "@mui/icons-material";
+import { useRouter } from "next/navigation";
 
 const HiladosData = [
   { id: 1, sku: "H001", titulo: "Hilado A", acabado: "Mate", colorTenido: "Rojo", estado: "Activo", receta: "-", tejido: "Algodón" },
@@ -38,6 +39,12 @@ const Hilados: React.FC = () => {
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
   const [mostrarEditar, setMostrarEditar] = useState(false);
   const [mostrarDeshabilitar, setMostrarDeshabilitar] = useState(false);
+
+  const router = useRouter();
+
+  const handleCreateClick = () => {
+    router.push("/operaciones-new/hilados/crear-hilado");
+  };
 
   const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
     setFilterAnchorEl(event.currentTarget);
@@ -163,6 +170,7 @@ const Hilados: React.FC = () => {
                 startIcon={<Add />}
                 variant="contained"
                 style={{ backgroundColor: "#1976d2", color: "#fff" }}
+                onClick={handleCreateClick}  // Agrega el evento onClick para redirigir
               >
                 CREAR
               </Button>
@@ -211,13 +219,11 @@ const Hilados: React.FC = () => {
                   <td className="border-b border-[#eee] px-4 py-5">
                     <span className={`text-sm ${hilado.estado === "Activo" ? "text-green-500" : "text-red-500"}`}>{hilado.estado}</span>
                   </td>
-                  {/* Columna Receta con ícono de Visualizar */}
                   <td className="border-b border-[#eee] px-4 py-5">
                     <IconButton className="text-inherit">
                       <Visibility />
                     </IconButton>
                   </td>
-                  {/* Columna Tejido con ícono de Visualizar */}
                   <td className="border-b border-[#eee] px-4 py-5">
                     <IconButton className="text-inherit">
                       <Visibility />
