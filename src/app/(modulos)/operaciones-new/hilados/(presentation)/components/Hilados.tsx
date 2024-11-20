@@ -170,7 +170,7 @@ const Hilados: React.FC = () => {
                 startIcon={<Add />}
                 variant="contained"
                 style={{ backgroundColor: "#1976d2", color: "#fff" }}
-                onClick={handleCreateClick}  // Agrega el evento onClick para redirigir
+                onClick={handleCreateClick} 
               >
                 CREAR
               </Button>

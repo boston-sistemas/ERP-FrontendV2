@@ -10,8 +10,11 @@ import {
   DialogContent,
   DialogTitle,
   TablePagination,
+  Snackbar,
 } from "@mui/material";
+import MuiAlert, { AlertProps } from "@mui/material/Alert";
 import { Add, Close } from "@mui/icons-material";
+import { useRouter } from "next/navigation";
 
 const hardcodedFibras = [
   { id: 1, categoria: "ALGODON", variedad: "TANGUIS", procedencia: "PER", color: "-", estado: "Activo" },
@@ -22,7 +25,15 @@ const hardcodedFibras = [
   { id: 6, categoria: "POLIESTER", variedad: "-", procedencia: "-", color: "BLANCO", estado: "Activo" },
 ];
 
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
+  props,
+  ref
+) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
+
 const CrearHilado: React.FC = () => {
+  const router = useRouter();
   const [titulo, setTitulo] = useState("");
   const [acabado, setAcabado] = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -31,6 +42,10 @@ const CrearHilado: React.FC = () => {
   const [selectedFibras, setSelectedFibras] = useState<any[]>([]);
   const [openFibrasDialog, setOpenFibrasDialog] = useState(false);
 
+  // Snackbar states
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("Fibra añadida correctamente");
+
   const toggleFibrasDialog = () => {
     setOpenFibrasDialog(!openFibrasDialog);
   };
@@ -38,6 +53,7 @@ const CrearHilado: React.FC = () => {
   const handleAddFiber = (fibra: any) => {
     if (!selectedFibras.some((f) => f.id === fibra.id)) {
       setSelectedFibras([...selectedFibras, { ...fibra, proporcion: "" }]);
+      setOpenSnackbar(true); // Open the snackbar
     }
   };
 
@@ -60,6 +76,17 @@ const CrearHilado: React.FC = () => {
     setAcabado("");
     setDescripcion("");
     setSelectedFibras([]);
+  };
+
+  const handleCancel = () => {
+    router.push("/operaciones-new/hilados");
+  };
+
+  const handleCloseSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setOpenSnackbar(false);
   };
 
   return (
@@ -119,7 +146,10 @@ const CrearHilado: React.FC = () => {
                       />
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
-                      <IconButton color="secondary" onClick={() => handleDeleteSelectedFibra(fibra.id)}>
+                      <IconButton
+                        style={{ backgroundColor: "#ffff", color: "#d32f2f" }}
+                        onClick={() => handleDeleteSelectedFibra(fibra.id)}
+                      >
                         <Close />
                       </IconButton>
                     </td>
@@ -142,7 +172,11 @@ const CrearHilado: React.FC = () => {
           />
 
           <div className="flex justify-end mt-6 gap-4">
-            <Button variant="contained" color="secondary">
+            <Button
+              onClick={handleCancel}
+              variant="contained"
+              style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+            >
               Cancelar
             </Button>
             <Button type="submit" variant="contained" style={{ backgroundColor: "#1976d2", color: "#fff" }}>
@@ -181,7 +215,9 @@ const CrearHilado: React.FC = () => {
                     <td className="border-b border-[#eee] px-4 py-5">{fibra.categoria}</td>
                     <td className="border-b border-[#eee] px-4 py-5">{fibra.variedad}</td>
                     <td className="border-b border-[#eee] px-4 py-5">{fibra.procedencia}</td>
-                    <td className="border-b border-[#eee] px-4 py-5">{fibra.estado}</td>
+                    <td className="border-b border-[#eee] px-4 py-5">
+                    <span className={`text-sm ${fibra.estado === "Activo" ? "text-green-500" : "text-red-500"}`}>{fibra.estado}</span>
+                  </td>
                     <td className="border-b border-[#eee] px-4 py-5">
                       <IconButton color="primary" onClick={() => handleAddFiber(fibra)}>
                         <Add />
@@ -201,11 +237,26 @@ const CrearHilado: React.FC = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={toggleFibrasDialog} color="secondary">
-            Cancelar
+          <Button
+            onClick={toggleFibrasDialog}
+            style={{ backgroundColor: "#1976d2", color: "#fff" }}
+          >
+            Guardar
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: "100%" }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
