@@ -41,8 +41,6 @@ const CrearHilado: React.FC = () => {
   const [filasPorPagina, setFilasPorPagina] = useState(5);
   const [selectedFibras, setSelectedFibras] = useState<any[]>([]);
   const [openFibrasDialog, setOpenFibrasDialog] = useState(false);
-
-  // Snackbar states
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("Fibra añadida correctamente");
 

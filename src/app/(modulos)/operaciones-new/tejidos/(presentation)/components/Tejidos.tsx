@@ -16,6 +16,7 @@ import {
   FilterList,
   Search,
 } from "@mui/icons-material";
+import { useRouter } from "next/navigation";
 
 const TejidosData = [
   { id: 1, familia: "JLL", densidad: 135, ancho: 90, desagujado: "1x1", estado: "Activo", receta: "-" },
@@ -26,6 +27,7 @@ const TejidosData = [
 ];
 
 const Tejidos: React.FC = () => {
+  const router = useRouter();
   const [tejidos, setTejidos] = useState(TejidosData);
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
@@ -50,19 +52,19 @@ const Tejidos: React.FC = () => {
     setSearchTerm(event.target.value);
   };
 
-  const handleFamiliaFilterChange = (event: { target: { value: React.SetStateAction<string>; }; }) => {
+  const handleFamiliaFilterChange = (event: { target: { value: React.SetStateAction<string> } }) => {
     setFamiliaFilter(event.target.value);
   };
 
-  const handleDensidadFilterChange = (event: { target: { value: React.SetStateAction<string>; }; }) => {
+  const handleDensidadFilterChange = (event: { target: { value: React.SetStateAction<string> } }) => {
     setDensidadFilter(event.target.value);
   };
 
-  const handleAnchoFilterChange = (event: { target: { value: React.SetStateAction<string>; }; }) => {
+  const handleAnchoFilterChange = (event: { target: { value: React.SetStateAction<string> } }) => {
     setAnchoFilter(event.target.value);
   };
 
-  const handleDesagujadoFilterChange = (event: { target: { value: React.SetStateAction<string>; }; }) => {
+  const handleDesagujadoFilterChange = (event: { target: { value: React.SetStateAction<string> } }) => {
     setDesagujadoFilter(event.target.value);
   };
 
@@ -82,6 +84,10 @@ const Tejidos: React.FC = () => {
 
   const toggleMostrarDeshabilitar = () => {
     setMostrarDeshabilitar(!mostrarDeshabilitar);
+  };
+
+  const handleCreateTejido = () => {
+    router.push("/operaciones-new/tejidos/crear-tejido");
   };
 
   return (
@@ -122,7 +128,7 @@ const Tejidos: React.FC = () => {
                     value={familiaFilter}
                     onChange={handleFamiliaFilterChange}
                     placeholder="Buscar por Familia..."
-                    size="small"  
+                    size="small"
                     fullWidth
                   />
                   <TextField
@@ -131,7 +137,7 @@ const Tejidos: React.FC = () => {
                     value={densidadFilter}
                     onChange={handleDensidadFilterChange}
                     placeholder="Buscar por Densidad..."
-                    size="small" 
+                    size="small"
                     fullWidth
                   />
                   <TextField
@@ -140,7 +146,7 @@ const Tejidos: React.FC = () => {
                     value={anchoFilter}
                     onChange={handleAnchoFilterChange}
                     placeholder="Buscar por Ancho..."
-                    size="small"  
+                    size="small"
                     fullWidth
                   />
                   <TextField
@@ -149,7 +155,7 @@ const Tejidos: React.FC = () => {
                     value={desagujadoFilter}
                     onChange={handleDesagujadoFilterChange}
                     placeholder="Buscar por Desagujado..."
-                    size="small"  
+                    size="small"
                     fullWidth
                   />
                 </div>
@@ -162,6 +168,7 @@ const Tejidos: React.FC = () => {
                 startIcon={<Add />}
                 variant="contained"
                 style={{ backgroundColor: "#1976d2", color: "#fff" }}
+                onClick={handleCreateTejido}
               >
                 CREAR
               </Button>
@@ -192,10 +199,10 @@ const Tejidos: React.FC = () => {
                     {col}
                   </th>
                 ))}
-                {mostrarEditar && ( 
+                {mostrarEditar && (
                   <th className="px-4 py-4 text-center font-normal text-white">Editar</th>
                 )}
-                {mostrarDeshabilitar && ( 
+                {mostrarDeshabilitar && (
                   <th className="px-4 py-4 text-center font-normal text-white">Deshabilitar</th>
                 )}
               </tr>
@@ -217,7 +224,7 @@ const Tejidos: React.FC = () => {
                       <Visibility />
                     </IconButton>
                   </td>
-                  {mostrarEditar && ( 
+                  {mostrarEditar && (
                     <td className="border-b border-[#eee] px-4 py-5">
                       <IconButton className="text-inherit">
                         <Edit />
@@ -242,8 +249,8 @@ const Tejidos: React.FC = () => {
           count={filteredTejidos.length}
           rowsPerPage={filasPorPagina}
           page={pagina}
-          onPageChange={() => {}}
-          onRowsPerPageChange={() => {}}
+          onPageChange={(event, newPage) => setPagina(newPage)}
+          onRowsPerPageChange={(event) => setFilasPorPagina(parseInt(event.target.value, 10))}
           labelRowsPerPage="Filas por página:"
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
           sx={{ color: (theme) => (theme.palette.mode === "dark" ? "#ffffff" : "inherit") }}
