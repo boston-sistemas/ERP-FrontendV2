@@ -26,6 +26,6 @@ export const minWidths1 = [
     "min-w-[110px]",  // Saldo Recogid
   ];
 
-  export const TIMEOUT = 10000;
+  export const TIMEOUT = 1000;
 
   export const TIMEOUTFETCH = 7000;

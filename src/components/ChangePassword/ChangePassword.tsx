@@ -14,7 +14,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import LanguageIcon from "@mui/icons-material/Language";
-import instance from "@/config/AxiosConfig";
+import instance from "@/infrastructure/config/AxiosConfig";
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
   props,
