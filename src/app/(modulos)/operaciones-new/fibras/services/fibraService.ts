@@ -21,6 +21,10 @@ export const fetchFiberCategories = async () => {
 };
 
 export const fetchCountries = async () => {
-  const response = await instance.get("/resources/v1/locations/countries/");
+  const response = await instance.get("/resources/v1/locations/countries");
   return response.data.countries; 
+};
+
+export const createFiber = async (payload: any): Promise<void> => {
+  await instance.post("/operations/v1/fibers", payload);
 };

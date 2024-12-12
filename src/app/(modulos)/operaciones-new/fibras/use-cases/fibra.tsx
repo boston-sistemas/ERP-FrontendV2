@@ -5,6 +5,7 @@ import {
   updateFiber,
   fetchFiberCategories,
   fetchCountries,
+  createFiber,
 } from "../services/fibraService";
 
 export const handleFetchFibras = async (
@@ -15,7 +16,7 @@ export const handleFetchFibras = async (
   try {
     setLoading(true);
     const response = await fetchFibras();
-    setFibras(response.fibers || []); // Asegúrate de que response.fibers exista
+    setFibras(response.fibers || []); 
   } catch (error) {
     console.error("Error fetching fibers:", error);
     setError("Error al obtener las fibras");
@@ -98,5 +99,24 @@ export const handleFetchCountries = async (
   } catch (error) {
     console.error("Error fetching countries:", error);
     setError("Error al obtener los países de origen");
+  }
+};
+
+export const handleCreateFiber = async (
+  payload: any,
+  setSnackbarMessage: Function,
+  setSnackbarSeverity: Function,
+  setSnackbarOpen: Function
+): Promise<void> => {
+  try {
+    await createFiber(payload);
+    setSnackbarMessage("Fibra creada exitosamente");
+    setSnackbarSeverity("success");
+  } catch (error) {
+    console.error("Error creando fibra:", error);
+    setSnackbarMessage("Error al crear la fibra");
+    setSnackbarSeverity("error");
+  } finally {
+    setSnackbarOpen(true);
   }
 };
