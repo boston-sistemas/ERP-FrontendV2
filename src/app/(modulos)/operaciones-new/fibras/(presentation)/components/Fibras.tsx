@@ -18,13 +18,14 @@ import {
 } from "@mui/material";
 import { Edit, PowerSettingsNew, Add, FilterList, Search } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-import { Fibra } from "../../../models/models";
+import { Fibra, MecsaColor } from "../../../models/models";
 import {
   handleFetchFibras,
   updateFiberStatus,
   handleUpdateFiber,
   handleFetchFiberCategories,
   handleFetchCountries,
+  handleFetchColors,
 } from "../../use-cases/fibra";
 
 const Fibras: React.FC = () => {
@@ -32,6 +33,7 @@ const Fibras: React.FC = () => {
   const [fibras, setFibras] = useState<Fibra[]>([]);
   const [categories, setCategories] = useState<{ id: number; value: string }[]>([]);
   const [countries, setCountries] = useState<{ id: string; name: string }[]>([]);
+  const [colors, setColors] = useState<MecsaColor[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pagina, setPagina] = useState(0);
@@ -54,6 +56,7 @@ const Fibras: React.FC = () => {
       await handleFetchFibras(setFibras, setLoading, setError);
       await handleFetchFiberCategories(setCategories, setError);
       await handleFetchCountries(setCountries, setError);
+      await handleFetchColors(setColors, setError);
     };
     fetchData();
   }, []);
@@ -76,32 +79,34 @@ const Fibras: React.FC = () => {
   };
 
   const handleSaveFibra = async () => {
-  if (selectedFibra) {
-    const payload = {
-      categoryId: selectedFibra.categoryId || null,
-      denomination: selectedFibra.denomination || null,
-      origin: selectedFibra.origin || null,
-      colorId: selectedFibra.colorId || null,
-    };
-
-    try {
-      await handleUpdateFiber(
-        selectedFibra.id,
-        payload,
-        setFibras,
-        setSnackbarMessage,
-        setSnackbarSeverity,
-        setSnackbarOpen
-      );
-      setOpenEditDialog(false);
-    } catch (error) {
-      console.error("Error al guardar la fibra:", error);
-      setSnackbarMessage("Error al guardar la fibra. Por favor, revisa los datos.");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
+    if (selectedFibra) {
+      const payload = {
+        categoryId: selectedFibra.categoryId || null,
+        denomination: selectedFibra.denomination || null,
+        origin: selectedFibra.origin || null,
+        colorId: selectedFibra.colorId || null,
+      };
+  
+      try {
+        await handleUpdateFiber(
+          selectedFibra.id,
+          payload,
+          setFibras,
+          setSnackbarMessage,
+          setSnackbarSeverity,
+          setSnackbarOpen
+        );
+        setOpenEditDialog(false);
+        await handleFetchFibras(setFibras, setLoading, setError); // Vuelve a cargar las fibras
+      } catch (error) {
+        console.error("Error al guardar la fibra:", error);
+        setSnackbarMessage("Error al guardar la fibra. Por favor, revisa los datos.");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+      }
     }
-  }
-};
+  };
+  
 
   const handleDeshabilitarFibra = async (fibra: Fibra) => {
     try {
@@ -361,6 +366,7 @@ const Fibras: React.FC = () => {
         <DialogContent>
           {selectedFibra && (
             <>
+              {/* Select para Categoría */}
               <Select
                 fullWidth
                 value={selectedFibra.categoryId || ""}
@@ -370,13 +376,17 @@ const Fibras: React.FC = () => {
                     categoryId: parseInt(e.target.value as string, 10),
                   })
                 }
+                margin="dense"
               >
+                <MenuItem value="">Seleccionar categoría</MenuItem>
                 {categories.map((category) => (
                   <MenuItem key={category.id} value={category.id}>
                     {category.value}
                   </MenuItem>
                 ))}
               </Select>
+
+              {/* Campo de texto para Variedad */}
               <TextField
                 margin="dense"
                 label="Variedad"
@@ -387,29 +397,43 @@ const Fibras: React.FC = () => {
                   setSelectedFibra({ ...selectedFibra, denomination: e.target.value })
                 }
               />
+
+              {/* Select para País/Procedencia */}
               <Select
                 fullWidth
                 value={selectedFibra.origin || ""}
                 onChange={(e) =>
                   setSelectedFibra({ ...selectedFibra, origin: e.target.value })
                 }
+                margin="dense"
               >
+                <MenuItem value="">Seleccionar procedencia</MenuItem>
                 {countries.map((country) => (
                   <MenuItem key={country.id} value={country.id}>
                     {country.name}
                   </MenuItem>
                 ))}
               </Select>
-              <TextField
-                margin="dense"
-                label="Color ID"
+
+              {/* Select para Color */}
+              <Select
                 fullWidth
-                variant="outlined"
                 value={selectedFibra.colorId || ""}
                 onChange={(e) =>
-                  setSelectedFibra({ ...selectedFibra, colorId: e.target.value })
+                  setSelectedFibra((prev) => ({
+                    ...prev!,
+                    colorId: e.target.value,
+                  }))
                 }
-              />
+                margin="dense"
+              >
+                <MenuItem value="">Sin color</MenuItem>
+                {colors.map((color) => (
+                  <MenuItem key={color.id} value={color.id}>
+                    {color.name}
+                  </MenuItem>
+                ))}
+              </Select>
             </>
           )}
         </DialogContent>
