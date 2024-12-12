@@ -1,12 +1,14 @@
 ﻿"use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TablePagination,
   IconButton,
   Button,
   TextField,
   Menu,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import {
   Visibility,
@@ -17,18 +19,11 @@ import {
   Search,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-
-const HiladosData = [
-  { id: 1, sku: "H001", titulo: "Hilado A", acabado: "Mate", colorTenido: "Rojo", estado: "Activo", receta: "-", tejido: "Algodón" },
-  { id: 2, sku: "H002", titulo: "Hilado B", acabado: "Brillante", colorTenido: "Azul", estado: "Activo", receta: "-", tejido: "Lana" },
-  { id: 3, sku: "H003", titulo: "Hilado C", acabado: "Satinado", colorTenido: "Verde", estado: "Inactivo", receta: "-", tejido: "Poliéster" },
-  { id: 4, sku: "H004", titulo: "Hilado D", acabado: "Mate", colorTenido: "Negro", estado: "Activo", receta: "-", tejido: "Lino" },
-  { id: 5, sku: "H005", titulo: "Hilado E", acabado: "Brillante", colorTenido: "Amarillo", estado: "Inactivo", receta: "-", tejido: "Seda" },
-  { id: 6, sku: "H006", titulo: "Hilado F", acabado: "Satinado", colorTenido: "Blanco", estado: "Activo", receta: "-", tejido: "Rayón" },
-];
+import { fetchHilados, updateYarnStatus } from "../../services/hiladoService";
+import { Yarn } from "../../../models/models";
 
 const Hilados: React.FC = () => {
-  const [hilados, setHilados] = useState(HiladosData);
+  const [hilados, setHilados] = useState<Yarn[]>([]);
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,10 +32,25 @@ const Hilados: React.FC = () => {
   const [acabadoFilter, setAcabadoFilter] = useState("");
   const [colorTenidoFilter, setColorTenidoFilter] = useState("");
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
-  const [mostrarEditar, setMostrarEditar] = useState(false);
-  const [mostrarDeshabilitar, setMostrarDeshabilitar] = useState(false);
+  const [mostrarEditar, setMostrarEditar] = useState(true);
+  const [mostrarDeshabilitar, setMostrarDeshabilitar] = useState(true);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await fetchHilados();
+        setHilados(data.yarns);
+      } catch (error) {
+        console.error("Error fetching hilados:", error);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleCreateClick = () => {
     router.push("/operaciones-new/hilados/crear-hilado");
@@ -58,30 +68,52 @@ const Hilados: React.FC = () => {
     setSearchTerm(event.target.value);
   };
 
-  const handleSkuFilterChange = (event: { target: { value: React.SetStateAction<string>; }; }) => {
+  const handleSkuFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSkuFilter(event.target.value);
   };
 
-  const handleTituloFilterChange = (event: { target: { value: React.SetStateAction<string>; }; }) => {
+  const handleTituloFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTituloFilter(event.target.value);
   };
 
-  const handleAcabadoFilterChange = (event: { target: { value: React.SetStateAction<string>; }; }) => {
+  const handleAcabadoFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setAcabadoFilter(event.target.value);
   };
 
-  const handleColorTenidoFilterChange = (event: { target: { value: React.SetStateAction<string>; }; }) => {
+  const handleColorTenidoFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setColorTenidoFilter(event.target.value);
   };
 
+  const handleToggleYarnStatus = async (id: string, isActive: boolean) => {
+    try {
+      await updateYarnStatus(id, !isActive);
+      setHilados((prev) =>
+        prev.map((hilado) =>
+          hilado.id === id ? { ...hilado, isActive: !isActive } : hilado
+        )
+      );
+      setSnackbarMessage(`Hilado ${!isActive ? "habilitado" : "deshabilitado"} correctamente`);
+      setSnackbarSeverity("success");
+    } catch (error) {
+      console.error("Error actualizando el estado del hilado:", error);
+      setSnackbarMessage("Error al actualizar el estado del hilado");
+      setSnackbarSeverity("error");
+    } finally {
+      setSnackbarOpen(true);
+    }
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+
   const filteredHilados = hilados.filter((hilado) =>
-    (Object.values(hilado).some(value =>
-      value.toString().toLowerCase().includes(searchTerm.toLowerCase())
-    )) &&
-    (skuFilter === "" || hilado.sku.toLowerCase().includes(skuFilter.toLowerCase())) &&
-    (tituloFilter === "" || hilado.titulo.toLowerCase().includes(tituloFilter.toLowerCase())) &&
-    (acabadoFilter === "" || hilado.acabado.toLowerCase().includes(acabadoFilter.toLowerCase())) &&
-    (colorTenidoFilter === "" || hilado.colorTenido.toLowerCase().includes(colorTenidoFilter.toLowerCase()))
+    (searchTerm === "" ||
+      hilado.description.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (skuFilter === "" || hilado.barcode.toString().includes(skuFilter)) &&
+    (tituloFilter === "" || hilado.description.toLowerCase().includes(tituloFilter.toLowerCase())) &&
+    (acabadoFilter === "" || hilado.spinningMethod.value.toLowerCase().includes(acabadoFilter.toLowerCase())) &&
+    (colorTenidoFilter === "" || hilado.color?.name?.toLowerCase().includes(colorTenidoFilter.toLowerCase()))
   );
 
   const toggleMostrarEditar = () => {
@@ -97,7 +129,6 @@ const Hilados: React.FC = () => {
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
         <div className="max-w-full overflow-x-auto">
           <div className="flex items-center justify-between gap-2 mb-4">
-            {/* Contenedor de Búsqueda y Filtros a la Izquierda */}
             <div className="flex items-center gap-2">
               <div className="flex items-center border border-gray-300 rounded-md px-2">
                 <Search />
@@ -130,7 +161,7 @@ const Hilados: React.FC = () => {
                     value={skuFilter}
                     onChange={handleSkuFilterChange}
                     placeholder="Buscar por SKU..."
-                    size="small"  
+                    size="small"
                     fullWidth
                   />
                   <TextField
@@ -139,7 +170,7 @@ const Hilados: React.FC = () => {
                     value={tituloFilter}
                     onChange={handleTituloFilterChange}
                     placeholder="Buscar por Título..."
-                    size="small" 
+                    size="small"
                     fullWidth
                   />
                   <TextField
@@ -148,7 +179,7 @@ const Hilados: React.FC = () => {
                     value={acabadoFilter}
                     onChange={handleAcabadoFilterChange}
                     placeholder="Buscar por Acabado..."
-                    size="small"  
+                    size="small"
                     fullWidth
                   />
                   <TextField
@@ -157,20 +188,18 @@ const Hilados: React.FC = () => {
                     value={colorTenidoFilter}
                     onChange={handleColorTenidoFilterChange}
                     placeholder="Buscar por Color Teñido..."
-                    size="small"  
+                    size="small"
                     fullWidth
                   />
                 </div>
               </Menu>
             </div>
-
-            {/* Botones de Acciones a la Derecha */}
             <div className="flex items-center gap-2">
               <Button
                 startIcon={<Add />}
                 variant="contained"
                 style={{ backgroundColor: "#1976d2", color: "#fff" }}
-                onClick={handleCreateClick} 
+                onClick={handleCreateClick}
               >
                 CREAR
               </Button>
@@ -180,7 +209,7 @@ const Hilados: React.FC = () => {
                 style={{ backgroundColor: "#0288d1", color: "#fff" }}
                 onClick={toggleMostrarEditar}
               >
-                EDITAR
+                {mostrarEditar ? "Ocultar Editar" : "Mostrar Editar"}
               </Button>
               <Button
                 startIcon={<PowerSettingsNew />}
@@ -188,7 +217,7 @@ const Hilados: React.FC = () => {
                 style={{ backgroundColor: "#d32f2f", color: "#fff" }}
                 onClick={toggleMostrarDeshabilitar}
               >
-                DESHABILITAR
+                {mostrarDeshabilitar ? "Ocultar Deshabilitar" : "Mostrar Deshabilitar"}
               </Button>
             </div>
           </div>
@@ -196,55 +225,45 @@ const Hilados: React.FC = () => {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center">
-                {["SKU", "Título", "Acabado", "Color Teñido", "Estado", "Receta", "Tejido"].map((col, index) => (
-                  <th key={index} className="px-4 py-4 text-center font-normal text-white">
-                    {col}
-                  </th>
-                ))}
-                {mostrarEditar && ( 
-                  <th className="px-4 py-4 text-center font-normal text-white">Editar</th>
-                )}
-                {mostrarDeshabilitar && ( 
-                  <th className="px-4 py-4 text-center font-normal text-white">Deshabilitar</th>
-                )}
+                <th className="px-4 py-4 text-center font-normal text-white">SKU</th>
+                <th className="px-4 py-4 text-center font-normal text-white">Título</th>
+                <th className="px-4 py-4 text-center font-normal text-white">Acabado</th>
+                <th className="px-4 py-4 text-center font-normal text-white">Color Teñido</th>
+                <th className="px-4 py-4 text-center font-normal text-white">Estado</th>
+                {mostrarEditar && <th className="px-4 py-4 text-center font-normal text-white">Editar</th>}
+                {mostrarDeshabilitar && <th className="px-4 py-4 text-center font-normal text-white">Deshabilitar</th>}
               </tr>
             </thead>
             <tbody>
-              {filteredHilados.slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina).map((hilado, index) => (
-                <tr key={index} className="text-center">
-                  <td className="border-b border-[#eee] px-4 py-5">{hilado.sku}</td>
-                  <td className="border-b border-[#eee] px-4 py-5">{hilado.titulo}</td>
-                  <td className="border-b border-[#eee] px-4 py-5">{hilado.acabado}</td>
-                  <td className="border-b border-[#eee] px-4 py-5">{hilado.colorTenido}</td>
-                  <td className="border-b border-[#eee] px-4 py-5">
-                    <span className={`text-sm ${hilado.estado === "Activo" ? "text-green-500" : "text-red-500"}`}>{hilado.estado}</span>
-                  </td>
-                  <td className="border-b border-[#eee] px-4 py-5">
-                    <IconButton className="text-inherit">
-                      <Visibility />
-                    </IconButton>
-                  </td>
-                  <td className="border-b border-[#eee] px-4 py-5">
-                    <IconButton className="text-inherit">
-                      <Visibility />
-                    </IconButton>
-                  </td>
-                  {mostrarEditar && ( 
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      <IconButton className="text-inherit">
-                        <Edit />
-                      </IconButton>
+              {filteredHilados
+                .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
+                .map((hilado) => (
+                  <tr key={hilado.id} className="text-center">
+                    <td className="border-b border-gray-300 px-4 py-5">{hilado.barcode}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">{hilado.description}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">{hilado.spinningMethod.value}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">{hilado.color?.name || "-"}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">
+                      <span className={hilado.isActive ? "text-green-500" : "text-red-500"}>
+                        {hilado.isActive ? "Activo" : "Inactivo"}
+                      </span>
                     </td>
-                  )}
-                  {mostrarDeshabilitar && (
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      <IconButton className="text-inherit">
-                        <PowerSettingsNew />
-                      </IconButton>
-                    </td>
-                  )}
-                </tr>
-              ))}
+                    {mostrarEditar && (
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        <IconButton>
+                          <Edit />
+                        </IconButton>
+                      </td>
+                    )}
+                    {mostrarDeshabilitar && (
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        <IconButton onClick={() => handleToggleYarnStatus(hilado.id, hilado.isActive)}>
+                          <PowerSettingsNew />
+                        </IconButton>
+                      </td>
+                    )}
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
@@ -254,13 +273,20 @@ const Hilados: React.FC = () => {
           count={filteredHilados.length}
           rowsPerPage={filasPorPagina}
           page={pagina}
-          onPageChange={() => {}}
-          onRowsPerPageChange={() => {}}
-          labelRowsPerPage="Filas por página:"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
-          sx={{ color: (theme) => (theme.palette.mode === "dark" ? "#ffffff" : "inherit") }}
+          onPageChange={(_, newPage) => setPagina(newPage)}
+          onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))}
         />
       </div>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

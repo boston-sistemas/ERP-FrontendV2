@@ -38,4 +38,42 @@ value: string;
 export interface FibraResponse {
     fibers: Fibra[];
   }
+
+export interface Fiber {
+  id: string;
+  denomination: string;
+  origin: string | null;
+  isActive: boolean;
+  category: Categoria;
+  color: Color | null;
+}
+
+export interface Recipe {
+  proportion: number;
+  fiber: Fiber;
+}
+
+export interface SpinningMethod {
+  id: number;
+  value: string;
+}
+
+export interface Yarn {
+  id: string;
+  inventoryUnitCode: string;
+  purchaseUnitCode: string;
+  description: string;
+  purchaseDescription: string;
+  barcode: number;
+  isActive: boolean;
+  spinningMethod: SpinningMethod;
+  color: Color | null;
+  recipe: Recipe[];
+  yarnCount: string;
+  numberingSystem: string;
+}
+
+export interface YarnResponse {
+  yarns: Yarn[];
+}
   
