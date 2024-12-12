@@ -42,7 +42,12 @@ const Fibras: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
   const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [denominationFilter, setDenominationFilter] = useState("");
+  const [originFilter, setOriginFilter] = useState("");
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
+  const [showEditColumn, setShowEditColumn] = useState(true);
+  const [showDisableColumn, setShowDisableColumn] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,15 +60,14 @@ const Fibras: React.FC = () => {
 
   const handleEditFibra = (fibra: Fibra) => {
     setSelectedFibra({
-      ...fibra, 
-      categoryId: fibra.category?.id || 0, 
+      ...fibra,
+      categoryId: fibra.category?.id || 0,
       colorId: fibra.color?.id || "",
       category: fibra.category || { id: 0, value: "" },
       color: fibra.color || { id: "", name: "", sku: "", hexadecimal: "", isActive: true },
     });
     setOpenEditDialog(true);
   };
-  
 
   const handleCloseEditDialog = () => {
     setOpenEditDialog(false);
@@ -123,8 +127,28 @@ const Fibras: React.FC = () => {
     setFilterAnchorEl(null);
   };
 
+  const handleToggleEditColumn = () => {
+    setShowEditColumn(!showEditColumn);
+  };
+
+  const handleToggleDisableColumn = () => {
+    setShowDisableColumn(!showDisableColumn);
+  };
+
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
+  };
+
+  const handleCategoryFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setCategoryFilter(event.target.value);
+  };
+
+  const handleDenominationFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setDenominationFilter(event.target.value);
+  };
+
+  const handleOriginFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setOriginFilter(event.target.value);
   };
 
   const filteredFibras = fibras.filter((fibra) => {
@@ -136,9 +160,13 @@ const Fibras: React.FC = () => {
       (searchTerm === "" ||
         Object.values({ ...fibra, categoryValue, denominationValue, originValue })
           .filter((value) => typeof value === "string")
-          .some((value) =>
-            value.toLowerCase().includes(searchTerm.toLowerCase())
-          ))
+          .some((value) => value.toLowerCase().includes(searchTerm.toLowerCase()))) &&
+      (categoryFilter === "" ||
+        categoryValue.toLowerCase().includes(categoryFilter.toLowerCase())) &&
+      (denominationFilter === "" ||
+        denominationValue.toLowerCase().includes(denominationFilter.toLowerCase())) &&
+      (originFilter === "" ||
+        originValue.toLowerCase().includes(originFilter.toLowerCase()))
     );
   });
 
@@ -172,6 +200,41 @@ const Fibras: React.FC = () => {
             >
               Filtros
             </Button>
+            <Menu
+              anchorEl={filterAnchorEl}
+              open={Boolean(filterAnchorEl)}
+              onClose={handleFilterClose}
+            >
+              <div className="p-4 space-y-2" style={{ maxWidth: "300px" }}>
+                <TextField
+                  label="Categoría"
+                  variant="outlined"
+                  value={categoryFilter}
+                  onChange={handleCategoryFilterChange}
+                  placeholder="Buscar por categoría..."
+                  size="small"
+                  fullWidth
+                />
+                <TextField
+                  label="Variedad"
+                  variant="outlined"
+                  value={denominationFilter}
+                  onChange={handleDenominationFilterChange}
+                  placeholder="Buscar por variedad..."
+                  size="small"
+                  fullWidth
+                />
+                <TextField
+                  label="Procedencia"
+                  variant="outlined"
+                  value={originFilter}
+                  onChange={handleOriginFilterChange}
+                  placeholder="Buscar por procedencia..."
+                  size="small"
+                  fullWidth
+                />
+              </div>
+            </Menu>
           </div>
           <div className="space-x-2">
             <Button
@@ -181,6 +244,22 @@ const Fibras: React.FC = () => {
               onClick={handleCrearFibra}
             >
               CREAR
+            </Button>
+            <Button
+              startIcon={<Edit />}
+              variant="contained"
+              style={{ backgroundColor: "#0288d1", color: "#fff" }}
+              onClick={handleToggleEditColumn}
+            >
+              {showEditColumn ? "Ocultar Editar" : "Mostrar Editar"}
+            </Button>
+            <Button
+              startIcon={<PowerSettingsNew />}
+              variant="contained"
+              style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+              onClick={handleToggleDisableColumn}
+            >
+              {showDisableColumn ? "Ocultar Deshabilitar" : "Mostrar Deshabilitar"}
             </Button>
           </div>
         </div>
@@ -195,14 +274,18 @@ const Fibras: React.FC = () => {
                 <th className="px-4 py-4 text-center font-normal text-white">Procedencia</th>
                 <th className="px-4 py-4 text-center font-normal text-white">Color</th>
                 <th className="px-4 py-4 text-center font-normal text-white">Estado</th>
-                <th className="px-4 py-4 text-center font-normal text-white">Editar</th>
-                <th className="px-4 py-4 text-center font-normal text-white">Deshabilitar</th>
+                {showEditColumn && (
+                  <th className="px-4 py-4 text-center font-normal text-white">Editar</th>
+                )}
+                {showDisableColumn && (
+                  <th className="px-4 py-4 text-center font-normal text-white">Deshabilitar</th>
+                )}
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="pt-5 pb-5 text-center">
+                  <td colSpan={8} className="pt-5 pb-5 text-center">
                     Cargando...
                   </td>
                 </tr>
@@ -225,21 +308,25 @@ const Fibras: React.FC = () => {
                           {fibra.isActive ? "Activo" : "Inactivo"}
                         </span>
                       </td>
-                      <td className="border-b border-gray-300 px-4 py-5">
-                        <IconButton onClick={() => handleEditFibra(fibra)}>
-                          <Edit />
-                        </IconButton>
-                      </td>
-                      <td className="border-b border-gray-300 px-4 py-5">
-                        <IconButton onClick={() => handleDeshabilitarFibra(fibra)}>
-                          <PowerSettingsNew />
-                        </IconButton>
-                      </td>
+                      {showEditColumn && (
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          <IconButton onClick={() => handleEditFibra(fibra)}>
+                            <Edit />
+                          </IconButton>
+                        </td>
+                      )}
+                      {showDisableColumn && (
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          <IconButton onClick={() => handleDeshabilitarFibra(fibra)}>
+                            <PowerSettingsNew />
+                          </IconButton>
+                        </td>
+                      )}
                     </tr>
                   ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="pt-5 pb-5 text-center">
+                  <td colSpan={8} className="pt-5 pb-5 text-center">
                     No existen fibras
                   </td>
                 </tr>
