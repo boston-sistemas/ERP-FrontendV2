@@ -1,4 +1,4 @@
-﻿import { Fibra, Categoria, Color, FibraResponse } from "../../models/models";
+﻿import { Fibra, Categoria, Color, FibraResponse, MecsaColor } from "../../models/models";
 import instance from "@/infrastructure/config/AxiosConfig";
 
 export const fetchFibras = async (): Promise<FibraResponse> => {
@@ -27,4 +27,9 @@ export const fetchCountries = async () => {
 
 export const createFiber = async (payload: any): Promise<void> => {
   await instance.post("/operations/v1/fibers", payload);
+};
+
+export const fetchMecsaColors = async (): Promise<MecsaColor[]> => {
+  const response = await instance.get("/operations/v1/mecsa-colors");
+  return response.data.mecsaColors;
 };

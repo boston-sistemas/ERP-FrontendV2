@@ -63,6 +63,7 @@ const Fibras: React.FC = () => {
       ...fibra,
       categoryId: fibra.category?.id || 0,
       colorId: fibra.color?.id || "",
+      origin: fibra.origin || "",
       category: fibra.category || { id: 0, value: "" },
       color: fibra.color || { id: "", name: "", sku: "", hexadecimal: "", isActive: true },
     });
@@ -75,13 +76,15 @@ const Fibras: React.FC = () => {
   };
 
   const handleSaveFibra = async () => {
-    if (selectedFibra) {
-      const payload = {
-        categoryId: selectedFibra.categoryId,
-        denomination: selectedFibra.denomination,
-        origin: selectedFibra.origin,
-        colorId: selectedFibra.colorId,
-      };
+  if (selectedFibra) {
+    const payload = {
+      categoryId: selectedFibra.categoryId || null,
+      denomination: selectedFibra.denomination || null,
+      origin: selectedFibra.origin || null,
+      colorId: selectedFibra.colorId || null,
+    };
+
+    try {
       await handleUpdateFiber(
         selectedFibra.id,
         payload,
@@ -91,8 +94,14 @@ const Fibras: React.FC = () => {
         setSnackbarOpen
       );
       setOpenEditDialog(false);
+    } catch (error) {
+      console.error("Error al guardar la fibra:", error);
+      setSnackbarMessage("Error al guardar la fibra. Por favor, revisa los datos.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
-  };
+  }
+};
 
   const handleDeshabilitarFibra = async (fibra: Fibra) => {
     try {
@@ -386,7 +395,7 @@ const Fibras: React.FC = () => {
                 }
               >
                 {countries.map((country) => (
-                  <MenuItem key={country.id} value={country.name}>
+                  <MenuItem key={country.id} value={country.id}>
                     {country.name}
                   </MenuItem>
                 ))}

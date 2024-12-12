@@ -1,4 +1,4 @@
-﻿import { Fibra } from "../../models/models";
+﻿import { Fibra, MecsaColor } from "../../models/models";
 import {
   fetchFibras,
   updateFiberStatus as updateFiberStatusService,
@@ -6,6 +6,7 @@ import {
   fetchFiberCategories,
   fetchCountries,
   createFiber,
+  fetchMecsaColors,
 } from "../services/fibraService";
 
 export const handleFetchFibras = async (
@@ -118,5 +119,18 @@ export const handleCreateFiber = async (
     setSnackbarSeverity("error");
   } finally {
     setSnackbarOpen(true);
+  }
+};
+
+export const handleFetchColors = async (
+  setColors: (colors: MecsaColor[]) => void,
+  setError: (error: string | null) => void
+): Promise<void> => {
+  try {
+    const colors = await fetchMecsaColors();
+    setColors(colors || []);
+  } catch (error) {
+    console.error("Error fetching colors:", error);
+    setError("Error al obtener los colores");
   }
 };

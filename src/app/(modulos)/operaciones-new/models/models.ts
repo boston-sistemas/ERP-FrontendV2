@@ -14,12 +14,12 @@ isActive: boolean;
 export interface Fibra {
 id: string; 
 categoryId: number; 
-denomination: string;
-origin: string;
-colorId: string; 
+denomination: string | null;
+origin: string | null;
+colorId: string | null; 
 isActive: boolean;
 category: Categoria; 
-color: Color | null; 
+color: MecsaColor | null; 
 }
 
 export interface MecsaColor {
