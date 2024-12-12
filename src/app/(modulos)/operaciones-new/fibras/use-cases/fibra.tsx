@@ -1,15 +1,102 @@
-﻿import { Fibra, Categoria, Color } from "../../models/models";
-import { fetchFibras } from "../services/fibraService";
+﻿import { Fibra } from "../../models/models";
+import {
+  fetchFibras,
+  updateFiberStatus as updateFiberStatusService,
+  updateFiber,
+  fetchFiberCategories,
+  fetchCountries,
+} from "../services/fibraService";
 
-export const handleFetchFibras = async (setFibras: Function, setLoading: Function, setError: Function) => {
+export const handleFetchFibras = async (
+  setFibras: (fibras: Fibra[]) => void,
+  setLoading: (loading: boolean) => void,
+  setError: (error: string | null) => void
+): Promise<void> => {
   try {
     setLoading(true);
-    const fibrasData = await fetchFibras();
-    setFibras(fibrasData);
+    const response = await fetchFibras();
+    setFibras(response.fibers || []); // Asegúrate de que response.fibers exista
   } catch (error) {
-    console.error('Error fetching fibers', error);
-    setError('Error fetching fibers');
+    console.error("Error fetching fibers:", error);
+    setError("Error al obtener las fibras");
   } finally {
     setLoading(false);
+  }
+};
+
+export const updateFiberStatus = async (
+  fiberId: string,
+  isActive: boolean,
+  setFibras: Function,
+  setSnackbarMessage: Function,
+  setSnackbarSeverity: Function,
+  setSnackbarOpen: Function
+): Promise<void> => {
+  try {
+    await updateFiberStatusService(fiberId, isActive);
+    setFibras((prevFibras: any[]) =>
+      prevFibras.map((f) => (f.id === fiberId ? { ...f, isActive } : f))
+    );
+    setSnackbarMessage(`Fibra ${isActive ? "habilitada" : "deshabilitada"} correctamente`);
+    setSnackbarSeverity("success");
+  } catch (error) {
+    console.error("Error actualizando el estado de la fibra:", error);
+    setSnackbarMessage("Error al actualizar el estado de la fibra");
+    setSnackbarSeverity("error");
+  } finally {
+    setSnackbarOpen(true);
+  }
+};
+
+export const handleUpdateFiber = async (
+  fiberId: string,
+  payload: any,
+  setFibras: Function,
+  setSnackbarMessage: Function,
+  setSnackbarSeverity: Function,
+  setSnackbarOpen: Function
+): Promise<void> => {
+  try {
+    await updateFiber(fiberId, payload);
+    setSnackbarMessage("Fibra actualizada correctamente");
+    setSnackbarSeverity("success");
+    setSnackbarOpen(true);
+
+    setFibras((prevFibras: any[]) =>
+      prevFibras.map((fiber) =>
+        fiber.id === fiberId ? { ...fiber, ...payload } : fiber
+      )
+    );
+  } catch (error) {
+    setSnackbarMessage("Error al actualizar la fibra");
+    setSnackbarSeverity("error");
+    setSnackbarOpen(true);
+    console.error("Error en handleUpdateFiber:", error);
+  }
+};
+
+export const handleFetchFiberCategories = async (
+  setCategories: (categories: { id: number; value: string }[]) => void,
+  setError: (error: string | null) => void
+): Promise<void> => {
+  try {
+    const categories = await fetchFiberCategories();
+    setCategories(categories || []);
+  } catch (error) {
+    console.error("Error fetching fiber categories:", error);
+    setError("Error al obtener las categorías de fibras");
+  }
+};
+
+export const handleFetchCountries = async (
+  setCountries: (countries: { id: string; name: string }[]) => void,
+  setError: (error: string | null) => void
+): Promise<void> => {
+  try {
+    const countries = await fetchCountries();
+    setCountries(countries || []);
+  } catch (error) {
+    console.error("Error fetching countries:", error);
+    setError("Error al obtener los países de origen");
   }
 };
