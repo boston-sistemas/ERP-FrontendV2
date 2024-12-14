@@ -97,7 +97,7 @@ const Fibras: React.FC = () => {
           setSnackbarOpen
         );
         setOpenEditDialog(false);
-        await handleFetchFibras(setFibras, setLoading, setError); // Vuelve a cargar las fibras
+        await handleFetchFibras(setFibras, setLoading, setError);
       } catch (error) {
         console.error("Error al guardar la fibra:", error);
         setSnackbarMessage("Error al guardar la fibra. Por favor, revisa los datos.");
@@ -262,7 +262,7 @@ const Fibras: React.FC = () => {
             <Button
               startIcon={<Edit />}
               variant="contained"
-              style={{ backgroundColor: "#0288d1", color: "#fff" }}
+              style={{ backgroundColor: "#1976d2", color: "#fff" }}
               onClick={handleToggleEditColumn}
             >
               {showEditColumn ? "Ocultar Editar" : "Mostrar Editar"}
@@ -299,7 +299,7 @@ const Fibras: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="pt-5 pb-5 text-center">
+                  <td colSpan={8} className="pt-5 pb-5 text-center text-black">
                     Cargando...
                   </td>
                 </tr>
@@ -307,7 +307,7 @@ const Fibras: React.FC = () => {
                 filteredFibras
                   .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
                   .map((fibra) => (
-                    <tr key={fibra.id} className="text-center">
+                    <tr key={fibra.id} className="text-center text-black" >
                       <td className="border-b border-gray-300 px-4 py-5">{fibra.id}</td>
                       <td className="border-b border-gray-300 px-4 py-5">{fibra.category?.value || "Sin categoría"}</td>
                       <td className="border-b border-gray-300 px-4 py-5">{fibra.denomination || "Sin variedad"}</td>
@@ -367,25 +367,27 @@ const Fibras: React.FC = () => {
           {selectedFibra && (
             <>
               {/* Select para Categoría */}
-              <Select
-                fullWidth
-                value={selectedFibra.categoryId || ""}
-                onChange={(e) =>
-                  setSelectedFibra({
-                    ...selectedFibra,
-                    categoryId: parseInt(e.target.value as string, 10),
-                  })
-                }
-                margin="dense"
-              >
-                <MenuItem value="">Seleccionar categoría</MenuItem>
-                {categories.map((category) => (
-                  <MenuItem key={category.id} value={category.id}>
-                    {category.value}
-                  </MenuItem>
-                ))}
-              </Select>
-
+              <TextField
+              margin="dense"
+              label="Categoría"
+              fullWidth
+              variant="outlined"
+              select
+              value={selectedFibra?.categoryId || ""}
+              onChange={(e) =>
+                setSelectedFibra({
+                  ...selectedFibra,
+                  categoryId: parseInt(e.target.value as string, 10),
+                })
+              }
+            >
+              <MenuItem value="">Sin categoria</MenuItem>
+              {categories.map((category) => (
+                <MenuItem key={category.id} value={category.id}>
+                  {category.value}
+                </MenuItem>
+              ))}
+            </TextField>
               {/* Campo de texto para Variedad */}
               <TextField
                 margin="dense"
@@ -397,43 +399,47 @@ const Fibras: React.FC = () => {
                   setSelectedFibra({ ...selectedFibra, denomination: e.target.value })
                 }
               />
-
               {/* Select para País/Procedencia */}
-              <Select
-                fullWidth
-                value={selectedFibra.origin || ""}
-                onChange={(e) =>
-                  setSelectedFibra({ ...selectedFibra, origin: e.target.value })
-                }
-                margin="dense"
-              >
-                <MenuItem value="">Seleccionar procedencia</MenuItem>
-                {countries.map((country) => (
-                  <MenuItem key={country.id} value={country.id}>
-                    {country.name}
-                  </MenuItem>
-                ))}
-              </Select>
-
+              <TextField
+              margin="dense"
+              label="Procedencia"
+              fullWidth
+              variant="outlined"
+              select
+              value={selectedFibra?.origin || ""}
+              onChange={(e) =>
+                setSelectedFibra({ ...selectedFibra, origin: e.target.value })
+              }
+            >
+              <MenuItem value="">Sin procedencia</MenuItem>
+              {countries.map((country) => (
+                <MenuItem key={country.id} value={country.id}>
+                  {country.name}
+                </MenuItem>
+              ))}
+            </TextField>
               {/* Select para Color */}
-              <Select
-                fullWidth
-                value={selectedFibra.colorId || ""}
-                onChange={(e) =>
-                  setSelectedFibra((prev) => ({
-                    ...prev!,
-                    colorId: e.target.value,
-                  }))
-                }
-                margin="dense"
-              >
-                <MenuItem value="">Sin color</MenuItem>
-                {colors.map((color) => (
-                  <MenuItem key={color.id} value={color.id}>
-                    {color.name}
-                  </MenuItem>
-                ))}
-              </Select>
+              <TextField
+              margin="dense"
+              label="Color"
+              fullWidth
+              variant="outlined"
+              select
+              value={selectedFibra?.colorId || ""}
+              onChange={(e) =>
+                setSelectedFibra((prev) => ({
+                  ...prev!,
+                  colorId: e.target.value,
+                }))
+              }
+            >
+              <MenuItem value="">Sin color</MenuItem>
+              {colors.map((color) => (
+                <MenuItem key={color.id} value={color.id}>
+                  {color.name}
+                </MenuItem>
+              ))}
+            </TextField>
             </>
           )}
         </DialogContent>
