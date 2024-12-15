@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Button, TextField, MenuItem, Snackbar, Alert } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { handleFetchFiberCategories, handleFetchCountries, handleCreateFiber } from "../../../use-cases/fibra";
+import { handleFetchFiberCategories, handleFetchCountries, handleFetchColors, handleCreateFiber } from "../../../use-cases/fibra";
 
 const CrearFibra: React.FC = () => {
   const router = useRouter();
@@ -13,6 +13,7 @@ const CrearFibra: React.FC = () => {
   const [color, setColor] = useState("");
   const [categories, setCategories] = useState<{ id: number; value: string }[]>([]);
   const [countries, setCountries] = useState<{ id: string; name: string }[]>([]);
+  const [colors, setColors] = useState<{ id: string; name: string }[]>([]);
   const [errors, setErrors] = useState({ categoria: false, variedad: false });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -23,8 +24,9 @@ const CrearFibra: React.FC = () => {
       try {
         await handleFetchFiberCategories(setCategories, () => null);
         await handleFetchCountries(setCountries, () => null);
+        await handleFetchColors(setColors, () => null); 
       } catch (error) {
-        console.error("Error cargando categorías o países:", error);
+        console.error("Error cargando datos:", error);
       }
     };
     fetchData();
@@ -42,10 +44,10 @@ const CrearFibra: React.FC = () => {
     if (!Object.values(newErrors).includes(true)) {
       const payload = {
         categoryId: Number(categoria),
-        denomination: variedad,
-        origin: procedencia,
-        colorId: color,
-      };
+        denomination: variedad.toUpperCase(),
+        origin: procedencia || null,
+        colorId: color || null,
+      };      
 
       await handleCreateFiber(payload, setSnackbarMessage, setSnackbarSeverity, setSnackbarOpen);
 
@@ -53,6 +55,10 @@ const CrearFibra: React.FC = () => {
       setVariedad("");
       setProcedencia("");
       setColor("");
+      
+      setTimeout(() => {
+        router.push("/operaciones-new/fibras");
+      }, 2000);
     }
   };
 
@@ -82,7 +88,23 @@ const CrearFibra: React.FC = () => {
             helperText={errors.categoria ? "Campo requerido" : ""}
             margin="dense"
             variant="outlined"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: "#444444", // Color negro por defecto
+                },
+                "&:hover fieldset": {
+                  borderColor: "#444444", // Color negro al pasar el cursor
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#444444", // Color negro al enfocar
+                },
+              },
+              "& .MuiInputLabel-root": { color: "#444444" },
+              "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+            }}
           >
+            <MenuItem value="">Sin categoría</MenuItem>
             {categories.map((category) => (
               <MenuItem key={category.id} value={category.id}>
                 {category.value}
@@ -90,41 +112,98 @@ const CrearFibra: React.FC = () => {
             ))}
           </TextField>
           <TextField
-            label="Variedad/Marca *"
-            fullWidth
-            value={variedad}
-            onChange={(e) => {
-              setVariedad(e.target.value);
-              setErrors((prev) => ({ ...prev, variedad: false }));
-            }}
-            error={errors.variedad}
-            helperText={errors.variedad ? "Campo requerido" : ""}
-            margin="dense"
-            variant="outlined"
-          />
-          <TextField
-            label="Procedencia"
-            fullWidth
-            select
-            value={procedencia}
-            onChange={(e) => setProcedencia(e.target.value)}
-            margin="dense"
-            variant="outlined"
-          >
-            {countries.map((country) => (
-              <MenuItem key={country.id} value={country.id}>
-                {country.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            label="Color"
-            fullWidth
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            margin="dense"
-            variant="outlined"
-          />
+          label="Variedad/Marca *"
+          fullWidth
+          value={variedad}
+          onChange={(e) => {
+            setVariedad(e.target.value);
+            setErrors((prev) => ({ ...prev, variedad: false }));
+          }}
+          error={errors.variedad}
+          helperText={errors.variedad ? "Campo requerido" : ""}
+          margin="dense"
+          variant="outlined"
+          sx={{
+            "& .MuiOutlinedInput-root": {
+              "& fieldset": {
+                borderColor: "#444444", // Color negro por defecto
+              },
+              "&:hover fieldset": {
+                borderColor: "#444444", // Color negro al pasar el cursor
+              },
+              "&.Mui-focused fieldset": {
+                borderColor: "#444444", // Color negro al enfocar
+              },
+            },
+            "& .MuiInputLabel-root": { color: "#444444" },
+            "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+          }}
+        />
+
+        <TextField
+          label="Procedencia"
+          fullWidth
+          select
+          value={procedencia}
+          onChange={(e) => setProcedencia(e.target.value)}
+          margin="dense"
+          variant="outlined"
+          sx={{
+            "& .MuiOutlinedInput-root": {
+              "& fieldset": {
+                borderColor: "#444444", // Color negro por defecto
+              },
+              "&:hover fieldset": {
+                borderColor: "#444444", // Color negro al pasar el cursor
+              },
+              "&.Mui-focused fieldset": {
+                borderColor: "#444444", // Color negro al enfocar
+              },
+            },
+            "& .MuiInputLabel-root": { color: "#444444" },
+            "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+          }}
+        >
+          <MenuItem value="">Sin procedencia</MenuItem>
+          {countries.map((country) => (
+            <MenuItem key={country.id} value={country.id}>
+              {country.name}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          label="Color"
+          fullWidth
+          select
+          value={color}
+          onChange={(e) => setColor(e.target.value)}
+          margin="dense"
+          variant="outlined"
+          sx={{
+            "& .MuiOutlinedInput-root": {
+              "& fieldset": {
+                borderColor: "#444444", // Color negro por defecto
+              },
+              "&:hover fieldset": {
+                borderColor: "#444444", // Color negro al pasar el cursor
+              },
+              "&.Mui-focused fieldset": {
+                borderColor: "#444444", // Color negro al enfocar
+              },
+            },
+            "& .MuiInputLabel-root": { color: "#444444" },
+            "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+          }}
+        >
+          <MenuItem value="">Sin color</MenuItem>
+          {colors.map((color) => (
+            <MenuItem key={color.id} value={color.id}>
+              {color.name}
+            </MenuItem>
+          ))}
+        </TextField>
+
           <div className="flex justify-between mt-6">
             <Button variant="contained" style={{ backgroundColor: "#d32f2f", color: "#fff" }} onClick={handleVolver}>
               Volver
