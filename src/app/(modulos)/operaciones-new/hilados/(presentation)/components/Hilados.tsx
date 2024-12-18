@@ -6,39 +6,43 @@ import {
   IconButton,
   Button,
   TextField,
-  Menu,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
 } from "@mui/material";
-import {
-  Visibility,
-  Add,
-  Edit,
-  PowerSettingsNew,
-  FilterList,
-  Search,
-} from "@mui/icons-material";
-import { useRouter } from "next/navigation";
+import { Edit, PowerSettingsNew } from "@mui/icons-material";
 import { fetchHilados, updateYarnStatus } from "../../services/hiladoService";
-import { Yarn } from "../../../models/models";
+import { handleUpdateYarn } from "../../use-cases/hilado";
+import { Yarn, Recipe } from "../../../models/models";
 
 const Hilados: React.FC = () => {
   const [hilados, setHilados] = useState<Yarn[]>([]);
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [skuFilter, setSkuFilter] = useState("");
-  const [tituloFilter, setTituloFilter] = useState("");
-  const [acabadoFilter, setAcabadoFilter] = useState("");
-  const [colorTenidoFilter, setColorTenidoFilter] = useState("");
-  const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
-  const [mostrarEditar, setMostrarEditar] = useState(true);
-  const [mostrarDeshabilitar, setMostrarDeshabilitar] = useState(true);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
-
-  const router = useRouter();
+  const [editingYarn, setEditingYarn] = useState<Yarn | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState<{ 
+    title: string; 
+    finish: string;
+    description: string; 
+    recipe: Recipe[] 
+  }>({
+    title: "",
+    finish: "",
+    description: "",
+    recipe: [],
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,36 +56,42 @@ const Hilados: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleCreateClick = () => {
-    router.push("/operaciones-new/hilados/crear-hilado");
+  const handleEditClick = (yarn: Yarn) => {
+    setEditingYarn(yarn);
+    setEditForm({
+      title: yarn.yarnCount,
+      finish: yarn.spinningMethod.value,
+      description: yarn.description,
+      recipe: yarn.recipe,
+    });
+    setEditDialogOpen(true);
   };
 
-  const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
-    setFilterAnchorEl(event.currentTarget);
+  const handleEditClose = () => {
+    setEditDialogOpen(false);
+    setEditingYarn(null);
   };
 
-  const handleFilterClose = () => {
-    setFilterAnchorEl(null);
-  };
+  const handleEditSave = async () => {
+    if (editingYarn) {
+      const updatedPayload = {
+        yarnCount: editForm.title,
+        spinningMethod: { value: editForm.finish },
+        description: editForm.description,
+        recipe: editForm.recipe,
+      };
 
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
+      await handleUpdateYarn(
+        editingYarn.id,
+        updatedPayload,
+        setHilados,
+        setSnackbarMessage,
+        setSnackbarSeverity,
+        setSnackbarOpen
+      );
 
-  const handleSkuFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSkuFilter(event.target.value);
-  };
-
-  const handleTituloFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setTituloFilter(event.target.value);
-  };
-
-  const handleAcabadoFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setAcabadoFilter(event.target.value);
-  };
-
-  const handleColorTenidoFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setColorTenidoFilter(event.target.value);
+      handleEditClose();
+    }
   };
 
   const handleToggleYarnStatus = async (id: string, isActive: boolean) => {
@@ -103,190 +113,130 @@ const Hilados: React.FC = () => {
     }
   };
 
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
-  };
-
-  const filteredHilados = hilados.filter((hilado) =>
-    (searchTerm === "" ||
-      hilado.description.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (skuFilter === "" || hilado.barcode.toString().includes(skuFilter)) &&
-    (tituloFilter === "" || hilado.description.toLowerCase().includes(tituloFilter.toLowerCase())) &&
-    (acabadoFilter === "" || hilado.spinningMethod.value.toLowerCase().includes(acabadoFilter.toLowerCase())) &&
-    (colorTenidoFilter === "" || hilado.color?.name?.toLowerCase().includes(colorTenidoFilter.toLowerCase()))
-  );
-
-  const toggleMostrarEditar = () => {
-    setMostrarEditar(!mostrarEditar);
-  };
-
-  const toggleMostrarDeshabilitar = () => {
-    setMostrarDeshabilitar(!mostrarDeshabilitar);
-  };
-
   return (
     <div className="space-y-5">
-      <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
+      <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default">
         <div className="max-w-full overflow-x-auto">
-          <div className="flex items-center justify-between gap-2 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center border border-gray-300 rounded-md px-2">
-                <Search />
-                <TextField
-                  variant="standard"
-                  placeholder="Buscar..."
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  InputProps={{
-                    disableUnderline: true,
-                  }}
-                />
-              </div>
-              <Button
-                startIcon={<FilterList />}
-                variant="outlined"
-                onClick={handleFilterClick}
-              >
-                Filtros
-              </Button>
-              <Menu
-                anchorEl={filterAnchorEl}
-                open={Boolean(filterAnchorEl)}
-                onClose={handleFilterClose}
-              >
-                <div className="p-4 space-y-2" style={{ maxWidth: "300px", margin: "0 auto" }}>
-                  <TextField
-                    label="SKU"
-                    variant="outlined"
-                    value={skuFilter}
-                    onChange={handleSkuFilterChange}
-                    placeholder="Buscar por SKU..."
-                    size="small"
-                    fullWidth
-                  />
-                  <TextField
-                    label="Título"
-                    variant="outlined"
-                    value={tituloFilter}
-                    onChange={handleTituloFilterChange}
-                    placeholder="Buscar por Título..."
-                    size="small"
-                    fullWidth
-                  />
-                  <TextField
-                    label="Acabado"
-                    variant="outlined"
-                    value={acabadoFilter}
-                    onChange={handleAcabadoFilterChange}
-                    placeholder="Buscar por Acabado..."
-                    size="small"
-                    fullWidth
-                  />
-                  <TextField
-                    label="Color Teñido"
-                    variant="outlined"
-                    value={colorTenidoFilter}
-                    onChange={handleColorTenidoFilterChange}
-                    placeholder="Buscar por Color Teñido..."
-                    size="small"
-                    fullWidth
-                  />
-                </div>
-              </Menu>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                startIcon={<Add />}
-                variant="contained"
-                style={{ backgroundColor: "#1976d2", color: "#fff" }}
-                onClick={handleCreateClick}
-              >
-                CREAR
-              </Button>
-              <Button
-                startIcon={<Edit />}
-                variant="contained"
-                style={{ backgroundColor: "#0288d1", color: "#fff" }}
-                onClick={toggleMostrarEditar}
-              >
-                {mostrarEditar ? "Ocultar Editar" : "Mostrar Editar"}
-              </Button>
-              <Button
-                startIcon={<PowerSettingsNew />}
-                variant="contained"
-                style={{ backgroundColor: "#d32f2f", color: "#fff" }}
-                onClick={toggleMostrarDeshabilitar}
-              >
-                {mostrarDeshabilitar ? "Ocultar Deshabilitar" : "Mostrar Deshabilitar"}
-              </Button>
-            </div>
-          </div>
-
           <table className="w-full table-auto">
             <thead>
-              <tr className="bg-blue-900 uppercase text-center">
-                <th className="px-4 py-4 text-center font-normal text-white">SKU</th>
-                <th className="px-4 py-4 text-center font-normal text-white">Título</th>
-                <th className="px-4 py-4 text-center font-normal text-white">Acabado</th>
-                <th className="px-4 py-4 text-center font-normal text-white">Color Teñido</th>
-                <th className="px-4 py-4 text-center font-normal text-white">Estado</th>
-                {mostrarEditar && <th className="px-4 py-4 text-center font-normal text-white">Editar</th>}
-                {mostrarDeshabilitar && <th className="px-4 py-4 text-center font-normal text-white">Deshabilitar</th>}
+              <tr className="bg-blue-900 uppercase text-center text-white">
+                <th className="px-4 py-4">SKU</th>
+                <th className="px-4 py-4">Título</th>
+                <th className="px-4 py-4">Acabado</th>
+                <th className="px-4 py-4">Estado</th>
+                <th className="px-4 py-4">Editar</th>
+                <th className="px-4 py-4">Deshabilitar</th>
               </tr>
             </thead>
             <tbody>
-              {filteredHilados
+              {hilados
                 .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
                 .map((hilado) => (
                   <tr key={hilado.id} className="text-center">
-                    <td className="border-b border-gray-300 px-4 py-5">{hilado.barcode}</td>
-                    <td className="border-b border-gray-300 px-4 py-5">{hilado.description}</td>
-                    <td className="border-b border-gray-300 px-4 py-5">{hilado.spinningMethod.value}</td>
-                    <td className="border-b border-gray-300 px-4 py-5">{hilado.color?.name || "-"}</td>
-                    <td className="border-b border-gray-300 px-4 py-5">
+                    <td className="border-b px-4 py-5">{hilado.barcode}</td>
+                    <td className="border-b px-4 py-5">{hilado.yarnCount}</td>
+                    <td className="border-b px-4 py-5">{hilado.spinningMethod.value}</td>
+                    <td className="border-b px-4 py-5">
                       <span className={hilado.isActive ? "text-green-500" : "text-red-500"}>
                         {hilado.isActive ? "Activo" : "Inactivo"}
                       </span>
                     </td>
-                    {mostrarEditar && (
-                      <td className="border-b border-gray-300 px-4 py-5">
-                        <IconButton>
-                          <Edit />
-                        </IconButton>
-                      </td>
-                    )}
-                    {mostrarDeshabilitar && (
-                      <td className="border-b border-gray-300 px-4 py-5">
-                        <IconButton onClick={() => handleToggleYarnStatus(hilado.id, hilado.isActive)}>
-                          <PowerSettingsNew />
-                        </IconButton>
-                      </td>
-                    )}
+                    <td className="border-b px-4 py-5">
+                      <IconButton onClick={() => handleEditClick(hilado)}>
+                        <Edit />
+                      </IconButton>
+                    </td>
+                    <td className="border-b px-4 py-5">
+                      <IconButton onClick={() => handleToggleYarnStatus(hilado.id, hilado.isActive)}>
+                        <PowerSettingsNew />
+                      </IconButton>
+                    </td>
                   </tr>
                 ))}
             </tbody>
           </table>
+          <TablePagination
+            rowsPerPageOptions={[10, 25, 50]}
+            component="div"
+            count={hilados.length}
+            rowsPerPage={filasPorPagina}
+            page={pagina}
+            onPageChange={(_, newPage) => setPagina(newPage)}
+            onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))}
+          />
         </div>
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 50]}
-          component="div"
-          count={filteredHilados.length}
-          rowsPerPage={filasPorPagina}
-          page={pagina}
-          onPageChange={(_, newPage) => setPagina(newPage)}
-          onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))}
-        />
       </div>
+
+      {/* Snackbar */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={6000}
-        onClose={handleSnackbarClose}
+        onClose={() => setSnackbarOpen(false)}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity}>
+        <Alert severity={snackbarSeverity} onClose={() => setSnackbarOpen(false)}>
           {snackbarMessage}
         </Alert>
       </Snackbar>
+
+      {/* Dialog para edición */}
+      <Dialog open={editDialogOpen} onClose={handleEditClose} maxWidth="md" fullWidth>
+        <DialogTitle>Editar Hilado</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Título"
+            fullWidth
+            margin="dense"
+            value={editForm.title}
+            onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+          />
+          <TextField
+            label="Acabado"
+            fullWidth
+            margin="dense"
+            value={editForm.finish}
+            onChange={(e) => setEditForm({ ...editForm, finish: e.target.value })}
+          />
+          <h3 className="mt-4 font-semibold">Seleccionar Fibras</h3>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Categoría</TableCell>
+                <TableCell>Variedad/Marca</TableCell>
+                <TableCell>Procedencia</TableCell>
+                <TableCell>Proporción</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {editForm.recipe.map((r: Recipe, index: number) => (
+                <TableRow key={index}>
+                  <TableCell>{r.fiber.category.value}</TableCell>
+                  <TableCell>{r.fiber.denomination}</TableCell>
+                  <TableCell>{r.fiber.origin}</TableCell>
+                  <TableCell>{r.proportion}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <TextField
+            label="Descripción"
+            fullWidth
+            multiline
+            rows={3}
+            margin="dense"
+            value={editForm.description}
+            onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditClose} color="error">
+            Cancelar
+          </Button>
+          <Button onClick={handleEditSave} color="primary" variant="contained">
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

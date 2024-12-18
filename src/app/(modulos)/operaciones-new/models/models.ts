@@ -77,3 +77,23 @@ export interface YarnResponse {
   yarns: Yarn[];
 }
   
+export interface Recipe {
+  proportion: number;
+  fiber: {
+    id: string;
+    denomination: string;
+    origin: string | null;
+    isActive: boolean;
+    category: {
+      id: number;
+      value: string;
+    };
+    color: {
+      id: string;
+      name: string;
+      sku: string;
+      hexadecimal: string;
+      isActive: boolean;
+    } | null;
+  };
+}
