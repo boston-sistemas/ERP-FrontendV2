@@ -17,13 +17,16 @@ import {
   TableBody,
   TableRow,
   TableCell,
+  Menu,
 } from "@mui/material";
-import { Edit, PowerSettingsNew } from "@mui/icons-material";
+import { Edit, PowerSettingsNew, Add, Search, FilterList } from "@mui/icons-material";
 import { fetchHilados, updateYarnStatus } from "../../services/hiladoService";
 import { handleUpdateYarn } from "../../use-cases/hilado";
 import { Yarn, Recipe } from "../../../models/models";
+import { useRouter } from "next/navigation";
 
 const Hilados: React.FC = () => {
+  const router = useRouter();
   const [hilados, setHilados] = useState<Yarn[]>([]);
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
@@ -32,11 +35,14 @@ const Hilados: React.FC = () => {
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
   const [editingYarn, setEditingYarn] = useState<Yarn | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editForm, setEditForm] = useState<{ 
-    title: string; 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showEditColumn, setShowEditColumn] = useState(true);
+  const [showDisableColumn, setShowDisableColumn] = useState(true);
+  const [editForm, setEditForm] = useState<{
+    title: string;
     finish: string;
-    description: string; 
-    recipe: Recipe[] 
+    description: string;
+    recipe: Recipe[];
   }>({
     title: "",
     finish: "",
@@ -113,9 +119,59 @@ const Hilados: React.FC = () => {
     }
   };
 
+  const handleCrearHilado = () => {
+    router.push("/operaciones-new/hilados/crear-hilado");
+  }
+
+  const filteredHilados = hilados.filter((h) =>
+    h.yarnCount.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="space-y-5">
-      <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default">
+      <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default sm:px-7.5 xl:pb-1">
+        {/* Barra superior dentro del contenedor de la tabla */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center border border-gray-300 rounded-md px-2">
+              <Search />
+              <TextField
+                variant="standard"
+                placeholder="Buscar por título..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  disableUnderline: true,
+                }}
+              />
+            </div>
+          </div>
+          <div className="space-x-2">
+            <Button startIcon={<Add />} variant="contained" style={{ backgroundColor: "#1976d2", color: "#fff" }} onClick={handleCrearHilado}>
+              CREAR
+            </Button>
+            <Button
+              startIcon={<Edit />}
+              variant="contained"
+              style={{ backgroundColor: "#1976d2", color: "#fff" }}
+              color="primary"
+              onClick={() => setShowEditColumn((prev) => !prev)}
+            >
+              {showEditColumn ? "Ocultar Editar" : "Mostrar Editar"}
+            </Button>
+            <Button
+              startIcon={<PowerSettingsNew />}
+              variant="contained"
+              style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+              color="error"
+              onClick={() => setShowDisableColumn((prev) => !prev)}
+            >
+              {showDisableColumn ? "Ocultar Deshabilitar" : "Mostrar Deshabilitar"}
+            </Button>
+          </div>
+        </div>
+  
+        {/* Tabla principal */}
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
             <thead>
@@ -124,12 +180,12 @@ const Hilados: React.FC = () => {
                 <th className="px-4 py-4">Título</th>
                 <th className="px-4 py-4">Acabado</th>
                 <th className="px-4 py-4">Estado</th>
-                <th className="px-4 py-4">Editar</th>
-                <th className="px-4 py-4">Deshabilitar</th>
+                {showEditColumn && <th className="px-4 py-4">Editar</th>}
+                {showDisableColumn && <th className="px-4 py-4">Deshabilitar</th>}
               </tr>
             </thead>
             <tbody>
-              {hilados
+              {filteredHilados
                 .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
                 .map((hilado) => (
                   <tr key={hilado.id} className="text-center">
@@ -141,16 +197,20 @@ const Hilados: React.FC = () => {
                         {hilado.isActive ? "Activo" : "Inactivo"}
                       </span>
                     </td>
-                    <td className="border-b px-4 py-5">
-                      <IconButton onClick={() => handleEditClick(hilado)}>
-                        <Edit />
-                      </IconButton>
-                    </td>
-                    <td className="border-b px-4 py-5">
-                      <IconButton onClick={() => handleToggleYarnStatus(hilado.id, hilado.isActive)}>
-                        <PowerSettingsNew />
-                      </IconButton>
-                    </td>
+                    {showEditColumn && (
+                      <td className="border-b px-4 py-5">
+                        <IconButton onClick={() => handleEditClick(hilado)}>
+                          <Edit />
+                        </IconButton>
+                      </td>
+                    )}
+                    {showDisableColumn && (
+                      <td className="border-b px-4 py-5">
+                        <IconButton onClick={() => handleToggleYarnStatus(hilado.id, hilado.isActive)}>
+                          <PowerSettingsNew />
+                        </IconButton>
+                      </td>
+                    )}
                   </tr>
                 ))}
             </tbody>
@@ -158,7 +218,7 @@ const Hilados: React.FC = () => {
           <TablePagination
             rowsPerPageOptions={[10, 25, 50]}
             component="div"
-            count={hilados.length}
+            count={filteredHilados.length}
             rowsPerPage={filasPorPagina}
             page={pagina}
             onPageChange={(_, newPage) => setPagina(newPage)}
@@ -166,7 +226,7 @@ const Hilados: React.FC = () => {
           />
         </div>
       </div>
-
+  
       {/* Snackbar */}
       <Snackbar
         open={snackbarOpen}
@@ -178,7 +238,7 @@ const Hilados: React.FC = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-
+  
       {/* Dialog para edición */}
       <Dialog open={editDialogOpen} onClose={handleEditClose} maxWidth="md" fullWidth>
         <DialogTitle>Editar Hilado</DialogTitle>
@@ -197,27 +257,6 @@ const Hilados: React.FC = () => {
             value={editForm.finish}
             onChange={(e) => setEditForm({ ...editForm, finish: e.target.value })}
           />
-          <h3 className="mt-4 font-semibold">Seleccionar Fibras</h3>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Categoría</TableCell>
-                <TableCell>Variedad/Marca</TableCell>
-                <TableCell>Procedencia</TableCell>
-                <TableCell>Proporción</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {editForm.recipe.map((r: Recipe, index: number) => (
-                <TableRow key={index}>
-                  <TableCell>{r.fiber.category.value}</TableCell>
-                  <TableCell>{r.fiber.denomination}</TableCell>
-                  <TableCell>{r.fiber.origin}</TableCell>
-                  <TableCell>{r.proportion}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
           <TextField
             label="Descripción"
             fullWidth
@@ -239,6 +278,7 @@ const Hilados: React.FC = () => {
       </Dialog>
     </div>
   );
+  
 };
 
 export default Hilados;
