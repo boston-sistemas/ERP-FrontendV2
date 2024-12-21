@@ -20,7 +20,7 @@ import {
   Menu,
 } from "@mui/material";
 import { Edit, PowerSettingsNew, Add, Search, FilterList, Close } from "@mui/icons-material";
-import { fetchHilados, updateYarnStatus } from "../../services/hiladoService";
+import { fetchHilados, updateYarnStatus, fetchSpinningMethods } from "../../services/hiladoService";
 import { handleUpdateYarn } from "../../use-cases/hilado";
 import { Yarn, Recipe, Fiber} from "../../../models/models";
 import { useRouter } from "next/navigation";
@@ -43,6 +43,7 @@ const Hilados: React.FC = () => {
   const [availableFibras, setAvailableFibras] = useState<Fiber[]>([]);
   const [showAvailableFibers, setShowAvailableFibers] = useState(false);
   const [showFiberDialog, setShowFiberDialog] = useState(false);
+  const [spinningMethods, setSpinningMethods] = useState<{ id: number; value: string }[]>([]);
   const [editForm, setEditForm] = useState<{
     title: string;
     finish: string;
@@ -60,8 +61,10 @@ const Hilados: React.FC = () => {
       try {
         const data = await fetchHilados();
         const dataFibers = await fetchFibras();
+        const methods = await fetchSpinningMethods();
         setHilados(data.yarns);
         setAvailableFibras(dataFibers.fibers);
+        setSpinningMethods(methods);
       } catch (error) {
         console.error("Error fetching hilados:", error);
       }
@@ -73,7 +76,7 @@ const Hilados: React.FC = () => {
     setEditingYarn(yarn);
     setEditForm({
       title: yarn.yarnCount,
-      finish: yarn.spinningMethod.value,
+      finish: yarn.spinningMethod.id.toString(),
       description: yarn.description,
       recipe: yarn.recipe ? [...yarn.recipe] : [],
     });
@@ -85,11 +88,50 @@ const Hilados: React.FC = () => {
     setEditingYarn(null);
   };
 
+  const getErrorMessage = (error: any): string => {
+    const detail = error?.detail || "Ocurrió un error inesperado.";
+    
+    switch (detail) {
+      case "El hilado especificado no existe.":
+        return "No se encontró el hilado especificado.";
+      case "El acabado de hilado especificado no existe.":
+        return "El acabado seleccionado para el hilado no existe.";
+      case "El acabado de hilado especificado está deshabilitado.":
+        return "El acabado seleccionado para el hilado está deshabilitado.";
+      case "Receta inválida: las proporciones deben sumar 100%.":
+        return "La receta del hilado es inválida: las proporciones deben sumar 100%.";
+      case "Receta inválida: una o más fibras están duplicadas.":
+        return "La receta contiene fibras duplicadas.";
+      case "Receta inválida: una o más fibras especificadas no existen.":
+        return "Una o más fibras de la receta no existen.";
+      case "Receta inválida: una o más fibras especificadas están deshabilitadas.":
+        return "Una o más fibras de la receta están deshabilitadas.";
+      case "El hilado ya está registrado en el sistema.":
+        return "El hilado ya está registrado.";
+      case "El titulo del hilado no puede ser nulo.":
+        return "El título del hilado es obligatorio.";
+      case "La unidad de medida del titulo del hilado no puede ser nulo.":
+        return "La unidad de medida del título del hilado es obligatoria.";
+      case "La receta del hilado no puede ser nula.":
+        return "La receta del hilado no puede estar vacía.";
+      default:
+        return detail;
+    }
+  };  
+
   const handleEditSave = async () => {
     if (editingYarn) {
-      // Validar que la suma de proporciones sea igual a 100
+      // Validar que al menos haya una fibra seleccionada
+      if (editForm.recipe.length === 0) {
+        setSnackbarMessage("Debe seleccionar al menos una fibra en la receta.");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+        return; // Detener la ejecución si no hay fibras seleccionadas
+      }
+  
       const totalProportion = editForm.recipe.reduce((acc, item) => acc + item.proportion, 0);
   
+      // Validar que las proporciones sumen 100
       if (totalProportion !== 100) {
         setSnackbarMessage("La suma de las proporciones debe ser igual a 100.");
         setSnackbarSeverity("error");
@@ -97,20 +139,22 @@ const Hilados: React.FC = () => {
         return;
       }
   
-      // Transformar el payload para ajustarlo al formato del endpoint
       const updatedPayload = {
         yarnCount: editForm.title,
-        numberingSystem: "Ne", // Puedes ajustarlo según tu lógica
-        spinningMethodId: editingYarn.spinningMethod.id, // Ajustar según tu modelo
+        numberingSystem: "Ne",
+        spinningMethodId: parseInt(editForm.finish, 10),
         colorId: editingYarn.color?.id || null,
         description: editForm.description,
-        recipe: editForm.recipe.map((item) => ({
-          fiberId: item.fiber.id,
-          proportion: item.proportion,
-        })),
+        recipe: editForm.recipe
+          .filter((item) => item.fiber) // Filtrar elementos inválidos
+          .map((item) => ({
+            fiberId: item.fiber!.id, // El operador ! asegura que fiber no es nulo aquí
+            proportion: item.proportion,
+          })),
       };
   
       try {
+        // Intentar actualizar el hilado
         await handleUpdateYarn(
           editingYarn.id,
           updatedPayload,
@@ -119,19 +163,38 @@ const Hilados: React.FC = () => {
           setSnackbarSeverity,
           setSnackbarOpen
         );
+  
+        // Actualizar el estado local de hilados si fue exitoso
+        setHilados((prevHilados) =>
+          prevHilados.map((hilado) =>
+            hilado.id === editingYarn.id
+              ? {
+                  ...hilado,
+                  yarnCount: editForm.title,
+                  spinningMethod:
+                    spinningMethods.find(
+                      (method) => method.id === parseInt(editForm.finish, 10)
+                    ) || hilado.spinningMethod,
+                  description: editForm.description,
+                }
+              : hilado
+          )
+        );
+  
         setSnackbarMessage("Hilado actualizado correctamente.");
         setSnackbarSeverity("success");
         setSnackbarOpen(true);
+        handleEditClose();
       } catch (error) {
-        setSnackbarMessage("Error al actualizar el hilado.");
+        // Mostrar mensaje de error si la actualización falla
+        const errorMessage = getErrorMessage(error);
+        setSnackbarMessage(errorMessage);
         setSnackbarSeverity("error");
         setSnackbarOpen(true);
       }
-  
-      handleEditClose();
     }
-  };  
-
+  };
+  
   const handleToggleYarnStatus = async (id: string, isActive: boolean) => {
     try {
       await updateYarnStatus(id, !isActive);
@@ -249,43 +312,55 @@ const Hilados: React.FC = () => {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center text-white">
-                <th className="px-4 py-4">SKU</th>
-                <th className="px-4 py-4">Título</th>
-                <th className="px-4 py-4">Acabado</th>
-                <th className="px-4 py-4">Estado</th>
-                {showEditColumn && <th className="px-4 py-4">Editar</th>}
-                {showDisableColumn && <th className="px-4 py-4">Deshabilitar</th>}
+                <th className="px-4 py-4 font-normal">SKU</th>
+                <th className="px-4 py-4 font-normal">Título</th>
+                <th className="px-4 py-4 font-normal">Acabado</th>
+                <th className="px-4 py-4 font-normal">Estado</th>
+                {showEditColumn && <th className="px-4 py-4 font-normal">Editar</th>}
+                {showDisableColumn && <th className="px-4 py-4 font-normal">Deshabilitar</th>}
               </tr>
             </thead>
             <tbody>
-              {filteredHilados
-                .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
-                .map((hilado) => (
-                  <tr key={hilado.id} className="text-center">
-                    <td className="border-b px-4 py-5">{hilado.barcode}</td>
-                    <td className="border-b px-4 py-5">{hilado.yarnCount}</td>
-                    <td className="border-b px-4 py-5">{hilado.spinningMethod.value}</td>
-                    <td className="border-b px-4 py-5">
-                      <span className={hilado.isActive ? "text-green-500" : "text-red-500"}>
-                        {hilado.isActive ? "Activo" : "Inactivo"}
-                      </span>
-                    </td>
-                    {showEditColumn && (
-                      <td className="border-b px-4 py-5">
-                        <IconButton onClick={() => handleEditClick(hilado)}>
-                          <Edit />
-                        </IconButton>
+              {filteredHilados.length > 0 ? (
+                filteredHilados
+                  .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
+                  .map((hilado) => (
+                    <tr key={hilado.id} className="text-center text-black">
+                      <td className="border-b border-gray-300 px-4 py-5">{hilado.barcode}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">{hilado.yarnCount}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">{hilado.spinningMethod.value}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        <span
+                          className={`text-sm ${
+                            hilado.isActive ? "text-green-500" : "text-red-500"
+                          }`}
+                        >
+                          {hilado.isActive ? "Activo" : "Inactivo"}
+                        </span>
                       </td>
-                    )}
-                    {showDisableColumn && (
-                      <td className="border-b px-4 py-5">
-                        <IconButton onClick={() => handleToggleYarnStatus(hilado.id, hilado.isActive)}>
-                          <PowerSettingsNew />
-                        </IconButton>
-                      </td>
-                    )}
-                  </tr>
-                ))}
+                      {showEditColumn && (
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          <IconButton onClick={() => handleEditClick(hilado)}>
+                            <Edit />
+                          </IconButton>
+                        </td>
+                      )}
+                      {showDisableColumn && (
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          <IconButton onClick={() => handleToggleYarnStatus(hilado.id, hilado.isActive)}>
+                            <PowerSettingsNew />
+                          </IconButton>
+                        </td>
+                      )}
+                    </tr>
+                  ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="pt-5 pb-5 text-center text-black">
+                    No hay datos disponibles
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
           <TablePagination
@@ -314,46 +389,57 @@ const Hilados: React.FC = () => {
   
       {/* Dialog para edición */}
       <Dialog open={editDialogOpen} onClose={handleEditClose} maxWidth="md" fullWidth>
-        <DialogTitle>Editar Hilado</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Título"
-            fullWidth
-            margin="dense"
-            value={editForm.title}
-            onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-          />
-          <TextField
-            label="Acabado"
-            fullWidth
-            margin="dense"
-            value={editForm.finish}
-            onChange={(e) => setEditForm({ ...editForm, finish: e.target.value })}
-          />
-          <TextField
-            label="Descripción"
-            fullWidth
-            multiline
-            rows={3}
-            margin="dense"
-            value={editForm.description}
-            onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-          />
-          {/* Tabla de receta */}
-          <h3 className="text-lg font-semibold text-black dark:text-white mb-2">Receta</h3>
-          <div className="max-w-full overflow-x-auto">
-            <table className="w-full table-auto">
-              <thead>
-                <tr className="bg-blue-900 uppercase text-center">
-                  <th className="px-4 py-4 text-center font-normal text-white">Fibra</th>
-                  <th className="px-4 py-4 text-center font-normal text-white">Categoría</th>
-                  <th className="px-4 py-4 text-center font-normal text-white">Procedencia</th>
-                  <th className="px-4 py-4 text-center font-normal text-white">Color</th>
-                  <th className="px-4 py-4 text-center font-normal text-white">Proporción</th>
-                  <th className="px-4 py-4 text-center font-normal text-white">Eliminar</th>
-                </tr>
-              </thead>
-              <tbody>
+      <DialogTitle>Editar Hilado</DialogTitle>
+      <DialogContent>
+        <TextField
+          label="Título"
+          fullWidth
+          margin="dense"
+          value={editForm.title}
+          onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+        />
+        <div className="mt-4">
+        <label htmlFor="spinningMethod" className="block text-sm font-medium text-gray-700 mb-1">
+          Método de Hilado
+        </label>
+        <select
+          id="spinningMethod"
+          className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 sm:text-sm text-gray-900"
+          value={editForm.finish} // Aquí se refleja el ID del método seleccionado
+          onChange={(e) => setEditForm({ ...editForm, finish: e.target.value })}
+        >
+          <option value="">Seleccione un método</option>
+          {spinningMethods.map((method) => (
+            <option key={method.id} value={method.id}>
+              {method.value}
+            </option>
+          ))}
+        </select>
+      </div>
+        <TextField
+          label="Descripción"
+          fullWidth
+          multiline
+          rows={3}
+          margin="dense"
+          value={editForm.description}
+          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+        />
+        {/* Tabla de receta */}
+        <h3 className="text-lg font-semibold text-black dark:text-white mb-2">Receta</h3>
+        <div className="max-w-full overflow-x-auto">
+          <table className="w-full table-auto">
+            <thead>
+              <tr className="bg-blue-900 uppercase text-center">
+                <th className="px-4 py-4 text-center font-normal text-white">Fibra</th>
+                <th className="px-4 py-4 text-center font-normal text-white">Categoría</th>
+                <th className="px-4 py-4 text-center font-normal text-white">Procedencia</th>
+                <th className="px-4 py-4 text-center font-normal text-white">Color</th>
+                <th className="px-4 py-4 text-center font-normal text-white">Proporción</th>
+                <th className="px-4 py-4 text-center font-normal text-white">Eliminar</th>
+              </tr>
+            </thead>
+            <tbody>
               {editForm.recipe.map((r, index) => (
                 <tr key={index} className="text-center">
                   <td className="border-b border-[#eee] px-4 py-5">
@@ -389,12 +475,12 @@ const Hilados: React.FC = () => {
                 </tr>
               ))}
             </tbody>
-            </table>
-            <IconButton onClick={() => setShowFiberDialog(true)}>
-              <Add />
-            </IconButton>
-          </div>
-        </DialogContent>
+          </table>
+          <IconButton onClick={() => setShowFiberDialog(true)} style={{ color: "#1976d2" }}>
+            <Add />
+          </IconButton>
+        </div>
+      </DialogContent>
         {/* Diálogo de fibras disponibles */}
         <Dialog open={showFiberDialog} onClose={() => setShowFiberDialog(false)} maxWidth="md" fullWidth>
         <DialogContent>
@@ -453,10 +539,10 @@ const Hilados: React.FC = () => {
       </Dialog>
 
         <DialogActions>
-          <Button onClick={handleEditClose} color="error">
+          <Button onClick={handleEditClose} variant = "contained" style={{backgroundColor: "#d32f2f", color: "#fff"}}>
             Cancelar
           </Button>
-          <Button onClick={handleEditSave} color="primary" variant="contained">
+          <Button onClick={handleEditSave} variant="contained" style={{backgroundColor: "#1976d2", color: "#fff"}}>
             Guardar
           </Button>
         </DialogActions>

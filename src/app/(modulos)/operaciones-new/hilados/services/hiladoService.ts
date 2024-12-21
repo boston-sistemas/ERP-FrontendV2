@@ -14,3 +14,8 @@ export const updateYarnStatus = async (yarnId: string, isActive: boolean): Promi
 export const updateYarn = async (yarnId: string, payload: any): Promise<void> => {
     await instance.patch(`/operations/v1/yarns/${yarnId}`, payload);
 }
+
+export const fetchSpinningMethods = async () => {
+    const response = await instance.get("/security/v1/parameters/public/spinning-methods");
+    return response.data.spinningMethods;
+}
