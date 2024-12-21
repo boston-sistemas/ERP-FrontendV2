@@ -12,5 +12,5 @@ export const updateYarnStatus = async (yarnId: string, isActive: boolean): Promi
 }
 
 export const updateYarn = async (yarnId: string, payload: any): Promise<void> => {
-    await instance.put(`/operations/v1/yarns/${yarnId}`, payload);
+    await instance.patch(`/operations/v1/yarns/${yarnId}`, payload);
 }

@@ -1,4 +1,4 @@
-﻿import { Fibra, MecsaColor } from "../../models/models";
+﻿import { Fiber, Fibra, MecsaColor } from "../../models/models";
 import {
   fetchFibras,
   updateFiberStatus as updateFiberStatusService,
@@ -10,7 +10,7 @@ import {
 } from "../services/fibraService";
 
 export const handleFetchFibras = async (
-  setFibras: (fibras: Fibra[]) => void,
+  setFibras: (fibras: Fiber[]) => void,
   setLoading: (loading: boolean) => void,
   setError: (error: string | null) => void
 ): Promise<void> => {

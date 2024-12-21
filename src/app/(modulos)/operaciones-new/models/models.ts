@@ -36,7 +36,7 @@ export interface FiberCategory {
 }
 
 export interface FibraResponse {
-  fibers: Fibra[];
+  fibers: Fiber[];
 }
 
 export interface Fiber {

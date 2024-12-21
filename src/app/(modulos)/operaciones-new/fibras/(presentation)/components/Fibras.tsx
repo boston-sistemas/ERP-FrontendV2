@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import { Edit, PowerSettingsNew, Add, FilterList, Search } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-import { Fibra, MecsaColor } from "../../../models/models";
+import { Fiber, Fibra, MecsaColor } from "../../../models/models";
 import {
   handleFetchFibras,
   updateFiberStatus,
@@ -30,7 +30,7 @@ import {
 
 const Fibras: React.FC = () => {
   const router = useRouter();
-  const [fibras, setFibras] = useState<Fibra[]>([]);
+  const [fibras, setFibras] = useState<Fiber[]>([]);
   const [categories, setCategories] = useState<{ id: number; value: string }[]>([]);
   const [countries, setCountries] = useState<{ id: string; name: string }[]>([]);
   const [colors, setColors] = useState<MecsaColor[]>([]);
@@ -61,7 +61,7 @@ const Fibras: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleEditFibra = (fibra: Fibra) => {
+  const handleEditFibra = (fibra: Fiber) => {
     setSelectedFibra({
       ...fibra,
       categoryId: fibra.category?.id || 0,
@@ -108,7 +108,7 @@ const Fibras: React.FC = () => {
   };
   
 
-  const handleDeshabilitarFibra = async (fibra: Fibra) => {
+  const handleDeshabilitarFibra = async (fibra: Fiber) => {
     try {
       setLoading(true);
       await updateFiberStatus(
