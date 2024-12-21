@@ -19,3 +19,7 @@ export const fetchSpinningMethods = async () => {
     const response = await instance.get("/security/v1/parameters/public/spinning-methods");
     return response.data.spinningMethods;
 }
+
+export const createYarn = async (payload: any): Promise<void> => {
+    await instance.post("/operations/v1/yarns", payload);
+}
