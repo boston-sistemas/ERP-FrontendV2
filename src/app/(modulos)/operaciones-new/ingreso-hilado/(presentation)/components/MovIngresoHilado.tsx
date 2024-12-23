@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TablePagination,
   IconButton,
@@ -9,50 +9,39 @@ import {
   Menu,
 } from "@mui/material";
 import { Visibility, Add, FilterList, Search } from "@mui/icons-material";
-import { useRouter } from "next/navigation"; // Importa useRouter
-
-const HiladosData = [
-  {
-    nroOC: "OC001",
-    nroIngreso: "ING001",
-    proveedor: "Proveedor A",
-    fecha: "2024-11-21",
-    loteProveedor: "Lote001",
-    loteMecsa: "LM001",
-  },
-  {
-    nroOC: "OC002",
-    nroIngreso: "ING002",
-    proveedor: "Proveedor B",
-    fecha: "2024-11-20",
-    loteProveedor: "Lote002",
-    loteMecsa: "LM002",
-  },
-  {
-    nroOC: "OC003",
-    nroIngreso: "ING003",
-    proveedor: "Proveedor C",
-    fecha: "2024-11-19",
-    loteProveedor: "Lote003",
-    loteMecsa: "LM003",
-  },
-  {
-    nroOC: "OC004",
-    nroIngreso: "ING004",
-    proveedor: "Proveedor D",
-    fecha: "2024-11-18",
-    loteProveedor: "Lote004",
-    loteMecsa: "LM004",
-  },
-];
+import { useRouter } from "next/navigation";
+import { YarnPurchaseEntry } from "../../../models/models";
+import { fetchYarnPurchaseEntries } from "../../services/movIngresoHiladoService";
 
 const MovIngresoHilado: React.FC = () => {
-  const router = useRouter(); // Hook de Next.js para redireccionar
-  const [hilados, setHilados] = useState(HiladosData);
+  const router = useRouter();
+  const [hilados, setHilados] = useState<YarnPurchaseEntry[]>([]);
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Cargar datos del servicio
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetchYarnPurchaseEntries(
+          2024, // Cambia el periodo si es dinámico
+          filasPorPagina,
+          pagina * filasPorPagina
+        );
+        setHilados(response.yarnPurchaseEntries); // Asigna los datos de hilados
+      } catch (error) {
+        console.error("Error al cargar los datos:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [pagina, filasPorPagina]);
 
   const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
     setFilterAnchorEl(event.currentTarget);
@@ -70,9 +59,13 @@ const MovIngresoHilado: React.FC = () => {
     router.push("/operaciones-new/ingreso-hilado/crear-mov-ingreso-hilado");
   };
 
+  const handleDetailsClick = (entryNumber: string) => {
+    router.push(`/operaciones-new/ingreso-hilado/detalles-mov-ingreso-hilado/${entryNumber}`);
+  };
+
   const filteredHilados = hilados.filter((hilado) =>
     Object.values(hilado).some((value) =>
-      value.toLowerCase().includes(searchTerm.toLowerCase())
+      String(value).toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
@@ -128,29 +121,33 @@ const MovIngresoHilado: React.FC = () => {
               </Menu>
             </div>
 
-            {/* Botón Agregar */}
+            {/* Botón Crear */}
             <div className="flex items-center gap-2">
               <Button
                 startIcon={<Add />}
                 variant="contained"
                 style={{ backgroundColor: "#1976d2", color: "#fff" }}
-                onClick={handleCreateMovIngresoHilado} // Llama a la función de redirección
+                onClick={handleCreateMovIngresoHilado}
               >
                 CREAR
               </Button>
             </div>
           </div>
 
+          {/* Tabla de Movimientos */}
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center">
                 {[
-                  "Nro O/C",
                   "Nro Ingreso",
-                  "Proveedor de la O/C",
+                  "Periodo",
                   "Fecha",
-                  "Lte. Provee.",
-                  "Lte. Mecsa",
+                  "Hora",
+                  "Proveedor",
+                  "Estado",
+                  "Nro O/C",
+                  "Lote Proveedor",
+                  "Lote Mecsa",
                   "Detalles/Edición",
                 ].map((col, index) => (
                   <th
@@ -163,41 +160,64 @@ const MovIngresoHilado: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredHilados
-                .slice(
-                  pagina * filasPorPagina,
-                  pagina * filasPorPagina + filasPorPagina
-                )
-                .map((hilado, index) => (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={10} className="text-center py-4">
+                    Cargando datos...
+                  </td>
+                </tr>
+              ) : filteredHilados.length > 0 ? (
+                filteredHilados.map((hilado, index) => (
                   <tr key={index} className="text-center">
                     <td className="border-b border-[#eee] px-4 py-5">
-                      {hilado.nroOC}
+                      {hilado.entryNumber}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
-                      {hilado.nroIngreso}
+                      {hilado.period}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
-                      {hilado.proveedor}
+                      {hilado.creationDate}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
-                      {hilado.fecha}
+                      {hilado.creationTime}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
-                      {hilado.loteProveedor}
+                      {hilado.supplierCode}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
-                      {hilado.loteMecsa}
+                      {hilado.statusFlag}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
-                      <IconButton color="primary">
+                      {hilado.purchaseOrderNumber}
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5">
+                      {hilado.supplierBatch}
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5">
+                      {hilado.mecsaBatch}
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-5">
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleDetailsClick(hilado.entryNumber)}
+                      >
                         <Visibility />
                       </IconButton>
                     </td>
                   </tr>
-                ))}
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={10} className="text-center py-4">
+                    No se encontraron resultados.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* Paginación */}
         <TablePagination
           rowsPerPageOptions={[10, 25, 50]}
           component="div"
@@ -212,10 +232,6 @@ const MovIngresoHilado: React.FC = () => {
           labelDisplayedRows={({ from, to, count }) =>
             `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
           }
-          sx={{
-            color: (theme) =>
-              theme.palette.mode === "dark" ? "#ffffff" : "inherit",
-          }}
         />
       </div>
     </div>

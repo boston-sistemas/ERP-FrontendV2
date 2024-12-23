@@ -1,101 +1,111 @@
 ﻿"use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Button,
-  IconButton,
-  Table,
-  TableBody,
-  TableCell,
   TableContainer,
+  Table,
   TableHead,
   TableRow,
+  TableCell,
+  TableBody,
   Typography,
-  Collapse,
-  Checkbox,
+  CircularProgress,
 } from "@mui/material";
-import { Visibility, Edit, KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
+import { Edit } from "@mui/icons-material";
+import { useParams } from "next/navigation"; // Para capturar parámetros dinámicos
+import instance from "@/infrastructure/config/AxiosConfig";
+import { YarnPurchaseEntry } from "../../../models/models";
 
 const DetallesMovIngresoHilado: React.FC = () => {
-  const [openDetails, setOpenDetails] = useState(false); 
+  const { entryNumber } = useParams<{ entryNumber: string }>(); // Captura el parámetro de la URL
+  const [detalle, setDetalle] = useState<YarnPurchaseEntry | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const detalleCabecera = {
-    numero: "60024521",
-    proveedor: "P0249 GRUPO INDUSTRIAL SAN IGNACIO SA",
-    ordenCompra: "12400143",
-    guiaFactura: "07 296",
-    loteProveedor: "GSI-P122",
-    fechaDoc: "12/09/2024",
-    tipoCambio: "3.7850",
-    moneda: "US$",
-    fechaGF: "12/09/2024",
+  const fetchYarnPurchaseEntryDetails = async (
+    entryNumber: string,
+    period: number
+  ): Promise<YarnPurchaseEntry> => {
+    try {
+      const response = await instance.get<YarnPurchaseEntry>(
+        `/operations/v1/yarn-purchase-entries/${entryNumber}?period=${period}`
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error("Error al obtener los detalles del ingreso de hilado.");
+    }
   };
 
-  const detalleItems = [
-    {
-      item: 1,
-      codigo: "H301PCOISI",
-      descripcion: "Hilo Algodón",
-      numBultos: 47,
-      numConos: 705,
-      loteMecsa: "0001125",
-      porcentajeDiferencia: "0.00%",
-      pesoBruto: "1,372.00",
-      pesoNeto: "1.000",
-    },
-  ];
+  useEffect(() => {
+    const fetchDetails = async () => {
+      try {
+        setLoading(true);
+        const response = await fetchYarnPurchaseEntryDetails(entryNumber!, 2024);
+        setDetalle(response);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error al cargar los detalles:", err);
+        setError("No se pudieron cargar los detalles del ingreso.");
+        setLoading(false);
+      }
+    };
 
-  const detallePesos = [
-    {
-      item: 1,
-      grupo: 1,
-      pesoGuia: "26,332.460",
-      numBultos: 47,
-      numConos: 705,
-      pesoBruto: "1,372.00",
-      pesoNeto: "1.000",
-      bultosRestantes: 47,
-      estado: "No Despachado",
-    },
-  ];
+    if (entryNumber) {
+      fetchDetails();
+    }
+  }, [entryNumber]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <CircularProgress />
+      </div>
+    );
+  }
+
+  if (error || !detalle) {
+    return (
+      <Typography color="error" className="text-center mt-4">
+        {error || "Error desconocido al cargar los detalles."}
+      </Typography>
+    );
+  }
 
   return (
     <div className="space-y-5">
+      {/* Cabecera */}
       <div className="rounded-sm border border-stroke bg-white px-5 py-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5">
-        {/* Cabecera */}
         <Typography variant="h6" className="text-black font-bold mb-4">
           DETALLES DE INGRESO DE HILADO
         </Typography>
         <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
           <div>
             <Typography>
-              <strong>N°:</strong> {detalleCabecera.numero}
+              <strong>N°:</strong> {detalle.entryNumber}
             </Typography>
             <Typography>
-              <strong>PROVEEDOR:</strong> {detalleCabecera.proveedor}
+              <strong>PROVEEDOR:</strong> {detalle.supplierCode}
             </Typography>
             <Typography>
-              <strong>O/C N°:</strong> {detalleCabecera.ordenCompra}
+              <strong>O/C N°:</strong> {detalle.purchaseOrderNumber}
             </Typography>
             <Typography>
-              <strong>GUÍA/FACTURA:</strong> {detalleCabecera.guiaFactura}
-            </Typography>
-            <Typography>
-              <strong>Lte. Provee.:</strong> {detalleCabecera.loteProveedor}
+              <strong>Lote Proveedor:</strong> {detalle.supplierBatch}
             </Typography>
           </div>
           <div>
             <Typography>
-              <strong>FECHA DOC.:</strong> {detalleCabecera.fechaDoc}
+              <strong>FECHA DOC.:</strong> {detalle.fecgf}
             </Typography>
             <Typography>
-              <strong>TIPO DE CAMBIO:</strong> {detalleCabecera.tipoCambio}
+              <strong>TIPO DE CAMBIO:</strong> {detalle.exchangeRate}
             </Typography>
             <Typography>
-              <strong>MONEDA:</strong> {detalleCabecera.moneda}
+              <strong>MONEDA:</strong> {detalle.currencyCode}
             </Typography>
             <Typography>
-              <strong>FECHA G/F:</strong> {detalleCabecera.fechaGF}
+              <strong>Lote Mecsa:</strong> {detalle.mecsaBatch}
             </Typography>
           </div>
         </div>
@@ -120,18 +130,15 @@ const DetallesMovIngresoHilado: React.FC = () => {
               {[
                 "Item",
                 "Código",
-                "Descripción",
+                "Peso Bruto Guía",
+                "Peso Neto Guía",
                 "N° Bultos",
                 "N° Conos",
-                "Lte. Mecsa",
-                "%Dif.",
-                "Peso Bruto",
-                "Peso Neto",
-                "Pesaje",
+                "Estado",
               ].map((col, index) => (
                 <TableCell
                   key={index}
-                  className="px-4 py-2 text-center text-white"
+                  className="px-4 py-4 text-center font-normal text-white"
                 >
                   {col}
                 </TableCell>
@@ -139,93 +146,20 @@ const DetallesMovIngresoHilado: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {detalleItems.map((item, index) => (
+            {detalle.detail.map((item, index) => (
               <TableRow key={index} className="text-center">
-                <TableCell className="text-center">{item.item}</TableCell>
-                <TableCell className="text-center">{item.codigo}</TableCell>
-                <TableCell className="text-center">
-                  <IconButton>
-                    <Visibility />
-                  </IconButton>
-                </TableCell>
-                <TableCell className="text-center">{item.numBultos}</TableCell>
-                <TableCell className="text-center">{item.numConos}</TableCell>
-                <TableCell className="text-center">{item.loteMecsa}</TableCell>
-                <TableCell className="text-center">{item.porcentajeDiferencia}</TableCell>
-                <TableCell className="text-center">{item.pesoBruto}</TableCell>
-                <TableCell className="text-center">{item.pesoNeto}</TableCell>
-                <TableCell className="text-center">
-                  <IconButton onClick={() => setOpenDetails(!openDetails)}>
-                    {openDetails ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-                  </IconButton>
-                </TableCell>
+                <TableCell>{item.itemNumber}</TableCell>
+                <TableCell>{item.yarnId}</TableCell>
+                <TableCell>{item.guideGrossWeight}</TableCell>
+                <TableCell>{item.guideNetWeight}</TableCell>
+                <TableCell>{item.guidePackageCount}</TableCell>
+                <TableCell>{item.guideConeCount}</TableCell>
+                <TableCell>{item.statusFlag}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
-
-      {/* Tabla de Pesos (Detalles) */}
-      <Collapse in={openDetails} timeout="auto" unmountOnExit>
-        <TableContainer className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-          <Table>
-            <TableHead className="bg-blue-900">
-              <TableRow>
-                {[
-                  "Item",
-                  "Grupo",
-                  "Peso Guía",
-                  "N° Bultos",
-                  "N° Conos",
-                  "Peso Bruto",
-                  "Peso Neto",
-                  "Bultos Restantes",
-                  "Estado",
-                  "Salida",
-                ].map((col, index) => (
-                  <TableCell
-                    key={index}
-                    className="px-4 py-2 text-center text-white"
-                  >
-                    {col}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {detallePesos.map((peso, index) => (
-                <TableRow key={index} className="text-center">
-                  <TableCell className="text-center">{peso.item}</TableCell>
-                  <TableCell className="text-center">{peso.grupo}</TableCell>
-                  <TableCell className="text-center">{peso.pesoGuia}</TableCell>
-                  <TableCell className="text-center">{peso.numBultos}</TableCell>
-                  <TableCell className="text-center">{peso.numConos}</TableCell>
-                  <TableCell className="text-center">{peso.pesoBruto}</TableCell>
-                  <TableCell className="text-center">{peso.pesoNeto}</TableCell>
-                  <TableCell className="text-center">{peso.bultosRestantes}</TableCell>
-                  <TableCell className="text-center text-red-500 font-bold">
-                    {peso.estado}
-                  </TableCell>
-                  <TableCell>
-                    <Checkbox />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Collapse>
-
-      {/* Botón Generar Salida */}
-      <div className="flex justify-end">
-        <Button
-          variant="contained"
-          style={{ backgroundColor: "#1976d2", color: "#fff" }}
-          className="mt-6"
-        >
-          Generar Salida
-        </Button>
-      </div>
     </div>
   );
 };

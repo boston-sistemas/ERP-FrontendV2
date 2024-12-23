@@ -76,3 +76,38 @@ export interface Yarn {
 export interface YarnResponse {
   yarns: Yarn[];
 }
+
+// models/models.ts
+
+export interface YarnPurchaseEntryDetail {
+  itemNumber: number;
+  yarnId: string;
+  guideGrossWeight: number;
+  guideNetWeight: number;
+  guidePackageCount: number;
+  guideConeCount: number;
+  statusFlag: string;
+}
+
+export interface YarnPurchaseEntry {
+  entryNumber: string;
+  period: number;
+  creationDate: string;
+  creationTime: string;
+  supplierCode: string;
+  statusFlag: string;
+  purchaseOrderNumber: string;
+  flgItras: boolean;
+  supplierBatch: string;
+  mecsaBatch: string;
+  documentNote: string;
+  currencyCode: number;
+  exchangeRate: number;
+  fecgf: string; // Fecha de documento
+  detail: YarnPurchaseEntryDetail[];
+}
+
+
+export interface YarnPurchaseEntryResponse {
+  yarnPurchaseEntries: YarnPurchaseEntry[];
+}

@@ -1,5 +1,5 @@
 ﻿import Breadcrumb from "@/common/components/Breadcrumb/Breadcrumb";
-import MovIngresoHilado from "../components/MovIngresHilado";
+import MovIngresoHilado from "../components/MovIngresoHilado";
 import DefaultLayout from "@/common/components/Layouts/DefaultLayout";
 import { Metadata } from "next"; 
 
