@@ -12,8 +12,14 @@ import {
   Button,
   IconButton,
   Collapse,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Switch,
 } from "@mui/material";
-import { Edit, ExpandMore, ExpandLess } from "@mui/icons-material";
+import { Edit, ExpandMore, ExpandLess, Save, Cancel } from "@mui/icons-material";
 import { useRouter, useParams } from "next/navigation";
 import { fetchYarnPurchaseEntryDetails } from "../../services/movIngresoHiladoService";
 import { YarnPurchaseEntry } from "../../../models/models";
@@ -25,13 +31,16 @@ const DetallesMovIngresoHilado: React.FC = () => {
   const [openRows, setOpenRows] = useState<Record<number, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
 
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editedData, setEditedData] = useState<YarnPurchaseEntry | null>(null);
+
   // Cargar datos del movimiento
   useEffect(() => {
     const loadDetails = async () => {
       setIsLoading(true);
       try {
         if (entryNumber) {
-          const period = new Date().getFullYear(); // Ajustar si el período debe ser dinámico
+          const period = new Date().getFullYear();
           const data = await fetchYarnPurchaseEntryDetails(entryNumber, period);
           setDetalle(data);
         }
@@ -50,6 +59,33 @@ const DetallesMovIngresoHilado: React.FC = () => {
       ...prevState,
       [index]: !prevState[index],
     }));
+  };
+
+  const handleOpenEditDialog = () => {
+    setEditedData({ ...detalle } as YarnPurchaseEntry);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setIsEditDialogOpen(false);
+  };
+
+  const handleEditFieldChange = (field: keyof YarnPurchaseEntry, value: any) => {
+    setEditedData((prevState) => ({
+      ...prevState,
+      [field]: value,
+    }) as YarnPurchaseEntry);
+  };
+
+  const handleSaveChanges = async () => {
+    try {
+      console.log("Datos actualizados:", editedData);
+      // Aquí harías el llamado al servicio para actualizar los datos con PATCH
+      setDetalle(editedData);
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error("Error al guardar los cambios:", error);
+    }
   };
 
   if (isLoading) {
@@ -85,10 +121,10 @@ const DetallesMovIngresoHilado: React.FC = () => {
               <strong>O/C N°:</strong> {detalle.purchaseOrderNumber}
             </Typography>
             <Typography style={{ color: "black" }}>
-              <strong>Guía/Factura:</strong> {detalle.documentNote || "N/A"}
+              <strong>Guía:</strong> {detalle.supplierPoCorrelative || "N/A"}
             </Typography>
             <Typography style={{ color: "black" }}>
-              <strong>Lote Proveedor:</strong> {detalle.supplierBatch}
+              <strong>Factura:</strong> {detalle.supplierPoSeries || "N/A"}
             </Typography>
           </div>
           <div>
@@ -104,12 +140,16 @@ const DetallesMovIngresoHilado: React.FC = () => {
             <Typography style={{ color: "black" }}>
               <strong>Lote Mecsa:</strong> {detalle.mecsaBatch}
             </Typography>
+            <Typography style={{ color: "black" }}>
+              <strong>Lote Proveedor:</strong> {detalle.supplierBatch}
+            </Typography>
           </div>
         </div>
         <Button
           startIcon={<Edit />}
           variant="contained"
           style={{ backgroundColor: "#0288d1", color: "#fff" }}
+          onClick={handleOpenEditDialog}
         >
           Editar
         </Button>
@@ -209,6 +249,45 @@ const DetallesMovIngresoHilado: React.FC = () => {
           Generar Salida
         </Button>
       </div>
+
+      {/* Diálogo de Edición */}
+      <Dialog open={isEditDialogOpen} onClose={handleCloseEditDialog} fullWidth maxWidth="md">
+        <DialogTitle>Editar Movimiento</DialogTitle>
+        <DialogContent>
+          <div className="grid grid-cols-2 gap-4">
+            <TextField
+              label="Guía"
+              value={editedData?.supplierPoCorrelative || ""}
+              onChange={(e) =>
+                handleEditFieldChange("supplierPoCorrelative", e.target.value)
+              }
+              fullWidth
+            />
+            <TextField
+              label="Factura"
+              value={editedData?.supplierPoSeries || ""}
+              onChange={(e) => handleEditFieldChange("supplierPoSeries", e.target.value)}
+              fullWidth
+            />
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            startIcon={<Cancel />}
+            onClick={handleCloseEditDialog}
+            color="secondary"
+          >
+            Cancelar
+          </Button>
+          <Button
+            startIcon={<Save />}
+            onClick={handleSaveChanges}
+            color="primary"
+          >
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
