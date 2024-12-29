@@ -9,18 +9,20 @@ import {
   Menu,
 } from "@mui/material";
 import { Visibility, Add, FilterList, Search } from "@mui/icons-material";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { YarnPurchaseEntry } from "../../../models/models";
 import { fetchYarnPurchaseEntries } from "../../services/movIngresoHiladoService";
 
 const MovIngresoHilado: React.FC = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [hilados, setHilados] = useState<YarnPurchaseEntry[]>([]);
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRedirectedAfterCreation, setIsRedirectedAfterCreation] = useState(true);
 
   // Cargar datos del servicio
   useEffect(() => {
@@ -33,17 +35,16 @@ const MovIngresoHilado: React.FC = () => {
           pagina * filasPorPagina
         );
         setHilados(response.yarnPurchaseEntries);
-  
-        // Si llegaste desde la creación, redirige al último movimiento
-        if (response.yarnPurchaseEntries.length > 0) {
+
+        // Handle redirection based on the query parameter
+        const redirectToLast = searchParams.get("redirectToLast") === "true";
+        if (redirectToLast && response.yarnPurchaseEntries.length > 0) {
           const lastEntry = response.yarnPurchaseEntries.sort(
             (a, b) => new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime()
           )[0]; // Ordenar por fecha descendente
-          if (pagina === 0) {
-            router.push(
-              `/operaciones-new/ingreso-hilado/detalles-mov-ingreso-hilado/${lastEntry.entryNumber}`
-            );
-          }
+
+          // Redirect to the last entry details and clear the query
+          router.replace(`/operaciones-new/ingreso-hilado/detalles-mov-ingreso-hilado/${lastEntry.entryNumber}`);
         }
       } catch (error) {
         console.error("Error al cargar los datos:", error);
@@ -51,10 +52,9 @@ const MovIngresoHilado: React.FC = () => {
         setIsLoading(false);
       }
     };
-  
+
     fetchData();
-  }, [pagina, filasPorPagina]);
-  
+  }, [pagina, filasPorPagina, searchParams]);
 
   const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
     setFilterAnchorEl(event.currentTarget);

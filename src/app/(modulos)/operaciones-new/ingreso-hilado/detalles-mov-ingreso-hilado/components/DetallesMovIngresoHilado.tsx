@@ -23,18 +23,22 @@ const DetallesMovIngresoHilado: React.FC = () => {
   const { entryNumber } = useParams() as { entryNumber: string };
   const [detalle, setDetalle] = useState<YarnPurchaseEntry | null>(null);
   const [openRows, setOpenRows] = useState<Record<number, boolean>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   // Cargar datos del movimiento
   useEffect(() => {
     const loadDetails = async () => {
+      setIsLoading(true);
       try {
         if (entryNumber) {
-          const period = new Date().getFullYear(); // Aquí puedes ajustar si el período debe venir de otro lado
+          const period = new Date().getFullYear(); // Ajustar si el período debe ser dinámico
           const data = await fetchYarnPurchaseEntryDetails(entryNumber, period);
           setDetalle(data);
         }
       } catch (error) {
         console.error("Error al cargar los detalles del movimiento:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -48,10 +52,20 @@ const DetallesMovIngresoHilado: React.FC = () => {
     }));
   };
 
-  if (!detalle) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Typography variant="h6">Cargando detalles del movimiento...</Typography>
+      </div>
+    );
+  }
+
+  if (!detalle) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Typography variant="h6">
+          No se encontraron detalles para este movimiento.
+        </Typography>
       </div>
     );
   }
@@ -178,8 +192,15 @@ const DetallesMovIngresoHilado: React.FC = () => {
         </Table>
       </TableContainer>
 
-      {/* Botón de acción */}
-      <div className="flex justify-end mt-5">
+      {/* Botones de acción */}
+      <div className="flex justify-between mt-5">
+        <Button
+          variant="contained"
+          style={{ backgroundColor: "#0288d1", color: "#fff" }}
+          onClick={() => router.push("/operaciones-new/ingreso-hilado")}
+        >
+          Regresar a Movimientos
+        </Button>
         <Button
           variant="contained"
           style={{ backgroundColor: "#4caf50", color: "#fff" }}

@@ -167,15 +167,15 @@ const CrearMovIngresoHilado: React.FC = () => {
       setOpenSnackbar(true);
       return;
     }
-
+  
     const payload: Partial<YarnPurchaseEntry> = {
       period: new Date().getFullYear(),
-      supplierPoCorrelative: guiaCorrelativa, // Número correlativo 
-      supplierPoSeries: facturaSerie,        // Serie de factura 
-      fecgf: new Date().toISOString().split("T")[0], // Fecha en formato 'YYYY-MM-DD'
-      purchaseOrderNumber: selectedOrden.purchaseOrderNumber, // Número de orden
-      documentNote: nota,                    // Nota del documento
-      supplierBatch: loteProveedor,          // Lote del proveedor
+      supplierPoCorrelative: guiaCorrelativa,
+      supplierPoSeries: facturaSerie,
+      fecgf: new Date().toISOString().split("T")[0],
+      purchaseOrderNumber: selectedOrden.purchaseOrderNumber,
+      documentNote: nota,
+      supplierBatch: loteProveedor,
       detail: details.map((detail, index) => ({
         itemNumber: index + 1,
         yarnId: detail.yarnId,
@@ -188,20 +188,21 @@ const CrearMovIngresoHilado: React.FC = () => {
         statusFlag: "P",
       })),
     };
-    
-
+  
     try {
       await createYarnPurchaseEntry(payload);
       setSnackbarMessage("Movimiento creado exitosamente.");
       setOpenSnackbar(true);
-      router.push("/operaciones-new/ingreso-hilado");
+  
+      // Navigate with a query indicating this was after creation
+      router.push("/operaciones-new/ingreso-hilado?redirectToLast=true");
     } catch (error: any) {
       console.error("Error al crear el movimiento:", error);
       setSnackbarMessage(error.message || "Error al crear el movimiento.");
       setOpenSnackbar(true);
     }
   };
-
+  
   const handleCancel = () => {
     router.push("/operaciones-new/ingreso-hilado");
   };
