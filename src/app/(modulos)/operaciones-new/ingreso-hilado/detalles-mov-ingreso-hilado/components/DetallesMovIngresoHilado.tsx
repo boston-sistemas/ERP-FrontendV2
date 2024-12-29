@@ -1,145 +1,146 @@
 ﻿"use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
-  Button,
+  Typography,
   TableContainer,
   Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
-  Typography,
-  CircularProgress,
+  Button,
+  IconButton,
+  Collapse,
 } from "@mui/material";
-import { Edit } from "@mui/icons-material";
-import { useParams } from "next/navigation"; // Para capturar parámetros dinámicos
-import instance from "@/infrastructure/config/AxiosConfig";
-import { YarnPurchaseEntry } from "../../../models/models";
+import { Edit, ExpandMore, ExpandLess } from "@mui/icons-material";
+
+const hardcodedData = {
+  entryNumber: "0060026060",
+  period: 2024,
+  creationDate: "2024-12-13",
+  creationTime: "15:05:50",
+  supplierCode: "p02517",
+  statusFlag: "P",
+  purchaseOrderNumber: "0012400235",
+  flgtras: true,
+  supplierBatch: "CC5-CF240100N",
+  mecsaBatch: "0000479",
+  documentNote: "",
+  currencyCode: 2,
+  exchangeRate: 3.722,
+  supplierPoCorrelative: "12022",
+  supplierPoSeries: "008",
+  fecgf: "2024-12-13",
+  voucherNumber: "12-061-120031",
+  fchcp: "2024-12-12",
+  flgcbd: "S",
+  serialNumberPo: "006",
+  printedFlag: "S",
+  detail: [
+    {
+      itemNumber: 1,
+      yarnId: "H301PCOITC",
+      mecsaWeight: 2250.0,
+      statusFlag: "P",
+      isWeighted: true,
+      guideGrossWeight: 2366.25,
+      detailHeavy: [
+        {
+          groupNumber: 1,
+          statusFlag: "C",
+          coneCount: 900,
+          packageCount: 75,
+          destinationStorage: "006",
+          netWeight: 2250.0,
+          grossWeight: 2366.25,
+          exitNumber: "T1040001438",
+          dispatchStatus: true,
+          packagesLeft: 0,
+          conesLeft: 0,
+        },
+      ],
+      guideNetWeight: 2250.0,
+      guideConeCount: 900,
+      guidePackageCount: 75,
+    },
+  ],
+};
 
 const DetallesMovIngresoHilado: React.FC = () => {
-  const { entryNumber } = useParams<{ entryNumber: string }>(); // Captura el parámetro de la URL
-  const [detalle, setDetalle] = useState<YarnPurchaseEntry | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [detalle] = useState(hardcodedData);
+  const [openRows, setOpenRows] = useState<Record<number, boolean>>({});
 
-  const fetchYarnPurchaseEntryDetails = async (
-    entryNumber: string,
-    period: number
-  ): Promise<YarnPurchaseEntry> => {
-    try {
-      const response = await instance.get<YarnPurchaseEntry>(
-        `/operations/v1/yarn-purchase-entries/${entryNumber}?period=${period}`
-      );
-      return response.data;
-    } catch (error) {
-      throw new Error("Error al obtener los detalles del ingreso de hilado.");
-    }
+  const toggleRow = (index: number) => {
+    setOpenRows((prevState) => ({
+      ...prevState,
+      [index]: !prevState[index],
+    }));
   };
-
-  useEffect(() => {
-    const fetchDetails = async () => {
-      try {
-        setLoading(true);
-        const response = await fetchYarnPurchaseEntryDetails(entryNumber!, 2024);
-        setDetalle(response);
-        setLoading(false);
-      } catch (err) {
-        console.error("Error al cargar los detalles:", err);
-        setError("No se pudieron cargar los detalles del ingreso.");
-        setLoading(false);
-      }
-    };
-
-    if (entryNumber) {
-      fetchDetails();
-    }
-  }, [entryNumber]);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <CircularProgress />
-      </div>
-    );
-  }
-
-  if (error || !detalle) {
-    return (
-      <Typography color="error" className="text-center mt-4">
-        {error || "Error desconocido al cargar los detalles."}
-      </Typography>
-    );
-  }
 
   return (
     <div className="space-y-5">
-      {/* Cabecera */}
-      <div className="rounded-sm border border-stroke bg-white px-5 py-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5">
-        <Typography variant="h6" className="text-black font-bold mb-4">
-          DETALLES DE INGRESO DE HILADO
-        </Typography>
-        <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+      <div className="rounded-md border p-5 bg-gray-50 shadow-md">
+        <div className="grid grid-cols-2 gap-4 text-sm mb-5">
           <div>
-            <Typography>
+            <Typography style={{ color: "black" }}>
               <strong>N°:</strong> {detalle.entryNumber}
             </Typography>
-            <Typography>
-              <strong>PROVEEDOR:</strong> {detalle.supplierCode}
+            <Typography style={{ color: "black" }}>
+              <strong>Proveedor:</strong> {detalle.supplierCode}
             </Typography>
-            <Typography>
+            <Typography style={{ color: "black" }}>
               <strong>O/C N°:</strong> {detalle.purchaseOrderNumber}
             </Typography>
-            <Typography>
+            <Typography style={{ color: "black" }}>
+              <strong>Guía/Factura:</strong> {detalle.documentNote || "N/A"}
+            </Typography>
+            <Typography style={{ color: "black" }}>
               <strong>Lote Proveedor:</strong> {detalle.supplierBatch}
             </Typography>
           </div>
           <div>
-            <Typography>
-              <strong>FECHA DOC.:</strong> {detalle.fecgf}
+            <Typography style={{ color: "black" }}>
+              <strong>Fecha Doc.:</strong> {detalle.fecgf}
             </Typography>
-            <Typography>
-              <strong>TIPO DE CAMBIO:</strong> {detalle.exchangeRate}
+            <Typography style={{ color: "black" }}>
+              <strong>Tipo de Cambio:</strong> {detalle.exchangeRate}
             </Typography>
-            <Typography>
-              <strong>MONEDA:</strong> {detalle.currencyCode}
+            <Typography style={{ color: "black" }}>
+              <strong>Moneda:</strong> {detalle.currencyCode === 2 ? "US$" : "Otra"}
             </Typography>
-            <Typography>
+            <Typography style={{ color: "black" }}>
               <strong>Lote Mecsa:</strong> {detalle.mecsaBatch}
             </Typography>
           </div>
         </div>
-
-        {/* Botón Editar */}
-        <div className="flex justify-end">
-          <Button
-            startIcon={<Edit />}
-            variant="contained"
-            style={{ backgroundColor: "#0288d1", color: "#fff" }}
-          >
-            Editar
-          </Button>
-        </div>
+        <Button
+          startIcon={<Edit />}
+          variant="contained"
+          style={{ backgroundColor: "#0288d1", color: "#fff" }}
+        >
+          Editar
+        </Button>
       </div>
 
-      {/* Tabla de Detalle */}
-      <TableContainer className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+      {/* Tabla Resumen */}
+      <TableContainer className="rounded-md border bg-gray-50 shadow-md mt-5">
         <Table>
           <TableHead className="bg-blue-900">
             <TableRow>
               {[
                 "Item",
                 "Código",
-                "Peso Bruto Guía",
-                "Peso Neto Guía",
+                //"Descripción",
                 "N° Bultos",
                 "N° Conos",
-                "Estado",
+                "Lote Mecsa",
+                "% Difer.",
+                "Peso Bruto",
+                "Peso Neto",
+                "Pesaje",
               ].map((col, index) => (
-                <TableCell
-                  key={index}
-                  className="px-4 py-4 text-center font-normal text-white"
-                >
+                <TableCell key={index} className="text-white text-center">
                   {col}
                 </TableCell>
               ))}
@@ -147,19 +148,67 @@ const DetallesMovIngresoHilado: React.FC = () => {
           </TableHead>
           <TableBody>
             {detalle.detail.map((item, index) => (
-              <TableRow key={index} className="text-center">
-                <TableCell>{item.itemNumber}</TableCell>
-                <TableCell>{item.yarnId}</TableCell>
-                <TableCell>{item.guideGrossWeight}</TableCell>
-                <TableCell>{item.guideNetWeight}</TableCell>
-                <TableCell>{item.guidePackageCount}</TableCell>
-                <TableCell>{item.guideConeCount}</TableCell>
-                <TableCell>{item.statusFlag}</TableCell>
-              </TableRow>
+              <React.Fragment key={index}>
+                <TableRow>
+                  <TableCell className="text-center">{item.itemNumber}</TableCell>
+                  <TableCell className="text-center">{item.yarnId}</TableCell>
+                  <TableCell className="text-center">{item.guidePackageCount}</TableCell>
+                  <TableCell className="text-center">{item.guideConeCount}</TableCell>
+                  <TableCell className="text-center">{detalle.mecsaBatch}</TableCell>
+                  <TableCell className="text-center">00.00%</TableCell>
+                  <TableCell className="text-center">{item.guideGrossWeight}</TableCell>
+                  <TableCell className="text-center">{item.guideNetWeight}</TableCell>
+                  <TableCell className="text-center">
+                    <IconButton onClick={() => toggleRow(index)}>
+                      {openRows[index] ? <ExpandLess /> : <ExpandMore />}
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell colSpan={10} style={{ padding: 0 }}>
+                    <Collapse in={openRows[index]} timeout="auto" unmountOnExit>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            {["Grupo", "Peso Guía", "Estado", "Bultos Restantes"].map(
+                              (subCol, subIndex) => (
+                                <TableCell key={subIndex} className="text-center">
+                                  {subCol}
+                                </TableCell>
+                              )
+                            )}
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell className="text-center">1</TableCell>
+                            <TableCell className="text-center">{item.guideGrossWeight}</TableCell>
+                            <TableCell className="text-center" style={{ color: "red" }}>
+                              No Despachado
+                            </TableCell>
+                            <TableCell className="text-center">{item.guidePackageCount}</TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </Collapse>
+                  </TableCell>
+                </TableRow>
+              </React.Fragment>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Botón de acción */}
+      <div className="flex justify-end mt-5">
+        <Button
+          variant="contained"
+          style={{ backgroundColor: "#4caf50", color: "#fff" }}
+          size="large"
+        >
+          Generar Salida
+        </Button>
+      </div>
     </div>
   );
 };

@@ -77,8 +77,7 @@ export interface YarnResponse {
   yarns: Yarn[];
 }
 
-// models/models.ts
-
+// Yarn Purchase Entry models
 export interface YarnPurchaseEntryDetail {
   itemNumber: number;
   yarnId: string;
@@ -86,8 +85,17 @@ export interface YarnPurchaseEntryDetail {
   guideNetWeight: number;
   guidePackageCount: number;
   guideConeCount: number;
+  detailHeavy: {
+    groupNumber: number;
+    coneCount: number;
+    packageCount: number;
+    grossWeight: number;
+    netWeight: number;
+  }[];
+  isWeighted: boolean;
   statusFlag: string;
 }
+
 
 export interface YarnPurchaseEntry {
   entryNumber: string;
@@ -97,17 +105,50 @@ export interface YarnPurchaseEntry {
   supplierCode: string;
   statusFlag: string;
   purchaseOrderNumber: string;
-  flgItras: boolean;
+  flgtras: boolean;
   supplierBatch: string;
   mecsaBatch: string;
   documentNote: string;
   currencyCode: number;
   exchangeRate: number;
-  fecgf: string; // Fecha de documento
+  supplierPoCorrelative: string;
+  supplierPoSeries: string;
+  fecgf: string;
+  voucherNumber: string;
+  fchcp: string; 
+  flgcbd: string;
+  serialNumberPo: string;
+  printedFlag: string;
   detail: YarnPurchaseEntryDetail[];
 }
 
-
 export interface YarnPurchaseEntryResponse {
   yarnPurchaseEntries: YarnPurchaseEntry[];
+}
+
+export interface PurchaseOrderDetail {
+  quantityOrdered: number;
+  quantitySupplied: number;
+  unitCode: string;
+  precto: number; // Precio unitario
+  impcto: number; // Importe total
+  yarn: Yarn; // Reutiliza la interfaz Yarn
+  statusFlag: string;
+}
+
+export interface PurchaseOrder {
+  companyCode: string;
+  purchaseOrderType: string;
+  purchaseOrderNumber: string;
+  supplierCode: string;
+  issueDate: string;
+  dueDate: string;
+  paymentMethod: string;
+  statusFlag: string;
+  currencyCode: number;
+  detail: PurchaseOrderDetail[];
+}
+
+export interface PurchaseOrderResponse {
+  ordenes: PurchaseOrder[];
 }
