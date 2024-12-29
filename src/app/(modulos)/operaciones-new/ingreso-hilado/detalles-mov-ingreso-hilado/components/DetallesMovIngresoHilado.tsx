@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   TableContainer,
@@ -14,62 +14,32 @@ import {
   Collapse,
 } from "@mui/material";
 import { Edit, ExpandMore, ExpandLess } from "@mui/icons-material";
-
-const hardcodedData = {
-  entryNumber: "0060026060",
-  period: 2024,
-  creationDate: "2024-12-13",
-  creationTime: "15:05:50",
-  supplierCode: "p02517",
-  statusFlag: "P",
-  purchaseOrderNumber: "0012400235",
-  flgtras: true,
-  supplierBatch: "CC5-CF240100N",
-  mecsaBatch: "0000479",
-  documentNote: "",
-  currencyCode: 2,
-  exchangeRate: 3.722,
-  supplierPoCorrelative: "12022",
-  supplierPoSeries: "008",
-  fecgf: "2024-12-13",
-  voucherNumber: "12-061-120031",
-  fchcp: "2024-12-12",
-  flgcbd: "S",
-  serialNumberPo: "006",
-  printedFlag: "S",
-  detail: [
-    {
-      itemNumber: 1,
-      yarnId: "H301PCOITC",
-      mecsaWeight: 2250.0,
-      statusFlag: "P",
-      isWeighted: true,
-      guideGrossWeight: 2366.25,
-      detailHeavy: [
-        {
-          groupNumber: 1,
-          statusFlag: "C",
-          coneCount: 900,
-          packageCount: 75,
-          destinationStorage: "006",
-          netWeight: 2250.0,
-          grossWeight: 2366.25,
-          exitNumber: "T1040001438",
-          dispatchStatus: true,
-          packagesLeft: 0,
-          conesLeft: 0,
-        },
-      ],
-      guideNetWeight: 2250.0,
-      guideConeCount: 900,
-      guidePackageCount: 75,
-    },
-  ],
-};
+import { useRouter, useParams } from "next/navigation";
+import { fetchYarnPurchaseEntryDetails } from "../../services/movIngresoHiladoService";
+import { YarnPurchaseEntry } from "../../../models/models";
 
 const DetallesMovIngresoHilado: React.FC = () => {
-  const [detalle] = useState(hardcodedData);
+  const router = useRouter();
+  const { entryNumber } = useParams() as { entryNumber: string };
+  const [detalle, setDetalle] = useState<YarnPurchaseEntry | null>(null);
   const [openRows, setOpenRows] = useState<Record<number, boolean>>({});
+
+  // Cargar datos del movimiento
+  useEffect(() => {
+    const loadDetails = async () => {
+      try {
+        if (entryNumber) {
+          const period = new Date().getFullYear(); // Aquí puedes ajustar si el período debe venir de otro lado
+          const data = await fetchYarnPurchaseEntryDetails(entryNumber, period);
+          setDetalle(data);
+        }
+      } catch (error) {
+        console.error("Error al cargar los detalles del movimiento:", error);
+      }
+    };
+
+    loadDetails();
+  }, [entryNumber]);
 
   const toggleRow = (index: number) => {
     setOpenRows((prevState) => ({
@@ -77,6 +47,14 @@ const DetallesMovIngresoHilado: React.FC = () => {
       [index]: !prevState[index],
     }));
   };
+
+  if (!detalle) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Typography variant="h6">Cargando detalles del movimiento...</Typography>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -131,7 +109,6 @@ const DetallesMovIngresoHilado: React.FC = () => {
               {[
                 "Item",
                 "Código",
-                //"Descripción",
                 "N° Bultos",
                 "N° Conos",
                 "Lote Mecsa",
@@ -180,14 +157,16 @@ const DetallesMovIngresoHilado: React.FC = () => {
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          <TableRow>
-                            <TableCell className="text-center">1</TableCell>
-                            <TableCell className="text-center">{item.guideGrossWeight}</TableCell>
-                            <TableCell className="text-center" style={{ color: "red" }}>
-                              No Despachado
-                            </TableCell>
-                            <TableCell className="text-center">{item.guidePackageCount}</TableCell>
-                          </TableRow>
+                          {item.detailHeavy.map((group, groupIndex) => (
+                            <TableRow key={groupIndex}>
+                              <TableCell className="text-center">{group.groupNumber}</TableCell>
+                              <TableCell className="text-center">{group.grossWeight}</TableCell>
+                              <TableCell className="text-center" style={{ color: "red" }}>
+                                No Despachado
+                              </TableCell>
+                              <TableCell className="text-center">{group.packageCount}</TableCell>
+                            </TableRow>
+                          ))}
                         </TableBody>
                       </Table>
                     </Collapse>

@@ -6,10 +6,11 @@ export const fetchOrdenCompras = async (): Promise<PurchaseOrderResponse> => {
   return response.data;
 };
 
-export const createYarnPurchaseEntry = async (payload: any): Promise<void> => {
+export const createYarnPurchaseEntry = async (payload: any): Promise<{ entryNumber: string }> => {
     try {
-      await instance.post("/operations/v1/yarn-purchase-entries/", payload);
+      const response = await instance.post("/operations/v1/yarn-purchase-entries/", payload);
       console.log("Movimiento creado exitosamente");
+      return response.data;
     } catch (error: any) {
       console.error("Error al crear el movimiento:", error?.response?.data || error.message);
       throw new Error(

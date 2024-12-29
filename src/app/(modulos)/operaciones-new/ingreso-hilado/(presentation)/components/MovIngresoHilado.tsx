@@ -32,16 +32,29 @@ const MovIngresoHilado: React.FC = () => {
           filasPorPagina,
           pagina * filasPorPagina
         );
-        setHilados(response.yarnPurchaseEntries); // Asigna los datos de hilados
+        setHilados(response.yarnPurchaseEntries);
+  
+        // Si llegaste desde la creación, redirige al último movimiento
+        if (response.yarnPurchaseEntries.length > 0) {
+          const lastEntry = response.yarnPurchaseEntries.sort(
+            (a, b) => new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime()
+          )[0]; // Ordenar por fecha descendente
+          if (pagina === 0) {
+            router.push(
+              `/operaciones-new/ingreso-hilado/detalles-mov-ingreso-hilado/${lastEntry.entryNumber}`
+            );
+          }
+        }
       } catch (error) {
         console.error("Error al cargar los datos:", error);
       } finally {
         setIsLoading(false);
       }
     };
-
+  
     fetchData();
   }, [pagina, filasPorPagina]);
+  
 
   const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
     setFilterAnchorEl(event.currentTarget);
