@@ -148,7 +148,7 @@ const MovIngresoHilado: React.FC = () => {
           </div>
 
           {/* Tabla de Movimientos */}
-          <table className="w-full table-auto">
+          <table className="table-auto border-collapse">
             <thead>
               <tr className="bg-blue-900 uppercase text-center">
                 {[

@@ -15,3 +15,14 @@ export const fetchYarnPurchaseEntryDetails = async (
     );
     return response.data;
   };
+
+  export const updateYarnPurchaseEntry = async (
+    entryNumber: string,
+    period: number,
+    data: Partial<YarnPurchaseEntry>
+  ): Promise<void> => {
+    await instance.patch(
+      `/operations/v1/yarn-purchase-entries/${entryNumber}?period=${period}`,
+      data
+    );
+  };

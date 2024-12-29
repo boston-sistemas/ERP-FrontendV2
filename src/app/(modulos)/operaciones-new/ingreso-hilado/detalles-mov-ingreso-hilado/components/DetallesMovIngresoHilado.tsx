@@ -19,9 +19,9 @@ import {
   TextField,
   Switch,
 } from "@mui/material";
-import { Edit, ExpandMore, ExpandLess, Save, Cancel } from "@mui/icons-material";
+import { Edit, ExpandMore, ExpandLess, Save, Cancel, Add, Delete } from "@mui/icons-material";
 import { useRouter, useParams } from "next/navigation";
-import { fetchYarnPurchaseEntryDetails } from "../../services/movIngresoHiladoService";
+import { fetchYarnPurchaseEntryDetails, updateYarnPurchaseEntry } from "../../services/movIngresoHiladoService";
 import { YarnPurchaseEntry } from "../../../models/models";
 
 const DetallesMovIngresoHilado: React.FC = () => {
@@ -78,15 +78,47 @@ const DetallesMovIngresoHilado: React.FC = () => {
   };
 
   const handleSaveChanges = async () => {
+    if (!editedData || !editedData.entryNumber) {
+      console.error("No hay datos para guardar.");
+      return;
+    }
+  
     try {
-      console.log("Datos actualizados:", editedData);
-      // Aquí harías el llamado al servicio para actualizar los datos con PATCH
+      // Prepara el payload basado en los datos editados
+      const payload: Partial<YarnPurchaseEntry> = {
+        period: new Date().getFullYear(),
+        supplierPoCorrelative: editedData.supplierPoCorrelative,
+        supplierPoSeries: editedData.supplierPoSeries,
+        fecgf: editedData.fecgf,
+        purchaseOrderNumber: editedData.purchaseOrderNumber,
+        documentNote: editedData.documentNote || "",
+        supplierBatch: editedData.supplierBatch,
+        detail: editedData.detail.map((detail, index) => ({
+          itemNumber: detail.itemNumber || index + 1, // Usa itemNumber o un índice por defecto
+          yarnId: detail.yarnId,
+          guideNetWeight: detail.guideNetWeight,
+          guideGrossWeight: detail.guideGrossWeight,
+          guidePackageCount: detail.guidePackageCount,
+          guideConeCount: detail.guideConeCount,
+          detailHeavy: detail.isWeighted ? detail.detailHeavy : [], // Incluye detailHeavy solo si isWeighted es true
+          isWeighted: detail.isWeighted,
+          statusFlag: "P", // Asegura que siempre se envíe el mismo flag
+        })),
+      };
+  
+      const period = new Date().getFullYear();
+  
+      // Llama al servicio de actualización con el payload
+      await updateYarnPurchaseEntry(editedData.entryNumber, period, payload);
+  
+      // Actualiza el estado con los datos editados
       setDetalle(editedData);
       setIsEditDialogOpen(false);
+      console.log("Movimiento actualizado correctamente.");
     } catch (error) {
       console.error("Error al guardar los cambios:", error);
     }
-  };
+  };    
 
   if (isLoading) {
     return (
@@ -271,6 +303,357 @@ const DetallesMovIngresoHilado: React.FC = () => {
             />
           </div>
         </DialogContent>
+        {/* Diálogo de Edición */}
+<Dialog open={isEditDialogOpen} onClose={handleCloseEditDialog} fullWidth maxWidth="md">
+  <DialogTitle>Editar Movimiento de Ingreso</DialogTitle>
+  <DialogContent>
+    <div className="mb-4">
+      <Typography
+        variant="subtitle1"
+        className="font-semibold mb-2"
+        style={{ color: "#000" }}
+      >
+        Seleccionar Orden de Compra
+      </Typography>
+      {editedData?.purchaseOrderNumber && (
+        <Typography
+          variant="body2"
+          className="mb-2 font-semibold"
+          style={{ color: "#000" }}
+        >
+          Orden seleccionada: {editedData.purchaseOrderNumber}
+        </Typography>
+      )}
+    </div>
+    <div className="grid grid-cols-2 gap-4 mb-4">
+      <TextField
+        label="Guía"
+        value={editedData?.supplierPoCorrelative || ""}
+        onChange={(e) => handleEditFieldChange("supplierPoCorrelative", e.target.value)}
+        fullWidth
+        variant="outlined"
+        size="small"
+      />
+      <TextField
+        label="Factura"
+        value={editedData?.supplierPoSeries || ""}
+        onChange={(e) => handleEditFieldChange("supplierPoSeries", e.target.value)}
+        fullWidth
+        variant="outlined"
+        size="small"
+      />
+      <TextField
+        label="Lte. Provee."
+        value={editedData?.supplierBatch || ""}
+        onChange={(e) => handleEditFieldChange("supplierBatch", e.target.value)}
+        fullWidth
+        variant="outlined"
+        size="small"
+      />
+    </div>
+    {/* Hilados dinámicos */}
+    {editedData?.detail?.map((detail, index) => (
+  <div key={index} className="mb-6">
+    <Typography
+      variant="subtitle1"
+      className="font-semibold mb-2"
+      style={{ color: "#000" }}
+    >
+      Hilado: {detail.yarnId}
+    </Typography>
+    <div className="grid grid-cols-2 gap-4">
+      <TextField
+        label="N° Bultos General"
+        value={detail.guidePackageCount || ""}
+        onChange={(e) =>
+          setEditedData((prevState) =>
+            prevState
+              ? {
+                  ...prevState,
+                  detail: prevState.detail.map((d, i) =>
+                    i === index
+                      ? { ...d, guidePackageCount: parseInt(e.target.value) || 0 }
+                      : d
+                  ),
+                }
+              : null
+          )
+        }
+        fullWidth
+        variant="outlined"
+        size="small"
+      />
+      <TextField
+        label="N° Conos"
+        value={detail.guideConeCount || ""}
+        onChange={(e) =>
+          setEditedData((prevState) =>
+            prevState
+              ? {
+                  ...prevState,
+                  detail: prevState.detail.map((d, i) =>
+                    i === index
+                      ? { ...d, guideConeCount: parseInt(e.target.value) || 0 }
+                      : d
+                  ),
+                }
+              : null
+          )
+        }
+        fullWidth
+        variant="outlined"
+        size="small"
+      />
+      <TextField
+        label="Peso Bruto"
+        value={detail.guideGrossWeight || ""}
+        onChange={(e) =>
+          setEditedData((prevState) =>
+            prevState
+              ? {
+                  ...prevState,
+                  detail: prevState.detail.map((d, i) =>
+                    i === index
+                      ? { ...d, guideGrossWeight: parseFloat(e.target.value) || 0 }
+                      : d
+                  ),
+                }
+              : null
+          )
+        }
+        fullWidth
+        variant="outlined"
+        size="small"
+      />
+      <TextField
+        label="Peso Neto"
+        value={detail.guideNetWeight || ""}
+        onChange={(e) =>
+          setEditedData((prevState) =>
+            prevState
+              ? {
+                  ...prevState,
+                  detail: prevState.detail.map((d, i) =>
+                    i === index
+                      ? { ...d, guideNetWeight: parseFloat(e.target.value) || 0 }
+                      : d
+                  ),
+                }
+              : null
+          )
+        }
+        fullWidth
+        variant="outlined"
+        size="small"
+      />
+    </div>
+        <div className="flex items-center justify-between mt-4">
+          <Typography variant="subtitle1" className="font-semibold">
+            Pesaje
+          </Typography>
+          <Switch
+            checked={detail.isWeighted || false}
+            onChange={(e) =>
+              setEditedData((prevState) =>
+                prevState ? {
+                  ...prevState,
+                  detail: prevState.detail.map((d, i) =>
+                    i === index ? { ...d, isWeighted: e.target.checked } : d
+                  ),
+                } : null
+              )
+            }
+            color="primary"
+          />
+        </div>
+        {detail.isWeighted && (
+          <div className="mb-4">
+            <table className="table-auto w-full">
+              <thead>
+                <tr className="bg-blue-900 text-white text-sm">
+                  {["Grupo", "N° Bultos", "N° Conos", "Peso Bruto", "Peso Neto", "Acciones"].map(
+                    (col, colIndex) => (
+                      <th key={colIndex} className="px-2 py-3 text-center">
+                        {col}
+                      </th>
+                    )
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {detail.detailHeavy?.map((group, groupIndex) => (
+                  <tr key={groupIndex} className="hover:bg-gray-200 text-sm">
+                    <td className="px-2 py-3 text-center">{group.groupNumber}</td>
+                    <td className="px-2 py-3 text-center">
+                      <TextField
+                        type="number"
+                        size="small"
+                        fullWidth
+                        value={1}
+                        InputProps={{ readOnly: true }} // Siempre será 1
+                      />
+                    </td>
+                    <td className="px-2 py-3 text-center">
+                      <TextField
+                        type="number"
+                        size="small"
+                        fullWidth
+                        value={group.coneCount || ""}
+                        onChange={(e) =>
+                          setEditedData((prevState) =>
+                            prevState ? {
+                              ...prevState,
+                              detail: prevState.detail.map((d, i) =>
+                                i === index
+                                  ? {
+                                      ...d,
+                                      detailHeavy: d.detailHeavy.map((g, gi) =>
+                                        gi === groupIndex
+                                          ? { ...g, coneCount: parseInt(e.target.value) || 0 }
+                                          : g
+                                      ),
+                                    }
+                                  : d
+                              ),
+                            } : null
+                          )
+                        }
+                      />
+                    </td>
+                    <td className="px-2 py-3 text-center">
+                      <TextField
+                        type="number"
+                        size="small"
+                        fullWidth
+                        value={group.grossWeight || ""}
+                        onChange={(e) =>
+                          setEditedData((prevState) =>
+                            prevState ? {
+                              ...prevState,
+                              detail: prevState.detail.map((d, i) =>
+                                i === index
+                                  ? {
+                                      ...d,
+                                      detailHeavy: d.detailHeavy.map((g, gi) =>
+                                        gi === groupIndex
+                                          ? { ...g, grossWeight: parseFloat(e.target.value) || 0 }
+                                          : g
+                                      ),
+                                    }
+                                  : d
+                              ),
+                            } : null
+                          )
+                        }
+                      />
+                    </td>
+                    <td className="px-2 py-3 text-center">
+                      <TextField
+                        type="number"
+                        size="small"
+                        fullWidth
+                        value={group.netWeight || ""}
+                        onChange={(e) =>
+                          setEditedData((prevState) =>
+                            prevState ? {
+                              ...prevState,
+                              detail: prevState.detail.map((d, i) =>
+                                i === index
+                                  ? {
+                                      ...d,
+                                      detailHeavy: d.detailHeavy.map((g, gi) =>
+                                        gi === groupIndex
+                                          ? { ...g, netWeight: parseFloat(e.target.value) || 0 }
+                                          : g
+                                      ),
+                                    }
+                                  : d
+                              ),
+                            } : null
+                          )
+                        }
+                      />
+                    </td>
+                    <td className="px-2 py-3 text-center">
+                      <IconButton
+                        color="error"
+                        onClick={() =>
+                          setEditedData((prevState) =>
+                            prevState ? {
+                              ...prevState,
+                              detail: prevState.detail.map((d, i) =>
+                                i === index
+                                  ? {
+                                      ...d,
+                                      detailHeavy: d.detailHeavy.filter(
+                                        (_, gi) => gi !== groupIndex
+                                      ),
+                                    }
+                                  : d
+                              ),
+                            } : null
+                          )
+                        }
+                      >
+                        <Delete />
+                      </IconButton>
+                    </td>
+                  </tr>
+                ))} 
+              </tbody>
+            </table>
+            <div className="flex justify-end mt-2">
+              <IconButton
+                color="primary"
+                onClick={() =>
+                  setEditedData((prevState) =>
+                    prevState ? {
+                      ...prevState,
+                      detail: prevState.detail.map((d, i) =>
+                        i === index
+                          ? {
+                              ...d,
+                              detailHeavy: [
+                                ...d.detailHeavy,
+                                {
+                                  groupNumber: d.detailHeavy.length + 1,
+                                  coneCount: 0,
+                                  packageCount: 1,
+                                  grossWeight: 0,
+                                  netWeight: 0,
+                                },
+                              ],
+                            }
+                          : d
+                      ),
+                    } : null
+                  )
+                }
+              >
+                <Add />
+              </IconButton>
+            </div>
+          </div>
+        )}
+      </div>
+    ))}
+  </DialogContent>
+  <DialogActions>
+    <Button
+      onClick={handleCloseEditDialog}
+      style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+    >
+      Cancelar
+    </Button>
+    <Button
+      onClick={handleSaveChanges}
+      style={{ backgroundColor: "#1976d2", color: "#fff" }}
+    >
+      Guardar
+    </Button>
+  </DialogActions>
+</Dialog>
+
         <DialogActions>
           <Button
             startIcon={<Cancel />}
