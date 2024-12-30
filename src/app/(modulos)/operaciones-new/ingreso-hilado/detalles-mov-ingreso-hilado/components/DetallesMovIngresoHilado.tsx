@@ -46,7 +46,8 @@ const DetallesMovIngresoHilado: React.FC = () => {
           netWeight: item.guideNetWeight,
         })),
       };
-  
+      
+      localStorage.setItem("entryNumber", JSON.stringify(payload));
       router.push(
         `/operaciones-new/salida-hilado/crear-mov-salida-hilado`);
     }

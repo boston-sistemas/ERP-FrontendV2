@@ -65,6 +65,7 @@ const MovSalidaHilado: React.FC = () => {
   };
 
   const handleCreateMovSalidaHilado = () => {
+    localStorage.removeItem("entryNumber");
     router.push("/operaciones-new/salida-hilado/crear-mov-salida-hilado");
   };
 
