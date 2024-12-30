@@ -152,3 +152,34 @@ export interface PurchaseOrder {
 export interface PurchaseOrderResponse {
   ordenes: PurchaseOrder[];
 }
+
+export interface YarnDispatchDetail {
+  itemNumber: number; // Número del ítem
+  entryNumber: string; // Número de entrada
+  entryGroupNumber: number; // Grupo de entrada
+  entryItemNumber: number; // Número de ítem en la entrada
+  creationDate: string; // Fecha de creación
+  creationTime: string; // Hora de creación
+  netWeight: number; // Peso neto
+  grossWeight: number; // Peso bruto
+  coneCount: number; // Cantidad de conos
+  packageCount: number; // Cantidad de paquetes
+  yarnId: string; // ID del hilado
+}
+
+export interface YarnDispatch {
+  exitNumber: string; // Número de salida
+  period: number; // Período
+  creationDate: string; // Fecha de creación
+  creationTime: string; // Hora de creación
+  supplierCode: string; // Código del proveedor
+  supplierYarnEtryNumber: string; // Número de entrada del hilado del proveedor
+  statusFlag: string; // Indicador de estado
+  documentNote: string; // Nota del documento
+  printedFlag: string; // Indicador si está impreso
+  detail: YarnDispatchDetail[]; // Detalle de la salida
+}
+
+export interface YarnDispatchResponse {
+  yarnWeavingDispatches: YarnDispatch[];
+}

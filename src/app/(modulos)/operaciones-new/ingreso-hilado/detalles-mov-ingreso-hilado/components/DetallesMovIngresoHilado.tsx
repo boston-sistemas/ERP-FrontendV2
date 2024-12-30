@@ -34,7 +34,32 @@ const DetallesMovIngresoHilado: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedData, setEditedData] = useState<YarnPurchaseEntry | null>(null);
 
+  const handleGenerateSalida = () => {
+    if (detalle) {
+      const payload = {
+        entryNumber: detalle.entryNumber,
+        groups: detalle.detail.map((item) => ({
+          groupNumber: item.itemNumber, // Usar groupNumber o cualquier identificador único
+          coneCount: item.guideConeCount,
+          packageCount: item.guidePackageCount,
+          grossWeight: item.guideGrossWeight,
+          netWeight: item.guideNetWeight,
+        })),
+      };
+  
+      router.push(
+        `/operaciones-new/salida-hilado/crear-mov-salida-hilado`);
+    }
+  };
+    
+
   // Cargar datos del movimiento
+  const initializeDetailHeavy = (detail: YarnPurchaseEntry["detail"]) =>
+    detail.map((item) => ({
+      ...item,
+      detailHeavy: item.detailHeavy || [], // Inicializa como un array vacío si no existe
+    }));
+  
   useEffect(() => {
     const loadDetails = async () => {
       setIsLoading(true);
@@ -42,7 +67,10 @@ const DetallesMovIngresoHilado: React.FC = () => {
         if (entryNumber) {
           const period = new Date().getFullYear();
           const data = await fetchYarnPurchaseEntryDetails(entryNumber, period);
-          setDetalle(data);
+          setDetalle({
+            ...data,
+            detail: initializeDetailHeavy(data.detail), // Asegura que todos los detalles tengan detailHeavy
+          });
         }
       } catch (error) {
         console.error("Error al cargar los detalles del movimiento:", error);
@@ -50,9 +78,9 @@ const DetallesMovIngresoHilado: React.FC = () => {
         setIsLoading(false);
       }
     };
-
+  
     loadDetails();
-  }, [entryNumber]);
+  }, [entryNumber]);  
 
   const toggleRow = (index: number) => {
     setOpenRows((prevState) => ({
@@ -82,7 +110,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
       console.error("No hay datos para guardar.");
       return;
     }
-  
+
     try {
       // Prepara el payload basado en los datos editados
       const payload: Partial<YarnPurchaseEntry> = {
@@ -100,7 +128,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
           guideGrossWeight: detail.guideGrossWeight,
           guidePackageCount: detail.guidePackageCount,
           guideConeCount: detail.guideConeCount,
-          detailHeavy: detail.isWeighted ? detail.detailHeavy : [], // Incluye detailHeavy solo si isWeighted es true
+          detailHeavy: detail.detailHeavy, // Incluye detailHeavy solo si isWeighted es true
           isWeighted: detail.isWeighted,
           statusFlag: "P", // Asegura que siempre se envíe el mismo flag
         })),
@@ -190,77 +218,81 @@ const DetallesMovIngresoHilado: React.FC = () => {
       {/* Tabla Resumen */}
       <TableContainer className="rounded-md border bg-gray-50 shadow-md mt-5">
         <Table>
-          <TableHead className="bg-blue-900">
-            <TableRow>
-              {[
-                "Item",
-                "Código",
-                "N° Bultos",
-                "N° Conos",
-                "Lote Mecsa",
-                "% Difer.",
-                "Peso Bruto",
-                "Peso Neto",
-                "Pesaje",
-              ].map((col, index) => (
-                <TableCell key={index} className="text-white text-center">
-                  {col}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {detalle.detail.map((item, index) => (
-              <React.Fragment key={index}>
-                <TableRow>
-                  <TableCell className="text-center">{item.itemNumber}</TableCell>
-                  <TableCell className="text-center">{item.yarnId}</TableCell>
-                  <TableCell className="text-center">{item.guidePackageCount}</TableCell>
-                  <TableCell className="text-center">{item.guideConeCount}</TableCell>
-                  <TableCell className="text-center">{detalle.mecsaBatch}</TableCell>
-                  <TableCell className="text-center">00.00%</TableCell>
-                  <TableCell className="text-center">{item.guideGrossWeight}</TableCell>
-                  <TableCell className="text-center">{item.guideNetWeight}</TableCell>
-                  <TableCell className="text-center">
-                    <IconButton onClick={() => toggleRow(index)}>
-                      {openRows[index] ? <ExpandLess /> : <ExpandMore />}
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell colSpan={10} style={{ padding: 0 }}>
-                    <Collapse in={openRows[index]} timeout="auto" unmountOnExit>
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            {["Grupo", "Peso Guía", "Estado", "Bultos Restantes"].map(
-                              (subCol, subIndex) => (
-                                <TableCell key={subIndex} className="text-center">
-                                  {subCol}
-                                </TableCell>
-                              )
-                            )}
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {item.detailHeavy.map((group, groupIndex) => (
-                            <TableRow key={groupIndex}>
-                              <TableCell className="text-center">{group.groupNumber}</TableCell>
-                              <TableCell className="text-center">{group.grossWeight}</TableCell>
-                              <TableCell className="text-center" style={{ color: "red" }}>
-                                No Despachado
-                              </TableCell>
-                              <TableCell className="text-center">{group.packageCount}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </Collapse>
-                  </TableCell>
-                </TableRow>
-              </React.Fragment>
+        <TableHead className="bg-blue-900">
+          <TableRow>
+            {[
+              "Item",
+              "Código",
+              "N° Bultos",
+              "N° Conos",
+              "Lote Mecsa",
+              "% Difer.",
+              "Peso Bruto",
+              "Peso Neto",
+              ...(detalle.detail.some((item) => item.isWeighted) ? ["Pesaje"] : []), // Muestra "Pesaje" solo si isWeighted es true
+            ].map((col, index) => (
+              <TableCell key={index} className="text-white text-center">
+                {col}
+              </TableCell>
             ))}
-          </TableBody>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+  {detalle.detail.map((item, index) => (
+    <React.Fragment key={index}>
+      <TableRow>
+        <TableCell className="text-center">{item.itemNumber}</TableCell>
+        <TableCell className="text-center">{item.yarnId}</TableCell>
+        <TableCell className="text-center">{item.guidePackageCount}</TableCell>
+        <TableCell className="text-center">{item.guideConeCount}</TableCell>
+        <TableCell className="text-center">{detalle.mecsaBatch}</TableCell>
+        <TableCell className="text-center">00.00%</TableCell>
+        <TableCell className="text-center">{item.guideGrossWeight}</TableCell>
+        <TableCell className="text-center">{item.guideNetWeight}</TableCell>
+        {item.isWeighted && ( // Oculta la columna "Pesaje" si isWeighted es false
+          <TableCell className="text-center">
+            <IconButton onClick={() => toggleRow(index)}>
+              {openRows[index] ? <ExpandLess /> : <ExpandMore />}
+            </IconButton>
+          </TableCell>
+        )}
+      </TableRow>
+      {item.isWeighted && (
+        <TableRow>
+          <TableCell colSpan={10} style={{ padding: 0 }}>
+            <Collapse in={openRows[index]} timeout="auto" unmountOnExit>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    {["Grupo", "Peso Guía", "Estado", "Bultos Restantes"].map(
+                      (subCol, subIndex) => (
+                        <TableCell key={subIndex} className="text-center">
+                          {subCol}
+                        </TableCell>
+                      )
+                    )}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {item.detailHeavy.map((group, groupIndex) => (
+                    <TableRow key={groupIndex}>
+                      <TableCell className="text-center">{group.groupNumber}</TableCell>
+                      <TableCell className="text-center">{group.grossWeight}</TableCell>
+                      <TableCell className="text-center" style={{ color: "red" }}>
+                        No Despachado
+                      </TableCell>
+                      <TableCell className="text-center">{group.packageCount}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Collapse>
+          </TableCell>
+        </TableRow>
+      )}
+    </React.Fragment>
+  ))}
+</TableBody>
         </Table>
       </TableContainer>
 
@@ -274,12 +306,13 @@ const DetallesMovIngresoHilado: React.FC = () => {
           Regresar a Movimientos
         </Button>
         <Button
-          variant="contained"
-          style={{ backgroundColor: "#4caf50", color: "#fff" }}
-          size="large"
-        >
-          Generar Salida
-        </Button>
+        variant="contained"
+        style={{ backgroundColor: "#4caf50", color: "#fff" }}
+        size="large"
+        onClick={handleGenerateSalida}
+      >
+        Generar Salida
+      </Button>
       </div>
 
       {/* Diálogo de Edición */}

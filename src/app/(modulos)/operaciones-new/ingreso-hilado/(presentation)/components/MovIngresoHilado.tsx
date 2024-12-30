@@ -85,7 +85,6 @@ const MovIngresoHilado: React.FC = () => {
   return (
     <div className="space-y-5">
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
-        <h2 className="text-xl font-semibold mb-4">Ingreso de Hilado</h2>
         <div className="max-w-full overflow-x-auto">
           <div className="flex items-center justify-between gap-2 mb-4">
             {/* Contenedor de Búsqueda y Filtros */}
