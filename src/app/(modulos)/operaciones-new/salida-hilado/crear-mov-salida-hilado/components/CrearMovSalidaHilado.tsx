@@ -177,61 +177,77 @@ const CrearMovSalidaHilado: React.FC = () => {
         </div>
       )}
 
-      <Dialog open={isDialogOpen} onClose={handleCloseDialog} fullWidth maxWidth="lg">
-        <DialogTitle>Seleccionar Movimiento de Ingreso</DialogTitle>
-        <DialogContent>
-          <div className="max-w-full overflow-x-auto">
-            <table className="w-full table-auto">
-              <thead>
-                <tr className="bg-blue-900 text-white">
-                  <th className="px-4 py-4 font-normal">Número</th>
-                  <th className="px-4 py-4 font-normal">Proveedor</th>
-                  <th className="px-4 py-4 font-normal">Fecha</th>
-                  <th className="px-4 py-4 font-normal">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ingresos.slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina).map((ingreso) => (
-                  <TableRow key={ingreso.entryNumber} className="text-center">
-                    <TableCell className="border-b border-gray-300 px-4 py-5">
-                      {ingreso.entryNumber}
+<Dialog
+  open={isDialogOpen}
+  onClose={handleCloseDialog}
+  fullWidth
+  maxWidth="lg"
+  PaperProps={{
+    style: {
+      marginLeft: "300px", // Ajusta este valor según el ancho de la barra lateral
+      maxWidth: "calc(100% - 240px)", // Asegura que no se superponga
+    },
+  }}
+>
+  <DialogTitle>Seleccionar Movimiento de Ingreso</DialogTitle>
+  <DialogContent>
+    <div className="max-w-full overflow-x-auto">
+      <table className="w-full table-auto">
+        <thead>
+          <tr className="bg-blue-900 text-white">
+            <th className="px-4 py-4 font-normal">Número</th>
+            <th className="px-4 py-4 font-normal">Proveedor</th>
+            <th className="px-4 py-4 font-normal">Fecha</th>
+            <th className="px-4 py-4 font-normal">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ingresos
+            .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
+            .map((ingreso) => (
+              <TableRow key={ingreso.entryNumber} className="text-center">
+                <TableCell className="border-b border-gray-300 px-4 py-5">
+                  {ingreso.entryNumber}
+                </TableCell>
+                <TableCell className="border-b border-gray-300 px-4 py-5">
+                  {ingreso.supplierCode}
+                </TableCell>
+                <TableCell className="border-b border-gray-300 px-4 py-5">
+                  {ingreso.creationDate}
+                </TableCell>
+                <TableCell className="border-b border-gray-300 px-4 py-5">
+                      {data?.entryNumber === ingreso.entryNumber ? (
+                        <span className="text-blue-600 font-semibold">Seleccionado</span>
+                      ) : (
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleSelectIngresoFromDialog(ingreso.entryNumber)}
+                        >
+                          <Add />
+                        </IconButton>
+                      )}
                     </TableCell>
-                    <TableCell className="border-b border-gray-300 px-4 py-5">
-                      {ingreso.supplierCode}
-                    </TableCell>
-                    <TableCell className="border-b border-gray-300 px-4 py-5">
-                      {ingreso.creationDate}
-                    </TableCell>
-                    <TableCell className="border-b border-gray-300 px-4 py-5">
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => handleSelectIngresoFromDialog(ingreso.entryNumber)}
-                      >
-                        Seleccionar
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </tbody>
-            </table>
-            <TablePagination
-              rowsPerPageOptions={[10, 25, 50]}
-              component="div"
-              count={ingresos.length}
-              rowsPerPage={filasPorPagina}
-              page={pagina}
-              onPageChange={(_, newPage) => setPagina(newPage)}
-              onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))}
-            />
-          </div>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color="secondary">
-            Cancelar
-          </Button>
-        </DialogActions>
-      </Dialog>
+              </TableRow>
+            ))}
+        </tbody>
+      </table>
+      <TablePagination
+        rowsPerPageOptions={[10, 25, 50]}
+        component="div"
+        count={ingresos.length}
+        rowsPerPage={filasPorPagina}
+        page={pagina}
+        onPageChange={(_, newPage) => setPagina(newPage)}
+        onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))}
+      />
+    </div>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={handleCloseDialog} color="secondary">
+      Cancelar
+    </Button>
+  </DialogActions>
+</Dialog>
 
       {data && (
         <Button
