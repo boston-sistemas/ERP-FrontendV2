@@ -183,3 +183,44 @@ export interface YarnDispatch {
 export interface YarnDispatchResponse {
   yarnWeavingDispatches: YarnDispatch[];
 }
+
+export interface Status {
+  id: number; // Identificador del estado
+  value: string; // Descripción del estado
+}
+
+export interface ServiceOrderDetail {
+  tissueId: string; // Identificador único del tejido
+  quantityOrdered: number; // Cantidad solicitada
+  quantitySupplied?: number; // Cantidad suministrada (opcional)
+  price: number; // Precio unitario
+  statusParamId?: number; // ID del parámetro de estado (opcional)
+  status?: { id: number; value: string }; // Información del estado (opcional)
+}
+
+export interface ServiceOrder {
+  id: string; // Identificador único de la orden de servicio
+  supplierId: string; // Identificador del proveedor
+  issueDate: string; // Fecha de emisión de la orden (formato ISO)
+  dueDate: string | null; // Fecha de vencimiento de la orden, puede ser nulo
+  storageCode: string; // Código del almacén asociado
+  statusFlag: string; // Indicador de estado de la orden
+  statusParamId: number; // ID del parámetro de estado
+  status: Status; // Información detallada del estado de la orden
+  detail: ServiceOrderDetail[]; // Lista de detalles de la orden
+}
+
+export interface ServiceOrderResponse {
+  serviceOrders: ServiceOrder[]; // Lista de órdenes de servicio
+}
+
+export interface Supplier {
+  code: string;
+  name: string;
+  ruc: string;
+  isActive: string;
+  storageCode: string;
+  initials: string;
+  emails: string[];
+  addresses: Record<string, string>;
+}

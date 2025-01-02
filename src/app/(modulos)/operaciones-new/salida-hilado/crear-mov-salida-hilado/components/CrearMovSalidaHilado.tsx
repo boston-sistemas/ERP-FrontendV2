@@ -117,8 +117,6 @@ const CrearMovSalidaHilado: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-xl font-bold mb-4">CREAR MOVIMIENTO DE SALIDA DE HILADO</h1>
-
       <div className="flex items-center justify-between mb-4">
         <p className="text-lg">
           Movimiento de Ingreso Asociado: {data ? <strong>{data.entryNumber}</strong> : "Ninguno"}
