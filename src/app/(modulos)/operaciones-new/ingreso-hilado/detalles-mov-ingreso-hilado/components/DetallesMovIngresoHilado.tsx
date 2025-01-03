@@ -66,7 +66,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
       setIsLoading(true);
       try {
         if (entryNumber) {
-          const period = new Date().getFullYear();
+          const period = 2024;
           const data = await fetchYarnPurchaseEntryDetails(entryNumber, period);
           setDetalle({
             ...data,
@@ -115,7 +115,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
     try {
       // Prepara el payload basado en los datos editados
       const payload: Partial<YarnPurchaseEntry> = {
-        period: new Date().getFullYear(),
+        period: 2024,
         supplierPoCorrelative: editedData.supplierPoCorrelative,
         supplierPoSeries: editedData.supplierPoSeries,
         fecgf: editedData.fecgf,

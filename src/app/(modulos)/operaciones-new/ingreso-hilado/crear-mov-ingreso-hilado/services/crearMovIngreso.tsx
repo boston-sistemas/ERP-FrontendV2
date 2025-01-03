@@ -1,8 +1,10 @@
 ﻿import instance from "@/infrastructure/config/AxiosConfig";
 import { PurchaseOrderResponse, YarnPurchaseEntry, YarnPurchaseEntryResponse } from "../../../models/models";
 
-export const fetchOrdenCompras = async (): Promise<PurchaseOrderResponse> => {
-  const response = await instance.get<PurchaseOrderResponse>("/operations/v1/orden-compra/yarns");
+export const fetchOrdenCompras = async (period: number): Promise<PurchaseOrderResponse> => {
+  const response = await instance.get<PurchaseOrderResponse>(
+    `/operations/v1/orden-compra/yarns?period=${period}`
+  );
   return response.data;
 };
 

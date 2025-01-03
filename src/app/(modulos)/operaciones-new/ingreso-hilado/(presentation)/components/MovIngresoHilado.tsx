@@ -6,9 +6,10 @@ import {
   IconButton,
   Button,
   TextField,
-  Menu,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
-import { Visibility, Add, FilterList, Search } from "@mui/icons-material";
+import { Visibility, Add, Search } from "@mui/icons-material";
 import { useRouter, useSearchParams } from "next/navigation";
 import { YarnPurchaseEntry } from "../../../models/models";
 import { fetchYarnPurchaseEntries } from "../../services/movIngresoHiladoService";
@@ -20,9 +21,8 @@ const MovIngresoHilado: React.FC = () => {
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isRedirectedAfterCreation, setIsRedirectedAfterCreation] = useState(true);
+  const [includeInactive, setIncludeInactive] = useState(false); // Controla el estado del switch
 
   // Cargar datos del servicio
   useEffect(() => {
@@ -32,20 +32,10 @@ const MovIngresoHilado: React.FC = () => {
         const response = await fetchYarnPurchaseEntries(
           2024, // Cambia el periodo si es dinámico
           filasPorPagina,
-          pagina * filasPorPagina
+          pagina * filasPorPagina,
+          includeInactive // Parámetro adicional para incluir inactivos
         );
         setHilados(response.yarnPurchaseEntries);
-
-        // Handle redirection based on the query parameter
-        const redirectToLast = searchParams.get("redirectToLast") === "true";
-        if (redirectToLast && response.yarnPurchaseEntries.length > 0) {
-          const lastEntry = response.yarnPurchaseEntries.sort(
-            (a, b) => new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime()
-          )[0]; // Ordenar por fecha descendente
-
-          // Redirect to the last entry details and clear the query
-          router.replace(`/operaciones-new/ingreso-hilado/detalles-mov-ingreso-hilado/${lastEntry.entryNumber}`);
-        }
       } catch (error) {
         console.error("Error al cargar los datos:", error);
       } finally {
@@ -54,14 +44,10 @@ const MovIngresoHilado: React.FC = () => {
     };
 
     fetchData();
-  }, [pagina, filasPorPagina, searchParams]);
+  }, [pagina, filasPorPagina, includeInactive]);
 
-  const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
-    setFilterAnchorEl(event.currentTarget);
-  };
-
-  const handleFilterClose = () => {
-    setFilterAnchorEl(null);
+  const handleSwitchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setIncludeInactive(event.target.checked);
   };
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,7 +73,7 @@ const MovIngresoHilado: React.FC = () => {
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
         <div className="max-w-full overflow-x-auto">
           <div className="flex items-center justify-between gap-2 mb-4">
-            {/* Contenedor de Búsqueda y Filtros */}
+            {/* Contenedor de Búsqueda y Switch */}
             <div className="flex items-center gap-2">
               <div className="flex items-center border border-gray-300 rounded-md px-2">
                 <Search />
@@ -101,36 +87,16 @@ const MovIngresoHilado: React.FC = () => {
                   }}
                 />
               </div>
-              <Button
-                startIcon={<FilterList />}
-                variant="outlined"
-                onClick={handleFilterClick}
-              >
-                Filtros
-              </Button>
-              <Menu
-                anchorEl={filterAnchorEl}
-                open={Boolean(filterAnchorEl)}
-                onClose={handleFilterClose}
-              >
-                <div className="p-4 space-y-2" style={{ maxWidth: "300px", margin: "0 auto" }}>
-                  <TextField
-                    label="Proveedor"
-                    variant="outlined"
-                    placeholder="Filtrar por proveedor..."
-                    size="small"
-                    fullWidth
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={includeInactive}
+                    onChange={handleSwitchChange}
+                    color="primary"
                   />
-                  <TextField
-                    label="Fecha"
-                    type="date"
-                    variant="outlined"
-                    InputLabelProps={{ shrink: true }}
-                    size="small"
-                    fullWidth
-                  />
-                </div>
-              </Menu>
+                }
+                label="Mostrar inactivos"
+              />
             </div>
 
             {/* Botón Crear */}

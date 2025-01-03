@@ -13,6 +13,8 @@ import {
   Typography,
   TablePagination,
   Switch,
+  MenuItem,
+  Select,
 } from "@mui/material";
 import MuiAlert, { AlertProps } from "@mui/material/Alert";
 import { Add, Delete } from "@mui/icons-material";
@@ -38,6 +40,7 @@ const CrearMovIngresoHilado: React.FC = () => {
   const [filasPorPagina, setFilasPorPagina] = useState(5);
   const [openOrdenesDialog, setOpenOrdenesDialog] = useState(false);
   const [selectedOrden, setSelectedOrden] = useState<PurchaseOrder | null>(null);
+  const [period, setPeriod] = useState(2024); // Período por defecto
   const [details, setDetails] = useState<
     {
       yarnId: string;
@@ -52,26 +55,40 @@ const CrearMovIngresoHilado: React.FC = () => {
 
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [detailHeavy, setDetailHeavy] = useState<
-  { groupNumber: number; coneCount: number; packageCount: number; grossWeight: number; netWeight: number }[]
->([
-  { groupNumber: 1, coneCount: 0, packageCount: 1, grossWeight: 0, netWeight: 0 }, // Grupo inicial con valores predeterminados
-]);
-
 
   useEffect(() => {
-    const fetchOrdenes = async () => {
+    // Fetch inicial con periodo 2024
+    const initialFetch = async () => {
       try {
-        const data: PurchaseOrderResponse = await fetchOrdenCompras();
+        const data: PurchaseOrderResponse = await fetchOrdenCompras(2024);
         setOrdenesCompra(data.ordenes);
       } catch (error) {
-        console.error("Error al cargar órdenes de compra:", error);
-        setSnackbarMessage("Error al cargar órdenes de compra.");
+        console.error("Error al cargar órdenes de compra para el periodo inicial:", error);
+        setSnackbarMessage("Error al cargar órdenes de compra para el periodo inicial.");
         setOpenSnackbar(true);
       }
     };
-    fetchOrdenes();
+
+    initialFetch();
   }, []);
+
+  useEffect(() => {
+    // Fetch dinámico basado en el periodo seleccionado
+    if (period !== 2024) {
+      const fetchOrdenes = async () => {
+        try {
+          const data: PurchaseOrderResponse = await fetchOrdenCompras(period);
+          setOrdenesCompra(data.ordenes);
+        } catch (error) {
+          console.error("Error al cargar órdenes de compra:", error);
+          setSnackbarMessage("Error al cargar órdenes de compra.");
+          setOpenSnackbar(true);
+        }
+      };
+
+      fetchOrdenes();
+    }
+  }, [period]);
 
   const toggleOrdenesDialog = () => {
     setOpenOrdenesDialog(!openOrdenesDialog);
@@ -124,8 +141,8 @@ const CrearMovIngresoHilado: React.FC = () => {
           : detail
       )
     );
-  };  
-  
+  };
+
   const handleUpdateGroup = (
     index: number,
     groupIndex: number,
@@ -167,9 +184,9 @@ const CrearMovIngresoHilado: React.FC = () => {
       setOpenSnackbar(true);
       return;
     }
-  
+
     const payload: Partial<YarnPurchaseEntry> = {
-      period: new Date().getFullYear(),
+      period,
       supplierPoCorrelative: guiaCorrelativa,
       supplierPoSeries: facturaSerie,
       fecgf: new Date().toISOString().split("T")[0],
@@ -188,13 +205,12 @@ const CrearMovIngresoHilado: React.FC = () => {
         statusFlag: "P",
       })),
     };
-  
+
     try {
       await createYarnPurchaseEntry(payload);
       setSnackbarMessage("Movimiento creado exitosamente.");
       setOpenSnackbar(true);
-  
-      // Navigate with a query indicating this was after creation
+
       router.push("/operaciones-new/ingreso-hilado?redirectToLast=true");
     } catch (error: any) {
       console.error("Error al crear el movimiento:", error);
@@ -202,7 +218,7 @@ const CrearMovIngresoHilado: React.FC = () => {
       setOpenSnackbar(true);
     }
   };
-  
+
   const handleCancel = () => {
     router.push("/operaciones-new/ingreso-hilado");
   };
@@ -217,6 +233,29 @@ const CrearMovIngresoHilado: React.FC = () => {
         <h2 className="text-xl font-bold mb-6 text-center" style={{ color: "#000" }}>
           Crear Mov. de Ingreso de Hilado
         </h2>
+        <div className="mb-4">
+          <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>
+            Seleccionar Año del Periodo
+          </Typography>
+          <Select
+            value={period}
+            onChange={(e) => setPeriod(Number(e.target.value))}
+            fullWidth
+            variant="outlined"
+            displayEmpty
+            style={{ backgroundColor: "#fff" }}
+          >
+            <MenuItem value="" disabled>
+              Seleccionar año
+            </MenuItem>
+            {[2023, 2024, 2025].map((year) => (
+              <MenuItem key={year} value={year}>
+                {year}
+              </MenuItem>
+            ))}
+          </Select>
+        </div>
+
         <div className="mb-4">
           <Typography
             variant="subtitle1"
@@ -238,6 +277,7 @@ const CrearMovIngresoHilado: React.FC = () => {
             <Add style={{ color: "#1976d2" }} />
           </IconButton>
         </div>
+
         <form>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <TextField
