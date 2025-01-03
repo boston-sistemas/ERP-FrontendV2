@@ -46,3 +46,12 @@ export const createServiceOrder = async (data: {
   const response = await instance.post("/operations/v1/service-orders/", data);
   return response.data;
 };
+
+export const anulateServiceOrder = async (orderId: string) => {
+  await instance.put(`/operations/v1/service-orders/${orderId}/anulate`);
+}
+
+export const checkIfServiceOrderIsUpdatable = async (orderId: string) => {
+  const response = await instance.get(`/operations/v1/service-orders/${orderId}/is-updatable`);
+  return response.data;
+}

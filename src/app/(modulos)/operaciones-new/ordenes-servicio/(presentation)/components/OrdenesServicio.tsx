@@ -13,8 +13,10 @@ import {
   DialogTitle,
   Select,
   MenuItem,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
-import { FilterList, Search, Visibility, Add } from "@mui/icons-material";
+import { FilterList, Search, Visibility, Add, Delete } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { fetchServiceOrders, fetchSuppliers, createServiceOrder } from "../../services/ordenesServicioService";
 import { ServiceOrder, Supplier } from "../../../models/models";
@@ -29,6 +31,7 @@ const OrdenesServicio: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({ supplierId: "", issueDate: "" });
+  const [includeInactive, setIncludeInactive] = useState(false); // Nuevo estado
 
   // Estado para el diálogo de creación
   const [openDialog, setOpenDialog] = useState(false);
@@ -39,6 +42,11 @@ const OrdenesServicio: React.FC = () => {
       { tissueId: "", quantityOrdered: 0, price: 0 },
     ],
   });
+
+  const getSupplierName = (supplierId: string) => {
+    const supplier = suppliers.find((s) => s.code === supplierId);
+    return supplier ? supplier.name : supplierId;
+  };
 
   const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
     setFilterAnchorEl(event.currentTarget);
@@ -71,6 +79,13 @@ const OrdenesServicio: React.FC = () => {
     }));
   };
 
+  const handleDeleteDetailRow = (index: number) => {
+    setNewOrder((prev) => ({
+      ...prev,
+      detail: prev.detail.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleInputChange = (index: number, field: string, value: string | number) => {
     const updatedDetails = [...newOrder.detail];
     (updatedDetails[index] as any)[field] = value;
@@ -85,30 +100,29 @@ const OrdenesServicio: React.FC = () => {
         supplierId: "",
         detail: [{ tissueId: "", quantityOrdered: 0, price: 0 }],
       });
-      const response = await fetchServiceOrders(filasPorPagina, pagina * filasPorPagina, false);
-      setOrdenesServicio(response.serviceOrders || []);
+      fetchOrders(); // Refetch orders after creation
     } catch (err) {
       console.error("Error al crear la orden de servicio", err);
       alert("No se pudo crear la orden. Verifica los datos e intenta nuevamente.");
     }
   };
 
-  // Fetch data from API
+  const fetchOrders = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetchServiceOrders(filasPorPagina, pagina * filasPorPagina, includeInactive);
+      setOrdenesServicio(response.serviceOrders || []);
+    } catch (err) {
+      setError("Error al cargar las órdenes de servicio.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetchServiceOrders(filasPorPagina, pagina * filasPorPagina, false);
-        setOrdenesServicio(response.serviceOrders || []);
-      } catch (err) {
-        setError("Error al cargar las órdenes de servicio.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, [pagina, filasPorPagina]);
+    fetchOrders();
+  }, [pagina, filasPorPagina, includeInactive]);
 
   useEffect(() => {
     const fetchSuppliersData = async () => {
@@ -147,13 +161,16 @@ const OrdenesServicio: React.FC = () => {
                   }}
                 />
               </div>
-              <Button
-                startIcon={<FilterList />}
-                variant="outlined"
-                onClick={handleFilterClick}
-              >
-                Filtros
-              </Button>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={includeInactive}
+                    onChange={() => setIncludeInactive((prev) => !prev)}
+                    color="primary"
+                  />
+                }
+                label="Incluir Inactivas"
+              />
               <Menu
                 anchorEl={filterAnchorEl}
                 open={Boolean(filterAnchorEl)}
@@ -228,7 +245,7 @@ const OrdenesServicio: React.FC = () => {
                 filteredOrdenes.map((orden) => (
                   <tr key={orden.id} className="text-center">
                     <td className="border-b border-[#eee] px-4 py-5">{orden.id}</td>
-                    <td className="border-b border-[#eee] px-4 py-5">{orden.supplierId}</td>
+                    <td className="border-b border-[#eee] px-4 py-5">{getSupplierName(orden.supplierId)}</td>
                     <td className="border-b border-[#eee] px-4 py-5">{orden.issueDate}</td>
                     <td className="border-b border-[#eee] px-4 py-5">{orden.storageCode}</td>
                     <td className="border-b border-[#eee] px-4 py-5">{orden.statusFlag}</td>
@@ -289,7 +306,7 @@ const OrdenesServicio: React.FC = () => {
               ))}
             </Select>
             {newOrder.detail.map((detail, index) => (
-              <div key={index} className="flex space-x-4">
+              <div key={index} className="flex space-x-4 items-center">
                 <TextField
                   label="Código del tejido"
                   value={detail.tissueId}
@@ -310,6 +327,9 @@ const OrdenesServicio: React.FC = () => {
                   onChange={(e) => handleInputChange(index, "price", Number(e.target.value))}
                   fullWidth
                 />
+                <IconButton onClick={() => handleDeleteDetailRow(index)} color="error">
+                  <Delete />
+                </IconButton>
               </div>
             ))}
             <Button onClick={handleAddDetailRow} variant="contained" style={{ backgroundColor: "#1976d2", color: "#fff" }}>
@@ -318,7 +338,7 @@ const OrdenesServicio: React.FC = () => {
           </div>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} color="secondary">
+          <Button onClick={handleCloseDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
             Cancelar
           </Button>
           <Button onClick={handleCreateOrder} style={{ backgroundColor: "#1976d2", color: "#fff" }}>
