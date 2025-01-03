@@ -6,13 +6,14 @@ import {
   IconButton,
   Button,
   TextField,
-  Menu,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
-import { Visibility, Add, FilterList, Search, Close } from "@mui/icons-material";
+import { Visibility, Add, Close, Search } from "@mui/icons-material";
 import { useRouter, useSearchParams } from "next/navigation";
 import { YarnDispatch } from "../../../models/models";
 import { fetchYarnDispatches } from "../../services/movSalidaHiladoService";
@@ -24,8 +25,8 @@ const MovSalidaHilado: React.FC = () => {
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [includeInactive, setIncludeInactive] = useState(false);
 
   // Estado para manejar el diálogo
   const [openDialog, setOpenDialog] = useState(false);
@@ -39,7 +40,8 @@ const MovSalidaHilado: React.FC = () => {
         const response = await fetchYarnDispatches(
           2024,
           filasPorPagina,
-          pagina * filasPorPagina
+          pagina * filasPorPagina,
+          includeInactive
         );
         setDispatches(response.yarnWeavingDispatches || []);
       } catch (error) {
@@ -50,15 +52,7 @@ const MovSalidaHilado: React.FC = () => {
     };
 
     fetchData();
-  }, [pagina, filasPorPagina]);
-
-  const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
-    setFilterAnchorEl(event.currentTarget);
-  };
-
-  const handleFilterClose = () => {
-    setFilterAnchorEl(null);
-  };
+  }, [pagina, filasPorPagina, includeInactive]);
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -74,12 +68,18 @@ const MovSalidaHilado: React.FC = () => {
   };
 
   const handleDialogOpen = (documentNote: string | null) => {
-    setDialogContent(documentNote && documentNote.trim() ? documentNote : "No existe Nota de documento");
+    setDialogContent(
+      documentNote && documentNote.trim() ? documentNote : "No existe Nota de documento"
+    );
     setOpenDialog(true);
   };
 
   const handleDialogClose = () => {
     setOpenDialog(false);
+  };
+
+  const handleSwitchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setIncludeInactive(event.target.checked);
   };
 
   const filteredDispatches = dispatches.filter((dispatch) =>
@@ -93,7 +93,7 @@ const MovSalidaHilado: React.FC = () => {
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
         <div className="max-w-full overflow-x-auto">
           <div className="flex items-center justify-between gap-2 mb-4">
-            {/* Contenedor de Búsqueda y Filtros */}
+            {/* Contenedor de Búsqueda y Switch */}
             <div className="flex items-center gap-2">
               <div className="flex items-center border border-gray-300 rounded-md px-2">
                 <Search />
@@ -107,36 +107,16 @@ const MovSalidaHilado: React.FC = () => {
                   }}
                 />
               </div>
-              <Button
-                startIcon={<FilterList />}
-                variant="outlined"
-                onClick={handleFilterClick}
-              >
-                Filtros
-              </Button>
-              <Menu
-                anchorEl={filterAnchorEl}
-                open={Boolean(filterAnchorEl)}
-                onClose={handleFilterClose}
-              >
-                <div className="p-4 space-y-2" style={{ maxWidth: "300px", margin: "0 auto" }}>
-                  <TextField
-                    label="Proveedor"
-                    variant="outlined"
-                    placeholder="Filtrar por proveedor..."
-                    size="small"
-                    fullWidth
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={includeInactive}
+                    onChange={handleSwitchChange}
+                    color="primary"
                   />
-                  <TextField
-                    label="Fecha"
-                    type="date"
-                    variant="outlined"
-                    InputLabelProps={{ shrink: true }}
-                    size="small"
-                    fullWidth
-                  />
-                </div>
-              </Menu>
+                }
+                label="Mostrar inactivos"
+              />
             </div>
 
             {/* Botón Crear */}
@@ -214,7 +194,11 @@ const MovSalidaHilado: React.FC = () => {
                     <td className="border-b border-[#eee] px-4 py-5">
                       <IconButton
                         color="primary"
-                        onClick={() => router.push(`/operaciones-new/salida-hilado/detalles-mov-salida-hilado/${dispatch.exitNumber}`)}
+                        onClick={() =>
+                          router.push(
+                            `/operaciones-new/salida-hilado/detalles-mov-salida-hilado/${dispatch.exitNumber}`
+                          )
+                        }
                       >
                         <Visibility />
                       </IconButton>

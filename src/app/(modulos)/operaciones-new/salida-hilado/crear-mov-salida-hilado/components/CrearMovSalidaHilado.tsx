@@ -7,48 +7,62 @@ import {
   TableCell,
   Button,
   Checkbox,
-  Collapse,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TablePagination,
+  IconButton,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
 } from "@mui/material";
-import { Add, ExpandMore, ExpandLess } from "@mui/icons-material";
+import { Add } from "@mui/icons-material";
 import {
   fetchYarnPurchaseEntries,
   fetchYarnPurchaseEntryDetails,
 } from "../../../ingreso-hilado/services/movIngresoHiladoService";
+import {
+  fetchServiceOrders,
+  fetchServiceOrderById,
+  fetchSuppliers,
+} from "../../../ordenes-servicio/services/ordenesServicioService";
 import { createYarnDispatch } from "../../services/movSalidaHiladoService";
+import { ServiceOrder, Supplier } from "../../../models/models";
 
 const CrearMovSalidaHilado: React.FC = () => {
-  const [data, setData] = useState<any>(null);
+  const [dataIngreso, setDataIngreso] = useState<any>(null); // Detalles del ingreso
+  const [dataOS, setDataOS] = useState<any>(null); // Detalles de la orden de servicio
   const [ingresos, setIngresos] = useState<any[]>([]);
+  const [ordenesServicio, setOrdenesServicio] = useState<ServiceOrder[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<any[]>([]);
-  const [openRows, setOpenRows] = useState<Record<number, boolean>>({});
-  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [isIngresoDialogOpen, setIsIngresoDialogOpen] = useState<boolean>(false);
+  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState<boolean>(false);
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [selectedSupplier, setSelectedSupplier] = useState<string>("");
+  const [selectedAddress, setSelectedAddress] = useState<string>("");
 
   useEffect(() => {
-    const savedEntry = localStorage.getItem("entryNumber");
-    if (savedEntry) {
-      const { entryNumber } = JSON.parse(savedEntry);
-      loadIngresoDetails(entryNumber);
-      localStorage.removeItem("entryNumber");
-    } else {
-      loadIngresos();
-    }
+    loadIngresosAndOrders();
+    loadSupplierData();
   }, []);
 
-  const loadIngresos = async () => {
+  const loadIngresosAndOrders = async () => {
     try {
       const period = 2024;
-      const response = await fetchYarnPurchaseEntries(period, 50, 0, false);
-      setIngresos(response.yarnPurchaseEntries || []);
+      const [ingresosResponse, ordenesServicioResponse] = await Promise.all([
+        fetchYarnPurchaseEntries(period, 50, 0, false),
+        fetchServiceOrders(50, 0, false),
+      ]);
+      setIngresos(ingresosResponse.yarnPurchaseEntries || []);
+      setOrdenesServicio(ordenesServicioResponse.serviceOrders || []);
     } catch (error) {
-      console.error("Error al cargar los movimientos de ingreso:", error);
+      console.error("Error al cargar datos:", error);
     }
   };
 
@@ -56,17 +70,60 @@ const CrearMovSalidaHilado: React.FC = () => {
     try {
       const period = 2024;
       const response = await fetchYarnPurchaseEntryDetails(entryNumber, period);
-      setData(response);
+      setDataIngreso({
+        ...response,
+        detail: response.detail || [], // Asegura que siempre haya un array de detalles
+      });
+      setIsIngresoDialogOpen(false); // Cierra el diálogo después de seleccionar
     } catch (error) {
       console.error("Error al cargar detalles del ingreso:", error);
     }
   };
 
-  const toggleRow = (index: number) => {
-    setOpenRows((prevState) => ({
-      ...prevState,
-      [index]: !prevState[index],
-    }));
+  const loadSupplierData = async () => {
+    try {
+      const suppliers = await fetchSuppliers();
+      setSuppliers(suppliers);
+    } catch (error) {
+      console.error("Error al cargar los proveedores:", error);
+    }
+  }
+
+  const handleProveedorChange = (event: SelectChangeEvent<string>) => {
+    setSelectedSupplier(event.target.value);
+  };
+
+  const handleAddressChange = (event: SelectChangeEvent<string>) => {
+    setSelectedAddress(event.target.value);
+  };
+
+  const supplier = suppliers.find((sup) => sup.code === selectedSupplier);
+
+  const handleGroupInputChange = (
+    itemIndex: number,
+    groupIndex: number,
+    field: string,
+    value: number
+  ) => {
+    setDataIngreso((prevData: any) => {
+      const updatedData = { ...prevData };
+      updatedData.detail[itemIndex].detailHeavy[groupIndex][field] = value;
+      return updatedData;
+    });
+  }; 
+
+  const handleSelectServiceOrder = async (orderId: string) => {
+    try {
+      const serviceOrderDetails = await fetchServiceOrderById(orderId);
+      setDataOS({
+        ...serviceOrderDetails,
+        detail: serviceOrderDetails.detail || [], // Asegura que haya un array de detalles
+      });
+      setIsServiceDialogOpen(false); // Cierra el diálogo después de seleccionar
+    } catch (error) {
+      console.error("Error al cargar la orden de servicio:", error);
+      alert("No se pudo cargar la orden de servicio seleccionada. Por favor, inténtelo de nuevo.");
+    }
   };
 
   const toggleGroupSelection = (group: any) => {
@@ -78,8 +135,8 @@ const CrearMovSalidaHilado: React.FC = () => {
   };
 
   const handleSaveSalida = async () => {
-    if (!data) {
-      alert("No hay datos cargados.");
+    if (!dataIngreso || !dataOS) {
+      alert("Debe seleccionar un movimiento de ingreso y una orden de servicio.");
       return;
     }
 
@@ -89,7 +146,8 @@ const CrearMovSalidaHilado: React.FC = () => {
     }
 
     const payload = {
-      entryNumber: data.entryNumber,
+      entryNumber: dataIngreso.entryNumber,
+      serviceOrderId: dataOS.id,
       detail: selectedGroups.map((group) => ({
         entryGroupNumber: group.groupNumber,
         coneCount: group.coneCount,
@@ -107,157 +165,318 @@ const CrearMovSalidaHilado: React.FC = () => {
     }
   };
 
-  const handleOpenDialog = () => setIsDialogOpen(true);
-  const handleCloseDialog = () => setIsDialogOpen(false);
+  const handleOpenIngresoDialog = () => setIsIngresoDialogOpen(true);
+  const handleCloseIngresoDialog = () => setIsIngresoDialogOpen(false);
 
-  const handleSelectIngresoFromDialog = (entryNumber: string) => {
-    loadIngresoDetails(entryNumber);
-    handleCloseDialog();
-  };
+  const handleOpenServiceDialog = () => setIsServiceDialogOpen(true);
+  const handleCloseServiceDialog = () => setIsServiceDialogOpen(false);
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-lg">
-          Movimiento de Ingreso Asociado: {data ? <strong>{data.entryNumber}</strong> : "Ninguno"}
-        </p>
-        <IconButton color="primary" onClick={handleOpenDialog}>
-          <Add />
-        </IconButton>
+    <><div>
+      <h1 className="text-2xl font-semibold mb-4">Crear Movimiento de Salida de Hilado</h1>
+      <div>
+        <div>
+        <p className="text-lg">Selección de Proveedor:</p>
+        </div>
+      <div className="flex justify-start mb-4">
+        <FormControl fullWidth style={{ maxWidth: "300px", marginBottom: "16px" }}>
+          <Select
+            labelId="proveedor-label"
+            value={selectedSupplier || ""}
+            onChange={handleProveedorChange}
+            displayEmpty
+          >
+            <MenuItem value="" disabled>
+              Seleccione un Proveedor
+            </MenuItem>
+            {suppliers.map((supplier) => (
+              <MenuItem key={supplier.code} value={supplier.code}>
+                {supplier.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </div>
       </div>
 
-      {data && (
-        <div className="max-w-full overflow-x-auto">
-          {data.detail.map((item: any, index: number) => (
-            <React.Fragment key={index}>
-              <h2 className="text-lg font-semibold mb-2">Hilado {index + 1}: {item.yarnId}</h2>
-              <table className="w-full table-auto mb-4">
+      {/* Seleccionable de direcciones */}
+      {supplier && (
+        <div>
+          <p className="text-lg">Selección de Dirección:</p>
+          <div className="flex justify-start mb-4">
+            <FormControl fullWidth style={{ maxWidth: "300px" }}>
+              <Select
+                labelId="direccion-label"
+                value={selectedAddress || ""}
+                onChange={handleAddressChange}
+                displayEmpty
+              >
+                <MenuItem value="" disabled>
+                  Seleccione una Dirección
+                </MenuItem>
+                {Object.entries(supplier.addresses).map(([code, address]) => (
+                  <MenuItem key={code} value={code}>
+                    {address}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </div>
+        </div>
+      )}
+    </div>
+    <div>
+        {/* Movimiento de ingreso */}
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-lg">
+            Movimiento de Ingreso Asociado:{" "}
+            {dataIngreso ? <strong>{dataIngreso.entryNumber}</strong> : "Ninguno"}
+          </p>
+          <div>
+          <Button style={{ backgroundColor: "#1976d2", color: "#fff" }} onClick={handleOpenIngresoDialog}>
+              Seleccionar Movimiento de Ingreso
+            </Button>
+          </div>
+        </div>
+
+        {/* Orden de Servicio */}
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-lg">
+            Orden de Servicio Asociada: {dataOS ? <strong>{dataOS.id}</strong> : "Ninguna"}
+          </p>
+          <div>
+            <Button style={{ backgroundColor: "#1976d2", color: "#fff" }} onClick={handleOpenServiceDialog}>
+              Seleccionar Orden de Servicio
+            </Button>
+          </div>
+        </div>
+
+        {/* Tabla de detalles de ingreso */}
+        {dataIngreso && (
+          <div className="max-w-full overflow-x-auto">
+            <h2 className="text-lg font-semibold mb-2">Detalles del Movimiento de Ingreso</h2>
+            {dataIngreso.detail.map((item: any, index: number) => (
+              <React.Fragment key={index}>
+                <h2 className="text-lg font-semibold mb-2">
+                  Hilado {index + 1}: {item.yarnId}
+                </h2>
+                <table className="w-full table-auto mb-4">
+                  <thead>
+                    <tr className="bg-blue-900 uppercase text-center text-white">
+                      <th className="px-4 py-4 font-normal">Grupo</th>
+                      {/*<th className="px-4 py-4 font-normal">Peso Guía</th>*/}
+                      <th className="px-4 py-4 font-normal">Conos</th>
+                      <th className="px-4 py-4 font-normal">Bultos</th>
+                      <th className="px-4 py-4 font-normal">Peso Bruto</th>
+                      <th className="px-4 py-4 font-normal">Peso Neto</th>
+                      <th className="px-4 py-4 font-normal">Seleccionar</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {item.detailHeavy.map((group: any, groupIndex: number) => (
+                      <TableRow key={groupIndex} className="text-center">
+                        <TableCell className="border-b border-gray-300 px-4 py-5">
+                          {group.groupNumber}
+                        </TableCell>
+                        <TableCell className="border-b border-gray-300 px-4 py-5">
+                          <TextField
+                            type="number"
+                            value={group.coneCount}
+                            onChange={(e) => handleGroupInputChange(
+                              index,
+                              groupIndex,
+                              "coneCount",
+                              parseInt(e.target.value) || 0
+                            )}
+                            fullWidth />
+                        </TableCell>
+                        <TableCell className="border-b border-gray-300 px-4 py-5">
+                          <TextField
+                            type="number"
+                            value={group.packageCount}
+                            onChange={(e) => handleGroupInputChange(
+                              index,
+                              groupIndex,
+                              "packageCount",
+                              parseInt(e.target.value) || 0
+                            )}
+                            fullWidth />
+                        </TableCell>
+                        <TableCell className="border-b border-gray-300 px-4 py-5">
+                          <TextField
+                            type="number"
+                            value={group.grossWeight}
+                            onChange={(e) => handleGroupInputChange(
+                              index,
+                              groupIndex,
+                              "grossWeight",
+                              parseFloat(e.target.value) || 0
+                            )}
+                            fullWidth />
+                        </TableCell>
+                        <TableCell className="border-b border-gray-300 px-4 py-5">
+                          <TextField
+                            type="number"
+                            value={group.netWeight}
+                            onChange={(e) => handleGroupInputChange(
+                              index,
+                              groupIndex,
+                              "netWeight",
+                              parseFloat(e.target.value) || 0
+                            )}
+                            fullWidth />
+                        </TableCell>
+                        <TableCell className="border-b border-gray-300 px-4 py-5">
+                          <Checkbox
+                            checked={selectedGroups.some(
+                              (g) => g.entryGroupNumber === group.groupNumber &&
+                                g.entryItemNumber === item.itemNumber
+                            )}
+                            onChange={() => toggleGroupSelection({
+                              ...group,
+                              entryGroupNumber: group.groupNumber,
+                              entryItemNumber: item.itemNumber,
+                              entryNumber: dataIngreso.entryNumber,
+                              entryPeriod: dataIngreso.period,
+                            })} />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </tbody>
+                </table>
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+
+        {/* Tabla de detalles de orden de servicio */}
+        {dataOS && (
+          <div className="max-w-full overflow-x-auto">
+            <h2 className="text-lg font-semibold mb-2">Detalles de la Orden de Servicio</h2>
+            {dataOS.detail.map((item: any, index: number) => (
+              <React.Fragment key={index}>
+                <table className="w-full table-auto mb-4">
+                  <thead>
+                    <tr className="bg-blue-900 uppercase text-center text-white">
+                      <th className="px-4 py-4 font-normal">Tejido</th>
+                      <th className="px-4 py-4 font-normal">Cantidad Ordenada</th>
+                      <th className="px-4 py-4 font-normal">Cantidad Suministrada</th>
+                      <th className="px-4 py-4 font-normal">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <TableRow className="text-center">
+                      <TableCell className="border-b border-gray-300 px-4 py-5">{item.tissueId}</TableCell>
+                      <TableCell className="border-b border-gray-300 px-4 py-5">{item.quantityOrdered}</TableCell>
+                      <TableCell className="border-b border-gray-300 px-4 py-5">{item.quantitySupplied || 0}</TableCell>
+                      <TableCell className="border-b border-gray-300 px-4 py-5">{item.status?.value || "Pendiente"}</TableCell>
+                    </TableRow>
+                  </tbody>
+                </table>
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+
+        {/* Diálogo para seleccionar movimientos de ingreso */}
+        <Dialog open={isIngresoDialogOpen} onClose={handleCloseIngresoDialog} fullWidth maxWidth="lg">
+          <DialogTitle>Seleccionar Movimiento de Ingreso</DialogTitle>
+          <DialogContent>
+            <div className="max-w-full overflow-x-auto">
+              <table className="w-full table-auto">
                 <thead>
-                  <tr className="bg-blue-900 uppercase text-center text-white">
-                    <th className="px-4 py-4 font-normal">Grupo</th>
-                    <th className="px-4 py-4 font-normal">Peso Guía</th>
-                    <th className="px-4 py-4 font-normal">Estado</th>
-                    <th className="px-4 py-4 font-normal">Bultos Restantes</th>
-                    <th className="px-4 py-4 font-normal">Seleccionar</th>
+                  <tr className="bg-blue-900 text-white">
+                    <th className="px-4 py-4 font-normal">Número</th>
+                    <th className="px-4 py-4 font-normal">Proveedor</th>
+                    <th className="px-4 py-4 font-normal">Fecha</th>
+                    <th className="px-4 py-4 font-normal">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {item.detailHeavy.map((group: any, groupIndex: number) => (
-                    <TableRow key={groupIndex} className="text-center">
+                  {ingresos.slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina).map((ingreso) => (
+                    <TableRow key={ingreso.entryNumber} className="text-center">
+                      <TableCell className="border-b border-gray-300 px-4 py-5">{ingreso.entryNumber}</TableCell>
+                      <TableCell className="border-b border-gray-300 px-4 py-5">{ingreso.supplierCode}</TableCell>
+                      <TableCell className="border-b border-gray-300 px-4 py-5">{ingreso.creationDate}</TableCell>
                       <TableCell className="border-b border-gray-300 px-4 py-5">
-                        {group.groupNumber}
-                      </TableCell>
-                      <TableCell className="border-b border-gray-300 px-4 py-5">
-                        {group.grossWeight}
-                      </TableCell>
-                      <TableCell
-                        className="border-b border-gray-300 px-4 py-5 text-red-500"
-                      >
-                        No Despachado
-                      </TableCell>
-                      <TableCell className="border-b border-gray-300 px-4 py-5">
-                        {group.packageCount}
-                      </TableCell>
-                      <TableCell className="border-b border-gray-300 px-4 py-5">
-                        <Checkbox
-                          checked={selectedGroups.some(
-                            (g) => g.groupNumber === group.groupNumber
-                          )}
-                          onChange={() => toggleGroupSelection(group)}
-                        />
+                        <IconButton color="primary" onClick={() => loadIngresoDetails(ingreso.entryNumber)}>
+                          <Add />
+                        </IconButton>
                       </TableCell>
                     </TableRow>
                   ))}
                 </tbody>
               </table>
-            </React.Fragment>
-          ))}
-        </div>
-      )}
+              <TablePagination
+                rowsPerPageOptions={[10, 25, 50]}
+                component="div"
+                count={ingresos.length}
+                rowsPerPage={filasPorPagina}
+                page={pagina}
+                onPageChange={(_, newPage) => setPagina(newPage)}
+                onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))} />
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseIngresoDialog} color="secondary">
+              Cancelar
+            </Button>
+          </DialogActions>
+        </Dialog>
 
-<Dialog
-  open={isDialogOpen}
-  onClose={handleCloseDialog}
-  fullWidth
-  maxWidth="lg"
-  PaperProps={{
-    style: {
-      marginLeft: "300px", // Ajusta este valor según el ancho de la barra lateral
-      maxWidth: "calc(100% - 240px)", // Asegura que no se superponga
-    },
-  }}
->
-  <DialogTitle>Seleccionar Movimiento de Ingreso</DialogTitle>
-  <DialogContent>
-    <div className="max-w-full overflow-x-auto">
-      <table className="w-full table-auto">
-        <thead>
-          <tr className="bg-blue-900 text-white">
-            <th className="px-4 py-4 font-normal">Número</th>
-            <th className="px-4 py-4 font-normal">Proveedor</th>
-            <th className="px-4 py-4 font-normal">Fecha</th>
-            <th className="px-4 py-4 font-normal">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ingresos
-            .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
-            .map((ingreso) => (
-              <TableRow key={ingreso.entryNumber} className="text-center">
-                <TableCell className="border-b border-gray-300 px-4 py-5">
-                  {ingreso.entryNumber}
-                </TableCell>
-                <TableCell className="border-b border-gray-300 px-4 py-5">
-                  {ingreso.supplierCode}
-                </TableCell>
-                <TableCell className="border-b border-gray-300 px-4 py-5">
-                  {ingreso.creationDate}
-                </TableCell>
-                <TableCell className="border-b border-gray-300 px-4 py-5">
-                      {data?.entryNumber === ingreso.entryNumber ? (
-                        <span className="text-blue-600 font-semibold">Seleccionado</span>
-                      ) : (
-                        <IconButton
-                          color="primary"
-                          onClick={() => handleSelectIngresoFromDialog(ingreso.entryNumber)}
-                        >
+        {/* Diálogo para seleccionar órdenes de servicio */}
+        <Dialog open={isServiceDialogOpen} onClose={handleCloseServiceDialog} fullWidth maxWidth="lg">
+          <DialogTitle>Seleccionar Orden de Servicio</DialogTitle>
+          <DialogContent>
+            <div className="max-w-full overflow-x-auto">
+              <table className="w-full table-auto">
+                <thead>
+                  <tr className="bg-blue-900 text-white">
+                    <th className="px-4 py-4 font-normal">Número</th>
+                    <th className="px-4 py-4 font-normal">Cliente</th>
+                    <th className="px-4 py-4 font-normal">Fecha</th>
+                    <th className="px-4 py-4 font-normal">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ordenesServicio.slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina).map((orden) => (
+                    <TableRow key={orden.id} className="text-center">
+                      <TableCell className="border-b border-gray-300 px-4 py-5">{orden.id}</TableCell>
+                      <TableCell className="border-b border-gray-300 px-4 py-5">{orden.supplierId}</TableCell>
+                      <TableCell className="border-b border-gray-300 px-4 py-5">{orden.issueDate}</TableCell>
+                      <TableCell className="border-b border-gray-300 px-4 py-5">
+                        <IconButton color="primary" onClick={() => handleSelectServiceOrder(orden.id)}>
                           <Add />
                         </IconButton>
-                      )}
-                    </TableCell>
-              </TableRow>
-            ))}
-        </tbody>
-      </table>
-      <TablePagination
-        rowsPerPageOptions={[10, 25, 50]}
-        component="div"
-        count={ingresos.length}
-        rowsPerPage={filasPorPagina}
-        page={pagina}
-        onPageChange={(_, newPage) => setPagina(newPage)}
-        onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))}
-      />
-    </div>
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={handleCloseDialog} color="secondary">
-      Cancelar
-    </Button>
-  </DialogActions>
-</Dialog>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </tbody>
+              </table>
+              <TablePagination
+                rowsPerPageOptions={[10, 25, 50]}
+                component="div"
+                count={ordenesServicio.length}
+                rowsPerPage={filasPorPagina}
+                page={pagina}
+                onPageChange={(_, newPage) => setPagina(newPage)}
+                onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))} />
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseServiceDialog} color="secondary">
+              Cancelar
+            </Button>
+          </DialogActions>
+        </Dialog>
 
-      {data && (
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleSaveSalida}
-          style={{ marginTop: "16px" }}
-        >
-          Guardar Salida
-        </Button>
-      )}
-    </div>
+        {/* Botón para guardar la salida */}
+        {dataIngreso && dataOS && (
+          <Button variant="contained" onClick={handleSaveSalida} style={{ marginTop: "16px", backgroundColor: "#4caf50", color: "#fff" }}>
+            Guardar Salida
+          </Button>
+        )}
+      </div></>
   );
 };
 

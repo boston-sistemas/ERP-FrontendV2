@@ -4,10 +4,11 @@ import { YarnDispatch, YarnDispatchDetail, YarnDispatchResponse } from "../../mo
 export const fetchYarnDispatches = async (
     period: number,
     limit: number,
-    offset: number
+    offset: number,
+    include_inactive: boolean,
     ): Promise<YarnDispatchResponse> => {
     const response = await instance.get<YarnDispatchResponse>(
-        `/operations/v1/yarn-weaving-dispatches/?period=${period}&limit=${limit}&offset=${offset}&include_inactive=true`
+        `/operations/v1/yarn-weaving-dispatches/?period=${period}&limit=${limit}&offset=${offset}&include_inactive=${include_inactive}`
     );
     console.log(response.data);
     return response.data;
