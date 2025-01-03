@@ -44,8 +44,8 @@ const CrearMovSalidaHilado: React.FC = () => {
 
   const loadIngresos = async () => {
     try {
-      const period = new Date().getFullYear();
-      const response = await fetchYarnPurchaseEntries(period, 50, 0);
+      const period = 2024;
+      const response = await fetchYarnPurchaseEntries(period, 50, 0, false);
       setIngresos(response.yarnPurchaseEntries || []);
     } catch (error) {
       console.error("Error al cargar los movimientos de ingreso:", error);
@@ -54,7 +54,7 @@ const CrearMovSalidaHilado: React.FC = () => {
 
   const loadIngresoDetails = async (entryNumber: string) => {
     try {
-      const period = new Date().getFullYear();
+      const period = 2024;
       const response = await fetchYarnPurchaseEntryDetails(entryNumber, period);
       setData(response);
     } catch (error) {

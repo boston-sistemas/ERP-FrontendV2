@@ -26,3 +26,15 @@ export const fetchYarnPurchaseEntryDetails = async (
       data
     );
   };
+
+  export const anulateYarnPurchaseEntry = async (entryNumber: string) => {
+    await instance.put(`/operations/v1/yarn-purchase-entries/${entryNumber}/anulate?period=2024`);
+  };
+  
+  // Servicio para verificar si el movimiento de ingreso de hilado es actualizable
+  export const checkIfYarnPurchaseEntryIsUpdatable = async (entryNumber: string) => {
+    const response = await instance.get(
+      `/operations/v1/yarn-purchase-entries/${entryNumber}/is-updatable?period=2024`
+    );
+    return response.data; // Devuelve la respuesta del API
+  };

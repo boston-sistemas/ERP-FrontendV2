@@ -25,6 +25,16 @@ const MovIngresoHilado: React.FC = () => {
   const [includeInactive, setIncludeInactive] = useState(false); // Controla el estado del switch
 
   // Cargar datos del servicio
+
+  useEffect(() => {
+    const savedEntry = localStorage.getItem("entryNumber");
+    if (savedEntry) {
+      const { entryNumber } = JSON.parse(savedEntry);
+      localStorage.removeItem("entryNumber"); // Asegura que solo redirija una vez
+      router.push(`/operaciones-new/ingreso-hilado/detalles-mov-ingreso-hilado/${entryNumber}`);
+    }
+  }, [router]);
+  
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);

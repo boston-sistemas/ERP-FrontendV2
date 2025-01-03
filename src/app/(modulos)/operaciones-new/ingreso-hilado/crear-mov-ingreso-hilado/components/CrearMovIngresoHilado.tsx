@@ -184,7 +184,7 @@ const CrearMovIngresoHilado: React.FC = () => {
       setOpenSnackbar(true);
       return;
     }
-
+  
     const payload: Partial<YarnPurchaseEntry> = {
       period,
       supplierPoCorrelative: guiaCorrelativa,
@@ -205,19 +205,26 @@ const CrearMovIngresoHilado: React.FC = () => {
         statusFlag: "P",
       })),
     };
-
+  
     try {
-      await createYarnPurchaseEntry(payload);
-      setSnackbarMessage("Movimiento creado exitosamente.");
-      setOpenSnackbar(true);
-
-      router.push("/operaciones-new/ingreso-hilado?redirectToLast=true");
+      const response = await createYarnPurchaseEntry(payload);
+  
+      if (response.entryNumber) {
+        // Guardar el número de entrada en el localStorage
+        localStorage.setItem("entryNumber", JSON.stringify({ entryNumber: response.entryNumber }));
+  
+        setSnackbarMessage("Movimiento creado exitosamente.");
+        setOpenSnackbar(true);
+  
+        // Redirigir al componente principal
+        router.push("/operaciones-new/ingreso-hilado");
+      }
     } catch (error: any) {
       console.error("Error al crear el movimiento:", error);
       setSnackbarMessage(error.message || "Error al crear el movimiento.");
       setOpenSnackbar(true);
     }
-  };
+  };  
 
   const handleCancel = () => {
     router.push("/operaciones-new/ingreso-hilado");

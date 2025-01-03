@@ -18,10 +18,12 @@ import {
   DialogActions,
   TextField,
   Switch,
+  Tooltip,
 } from "@mui/material";
-import { Edit, ExpandMore, ExpandLess, Save, Cancel, Add, Delete } from "@mui/icons-material";
+import { Edit, ExpandMore, ExpandLess, Save, Cancel, Add, Delete, Block } from "@mui/icons-material";
 import { useRouter, useParams } from "next/navigation";
-import { fetchYarnPurchaseEntryDetails, updateYarnPurchaseEntry } from "../../services/movIngresoHiladoService";
+import { fetchYarnPurchaseEntryDetails, updateYarnPurchaseEntry, anulateYarnPurchaseEntry,
+  checkIfYarnPurchaseEntryIsUpdatable, } from "../../services/movIngresoHiladoService";
 import { YarnPurchaseEntry } from "../../../models/models";
 
 const DetallesMovIngresoHilado: React.FC = () => {
@@ -30,6 +32,8 @@ const DetallesMovIngresoHilado: React.FC = () => {
   const [detalle, setDetalle] = useState<YarnPurchaseEntry | null>(null);
   const [openRows, setOpenRows] = useState<Record<number, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isEditable, setIsEditable] = useState(false);
+  const [isAnulable, setIsAnulable] = useState(false);
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedData, setEditedData] = useState<YarnPurchaseEntry | null>(null);
@@ -61,27 +65,32 @@ const DetallesMovIngresoHilado: React.FC = () => {
       detailHeavy: item.detailHeavy || [], // Inicializa como un array vacío si no existe
     }));
   
-  useEffect(() => {
-    const loadDetails = async () => {
-      setIsLoading(true);
-      try {
-        if (entryNumber) {
-          const period = 2024;
-          const data = await fetchYarnPurchaseEntryDetails(entryNumber, period);
-          setDetalle({
-            ...data,
-            detail: initializeDetailHeavy(data.detail), // Asegura que todos los detalles tengan detailHeavy
-          });
+    useEffect(() => {
+      const loadDetails = async () => {
+        setIsLoading(true);
+        try {
+          if (entryNumber) {
+            const period = 2024;
+    
+            // Llama a los servicios necesarios
+            const data = await fetchYarnPurchaseEntryDetails(entryNumber, period);
+            const updatableResponse = await checkIfYarnPurchaseEntryIsUpdatable(entryNumber);
+    
+            // Actualiza los estados con base en la respuesta
+            setDetalle(data);
+            setIsEditable(updatableResponse.updatable); // Basado en el campo `updatable` de la respuesta
+            setIsAnulable(updatableResponse.updatable); // Igual que `isEditable`
+          }
+        } catch (error) {
+          //console.error("Error al cargar los detalles del movimiento:", error);
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error("Error al cargar los detalles del movimiento:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-  
-    loadDetails();
-  }, [entryNumber]);  
+      };
+    
+      loadDetails();
+    }, [entryNumber]);
+    
 
   const toggleRow = (index: number) => {
     setOpenRows((prevState) => ({
@@ -106,9 +115,29 @@ const DetallesMovIngresoHilado: React.FC = () => {
     }) as YarnPurchaseEntry);
   };
 
+  const handleAnulateEntry = async (entryNumber: string) => {
+    try {
+      await anulateYarnPurchaseEntry(entryNumber);
+      alert(`Movimiento de ingreso N° ${entryNumber} anulado con éxito.`);
+      setDetalle((prev) =>
+        prev
+          ? {
+              ...prev,
+              statusFlag: "A", // Actualiza el estado del movimiento a "Anulado".
+            }
+          : null
+      );
+      setIsEditable(false); // Deshabilita la edición.
+      setIsAnulable(false); // Deshabilita la anulación.
+    } catch (error) {
+      console.error(`Error al anular el movimiento N° ${entryNumber}:`, error);
+      //alert("Ocurrió un error al intentar anular el movimiento.");
+    }
+  };
+  
   const handleSaveChanges = async () => {
     if (!editedData || !editedData.entryNumber) {
-      console.error("No hay datos para guardar.");
+      //console.error("No hay datos para guardar.");
       return;
     }
 
@@ -143,9 +172,9 @@ const DetallesMovIngresoHilado: React.FC = () => {
       // Actualiza el estado con los datos editados
       setDetalle(editedData);
       setIsEditDialogOpen(false);
-      console.log("Movimiento actualizado correctamente.");
+      //console.log("Movimiento actualizado correctamente.");
     } catch (error) {
-      console.error("Error al guardar los cambios:", error);
+      //console.error("Error al guardar los cambios:", error);
     }
   };    
 
@@ -206,14 +235,47 @@ const DetallesMovIngresoHilado: React.FC = () => {
             </Typography>
           </div>
         </div>
-        <Button
-          startIcon={<Edit />}
-          variant="contained"
-          style={{ backgroundColor: "#0288d1", color: "#fff" }}
-          onClick={handleOpenEditDialog}
-        >
-          Editar
-        </Button>
+        <Tooltip
+  title={isEditable ? "" : "El movimiento de ingreso no es editable"}
+  arrow
+>
+  <span>
+    <Button
+      startIcon={<Edit />}
+      variant="contained"
+      style={{
+        backgroundColor: isEditable ? "#0288d1" : "#b0b0b0",
+        color: "#fff",
+        marginRight: "10px",
+      }}
+      onClick={isEditable ? handleOpenEditDialog : undefined}
+      disabled={!isEditable}
+    >
+      Editar
+    </Button>
+  </span>
+</Tooltip>
+
+<Tooltip
+  title={isAnulable ? "" : "El movimiento de ingreso no se puede anular"}
+  arrow
+>
+  <span>
+    <Button
+      startIcon={<Block />}
+      variant="contained"
+      style={{
+        backgroundColor: isAnulable ? "#d32f2f" : "#b0b0b0",
+        color: "#fff",
+      }}
+      onClick={isAnulable ? () => handleAnulateEntry(entryNumber) : undefined}
+      disabled={!isAnulable}
+    >
+      Anular
+    </Button>
+  </span>
+</Tooltip>
+
       </div>
 
       {/* Tabla Resumen */}
