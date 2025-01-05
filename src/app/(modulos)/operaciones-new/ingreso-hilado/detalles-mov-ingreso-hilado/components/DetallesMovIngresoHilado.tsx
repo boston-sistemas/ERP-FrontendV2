@@ -160,7 +160,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
           guideConeCount: detail.guideConeCount,
           detailHeavy: detail.detailHeavy, // Incluye detailHeavy solo si isWeighted es true
           isWeighted: detail.isWeighted,
-          statusFlag: "P", // Asegura que siempre se envíe el mismo flag
+          statusFlag: detail.statusFlag, // Asegura que siempre se envíe el mismo flag
         })),
       };
   
@@ -327,7 +327,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    {["Grupo", "Peso Guía", "Estado", "Bultos Restantes"].map(
+                    {["Grupo", "N° Bultos", "N° Conos", "Peso Bruto", "Peso Neto", "Estado", "Bultos Restantes"].map(
                       (subCol, subIndex) => (
                         <TableCell key={subIndex} className="text-center">
                           {subCol}
@@ -340,11 +340,14 @@ const DetallesMovIngresoHilado: React.FC = () => {
                   {item.detailHeavy.map((group, groupIndex) => (
                     <TableRow key={groupIndex}>
                       <TableCell className="text-center">{group.groupNumber}</TableCell>
+                      <TableCell className="text-center">{group.packageCount}</TableCell>
+                      <TableCell className="text-center">{group.coneCount}</TableCell>
                       <TableCell className="text-center">{group.grossWeight}</TableCell>
+                      <TableCell className="text-center">{group.netWeight}</TableCell>
                       <TableCell className="text-center" style={{ color: "red" }}>
                         No Despachado
                       </TableCell>
-                      <TableCell className="text-center">{group.packageCount}</TableCell>
+                      <TableCell className="text-center">{group.packagesLeft}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -717,6 +720,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
                                   packageCount: 1,
                                   grossWeight: 0,
                                   netWeight: 0,
+                                  packagesLeft: 0,
                                 },
                               ],
                             }

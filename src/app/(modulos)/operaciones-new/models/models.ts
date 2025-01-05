@@ -86,6 +86,7 @@ export interface YarnPurchaseEntryDetail {
   guidePackageCount: number;
   guideConeCount: number;
   detailHeavy: {
+    packagesLeft: number;
     groupNumber: number;
     coneCount: number;
     packageCount: number;

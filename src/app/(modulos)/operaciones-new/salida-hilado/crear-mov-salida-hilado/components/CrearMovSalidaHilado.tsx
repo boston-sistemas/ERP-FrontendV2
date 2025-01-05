@@ -173,18 +173,24 @@ const CrearMovSalidaHilado: React.FC = () => {
 
   return (
     <><div>
-      <h1 className="text-2xl font-semibold mb-4">Crear Movimiento de Salida de Hilado</h1>
-      <div>
-        <div>
-        <p className="text-lg">Selección de Proveedor:</p>
-        </div>
-      <div className="flex justify-start mb-4">
-        <FormControl fullWidth style={{ maxWidth: "300px", marginBottom: "16px" }}>
+    <h1 className="text-2xl font-semibold mb-4">Crear Movimiento de Salida de Hilado</h1>
+    <div>
+      <p className="text-lg mb-2">Seleccionar Proveedor y Dirección:</p>
+      <div className="flex items-center space-x-4 mb-4">
+        {/* Selección de Proveedor */}
+        <FormControl fullWidth style={{ maxWidth: "300px" }}>
           <Select
             labelId="proveedor-label"
             value={selectedSupplier || ""}
             onChange={handleProveedorChange}
             displayEmpty
+            MenuProps={{
+              PaperProps: {
+                style: {
+                  transform: "translateX(30%)",
+                },
+              },
+            }}
           >
             <MenuItem value="" disabled>
               Seleccione un Proveedor
@@ -196,35 +202,37 @@ const CrearMovSalidaHilado: React.FC = () => {
             ))}
           </Select>
         </FormControl>
-      </div>
-      </div>
-
-      {/* Seleccionable de direcciones */}
-      {supplier && (
-        <div>
-          <p className="text-lg">Selección de Dirección:</p>
-          <div className="flex justify-start mb-4">
-            <FormControl fullWidth style={{ maxWidth: "300px" }}>
-              <Select
-                labelId="direccion-label"
-                value={selectedAddress || ""}
-                onChange={handleAddressChange}
-                displayEmpty
-              >
-                <MenuItem value="" disabled>
-                  Seleccione una Dirección
+  
+        {/* Selección de Dirección */}
+        {supplier && (
+          <FormControl fullWidth style={{ maxWidth: "300px" }}>
+            <Select
+              labelId="direccion-label"
+              value={selectedAddress || ""}
+              onChange={handleAddressChange}
+              displayEmpty
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    transform: "translateX(30%)",
+                  },
+                },
+              }}
+            >
+              <MenuItem value="" disabled>
+                Seleccione una Dirección
+              </MenuItem>
+              {Object.entries(supplier.addresses).map(([code, address]) => (
+                <MenuItem key={code} value={code}>
+                  {address}
                 </MenuItem>
-                {Object.entries(supplier.addresses).map(([code, address]) => (
-                  <MenuItem key={code} value={code}>
-                    {address}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </div>
-        </div>
-      )}
+              ))}
+            </Select>
+          </FormControl>
+        )}
+      </div>
     </div>
+  </div>  
     <div>
         {/* Movimiento de ingreso */}
         <div className="flex items-center justify-between mb-4">
@@ -379,7 +387,18 @@ const CrearMovSalidaHilado: React.FC = () => {
         )}
 
         {/* Diálogo para seleccionar movimientos de ingreso */}
-        <Dialog open={isIngresoDialogOpen} onClose={handleCloseIngresoDialog} fullWidth maxWidth="lg">
+        <Dialog
+            open={isIngresoDialogOpen}
+            onClose={handleCloseIngresoDialog}
+            fullWidth
+            maxWidth="lg"
+            sx={{
+              "& .MuiDialog-paper": {
+                width: "70%", // Incrementa el ancho
+                marginLeft: "20%", // Ajusta el margen para mantenerlo centrado en el espacio restante
+              },
+            }}
+          >
           <DialogTitle>Seleccionar Movimiento de Ingreso</DialogTitle>
           <DialogContent>
             <div className="max-w-full overflow-x-auto">
@@ -418,14 +437,25 @@ const CrearMovSalidaHilado: React.FC = () => {
             </div>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleCloseIngresoDialog} color="secondary">
+            <Button onClick={handleCloseIngresoDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
               Cancelar
             </Button>
           </DialogActions>
         </Dialog>
 
         {/* Diálogo para seleccionar órdenes de servicio */}
-        <Dialog open={isServiceDialogOpen} onClose={handleCloseServiceDialog} fullWidth maxWidth="lg">
+        <Dialog
+        open={isServiceDialogOpen}
+        onClose={handleCloseServiceDialog}
+        fullWidth
+        maxWidth="lg"
+        sx={{
+          "& .MuiDialog-paper": {
+            width: "70%",
+            marginLeft: "20%",
+          },
+        }}
+      >
           <DialogTitle>Seleccionar Orden de Servicio</DialogTitle>
           <DialogContent>
             <div className="max-w-full overflow-x-auto">
@@ -464,7 +494,7 @@ const CrearMovSalidaHilado: React.FC = () => {
             </div>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleCloseServiceDialog} color="secondary">
+            <Button onClick={handleCloseServiceDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
               Cancelar
             </Button>
           </DialogActions>

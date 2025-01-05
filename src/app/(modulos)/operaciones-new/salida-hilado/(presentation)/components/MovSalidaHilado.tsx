@@ -133,7 +133,7 @@ const MovSalidaHilado: React.FC = () => {
           </div>
 
           {/* Tabla de Movimientos */}
-          <table className="table-auto border-collapse">
+          <table className="w-full h-full border-collapse table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center">
                 {[
