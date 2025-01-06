@@ -48,9 +48,18 @@ const CrearMovSalidaHilado: React.FC = () => {
   const [selectedAddress, setSelectedAddress] = useState<string>("");
 
   useEffect(() => {
+    const savedEntryNumber = localStorage.getItem("entryNumber");
+  
+    if (savedEntryNumber) {
+      const parsedPayload = JSON.parse(savedEntryNumber);
+      loadIngresoDetails(parsedPayload.entryNumber); // Carga los detalles del ingreso
+      setSelectedGroups(parsedPayload.groups || []); // Preselecciona los grupos
+      localStorage.removeItem("entryNumber"); // Limpia el localStorage después de cargar
+    }
+  
     loadIngresosAndOrders();
     loadSupplierData();
-  }, []);
+  }, []);  
 
   const loadIngresosAndOrders = async () => {
     try {
@@ -133,38 +142,60 @@ const CrearMovSalidaHilado: React.FC = () => {
         : [...prev, group]
     );
   };
+  
 
   const handleSaveSalida = async () => {
     if (!dataIngreso || !dataOS) {
       alert("Debe seleccionar un movimiento de ingreso y una orden de servicio.");
       return;
     }
-
+  
+    if (!selectedAddress) {
+      alert("Debe seleccionar una dirección de proveedor.");
+      return;
+    }
+  
     if (selectedGroups.length === 0) {
       alert("Debe seleccionar al menos un grupo para generar la salida.");
       return;
     }
-
+  
+    const period = 2025; // Cambia esto según el período actual
+    const supplierCode = dataIngreso.supplierCode; // Ajusta el campo según tu objeto dataIngreso
+    const serviceOrderId = dataOS.id; // Id de la orden de servicio
+    const nrodir = selectedAddress; // Toma el nrodir directamente del estado seleccionado
+    const detail = selectedGroups.map((group) => ({
+      itemNumber: group.entryItemNumber, // Ajusta si necesitas otro campo
+      entryNumber: group.entryNumber,
+      entryGroupNumber: group.groupNumber,
+      entryItemNumber: group.entryItemNumber,
+      entryPeriod: group.entryPeriod || period,
+      coneCount: group.coneCount,
+      packageCount: group.packageCount,
+      grossWeight: group.grossWeight,
+      netWeight: group.netWeight,
+    }));
+  
     const payload = {
-      entryNumber: dataIngreso.entryNumber,
-      serviceOrderId: dataOS.id,
-      detail: selectedGroups.map((group) => ({
-        entryGroupNumber: group.groupNumber,
-        coneCount: group.coneCount,
-        packageCount: group.packageCount,
-        grossWeight: group.grossWeight,
-        netWeight: group.netWeight,
-      })),
+      period,
+      supplierCode,
+      documentNote: null, // Campo opcional, ajusta según lo necesario
+      nrodir, // Aquí se incluye la dirección seleccionada
+      serviceOrderId,
+      detail,
     };
-
+  
+    console.log("Payload enviado:", JSON.stringify(payload, null, 2));
+  
     try {
       await createYarnDispatch(payload);
       alert("Movimiento de salida creado exitosamente.");
     } catch (error) {
       console.error("Error al guardar el movimiento de salida:", error);
+      alert("Hubo un error al intentar guardar el movimiento de salida.");
     }
   };
-
+  
   const handleOpenIngresoDialog = () => setIsIngresoDialogOpen(true);
   const handleCloseIngresoDialog = () => setIsIngresoDialogOpen(false);
 

@@ -25,14 +25,16 @@ export const fetchYarnDispatchByNumber = async (
       };
 
 export const createYarnDispatch = async (payload: any): Promise<{ exitNumber: string }> => {
-    try {
-        const response = await instance.post("/operations/v1/yarn-weaving-dispatches/", payload);
-        console.log("Movimiento creado exitosamente");
-        return response.data;
-    } catch (error: any) {
-        console.error("Error al crear el movimiento:", error?.response?.data || error.message);
-        throw new Error(
-            error?.response?.data?.message || "Error al crear el movimiento."
-        );
-    }
+try {
+    const response = await instance.post("/operations/v1/yarn-weaving-dispatches/", payload);
+    console.log("Movimiento creado exitosamente:", response.data);
+    return response.data;
+} catch (error: any) {
+    console.error("Error al crear el movimiento:", error?.response?.data || error.message);
+    console.error("Payload fallido:", JSON.stringify(payload, null, 2));
+    throw new Error(
+    error?.response?.data?.message || "Error al crear el movimiento."
+    );
 }
+};
+      
