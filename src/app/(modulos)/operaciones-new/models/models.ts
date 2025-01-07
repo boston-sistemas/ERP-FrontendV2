@@ -78,6 +78,14 @@ export interface YarnResponse {
 }
 
 // Yarn Purchase Entry models
+export interface YarnPurchaseEntryDetailHeavy {
+  groupNumber: number;
+  coneCount: number;
+  packageCount: number;
+  grossWeight: number;
+  netWeight: number;
+}
+
 export interface YarnPurchaseEntryDetail {
   itemNumber: number;
   yarnId: string;
@@ -85,47 +93,21 @@ export interface YarnPurchaseEntryDetail {
   guideNetWeight: number;
   guidePackageCount: number;
   guideConeCount: number;
-  detailHeavy: {
-    packagesLeft: number;
-    groupNumber: number;
-    coneCount: number;
-    packageCount: number;
-    grossWeight: number;
-    netWeight: number;
-  }[];
+  detailHeavy: YarnPurchaseEntryDetailHeavy[];
   isWeighted: boolean;
-  statusFlag: string;
 }
 
-
 export interface YarnPurchaseEntry {
-  entryNumber: string;
   period: number;
-  creationDate: string;
-  creationTime: string;
-  supplierCode: string;
-  statusFlag: string;
-  purchaseOrderNumber: string;
-  flgtras: boolean;
-  supplierBatch: string;
-  mecsaBatch: string;
-  documentNote: string;
-  currencyCode: number;
-  exchangeRate: number;
   supplierPoCorrelative: string;
   supplierPoSeries: string;
   fecgf: string;
-  voucherNumber: string;
-  fchcp: string; 
-  flgcbd: string;
-  serialNumberPo: string;
-  printedFlag: string;
+  purchaseOrderNumber: string;
+  documentNote: string;
+  supplierBatch: string;
   detail: YarnPurchaseEntryDetail[];
 }
 
-export interface YarnPurchaseEntryResponse {
-  yarnPurchaseEntries: YarnPurchaseEntry[];
-}
 
 export interface PurchaseOrderDetail {
   quantityOrdered: number;
@@ -159,27 +141,22 @@ export interface YarnDispatchDetail {
   entryNumber: string; // Número de entrada
   entryGroupNumber: number; // Grupo de entrada
   entryItemNumber: number; // Número de ítem en la entrada
-  creationDate: string; // Fecha de creación
-  creationTime: string; // Hora de creación
+  entryPeriod: number; // Período de la entrada
   netWeight: number; // Peso neto
   grossWeight: number; // Peso bruto
   coneCount: number; // Cantidad de conos
   packageCount: number; // Cantidad de paquetes
-  yarnId: string; // ID del hilado
 }
 
 export interface YarnDispatch {
-  exitNumber: string; // Número de salida
   period: number; // Período
-  creationDate: string; // Fecha de creación
-  creationTime: string; // Hora de creación
   supplierCode: string; // Código del proveedor
-  supplierYarnEtryNumber: string; // Número de entrada del hilado del proveedor
-  statusFlag: string; // Indicador de estado
-  documentNote: string; // Nota del documento
-  printedFlag: string; // Indicador si está impreso
+  documentNote: string | null; // Nota del documento
+  nrodir: string; // Dirección seleccionada
+  serviceOrderId: string; // Identificador de la orden de servicio
   detail: YarnDispatchDetail[]; // Detalle de la salida
 }
+
 
 export interface YarnDispatchResponse {
   yarnWeavingDispatches: YarnDispatch[];
@@ -224,4 +201,38 @@ export interface Supplier {
   initials: string;
   emails: string[];
   addresses: Record<string, string>;
+}
+
+export interface FabricRecipe {
+  yarnId: string; // ID del hilo
+  proportion: number; // Proporción requerida
+  numPlies: number; // Cantidad de capas
+  galgue: number; // Galga (medida de densidad de tejido)
+  diameter: number; // Diámetro
+  stitchLength: number; // Longitud de la puntada
+}
+
+export interface FabricType {
+  id: number;
+  value: string;
+}
+
+export interface Fabric {
+  id: string; // Identificador del tejido
+  inventoryUnitCode: string; // Código de unidad de inventario
+  purchaseUnitCode: string; // Código de unidad de compra
+  description: string; // Descripción del tejido
+  purchaseDescription: string; // Descripción de compra
+  barcode: number; // Código de barras
+  isActive: boolean; // Indicador de estado activo
+  density: number; // Densidad del tejido
+  width: number; // Ancho del tejido
+  fabricType: FabricType; // Tipo de tejido
+  color: Color; // Color asociado
+  structurePattern: string; // Patrón de estructura
+  recipe: FabricRecipe[]; // Lista de recetas
+}
+
+export interface FabricResponse {
+  fabrics: Fabric[];
 }

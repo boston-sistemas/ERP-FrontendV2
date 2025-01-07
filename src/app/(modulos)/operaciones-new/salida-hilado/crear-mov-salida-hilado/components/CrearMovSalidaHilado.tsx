@@ -31,7 +31,7 @@ import {
   fetchSuppliers,
 } from "../../../ordenes-servicio/services/ordenesServicioService";
 import { createYarnDispatch } from "../../services/movSalidaHiladoService";
-import { ServiceOrder, Supplier } from "../../../models/models";
+import { ServiceOrder, Supplier, YarnDispatch } from "../../../models/models";
 
 const CrearMovSalidaHilado: React.FC = () => {
   const [dataIngreso, setDataIngreso] = useState<any>(null); // Detalles del ingreso
@@ -135,13 +135,27 @@ const CrearMovSalidaHilado: React.FC = () => {
     }
   };
 
-  const toggleGroupSelection = (group: any) => {
-    setSelectedGroups((prev) =>
-      prev.find((g) => g.groupNumber === group.groupNumber)
-        ? prev.filter((g) => g.groupNumber !== group.groupNumber)
-        : [...prev, group]
-    );
+  const toggleGroupSelection = (newGroup: any) => {
+    setSelectedGroups(prev => {
+      const existe = prev.some(
+        g =>
+          g.entryGroupNumber === newGroup.entryGroupNumber &&
+          g.entryItemNumber === newGroup.entryItemNumber
+      );
+      return existe
+        ? // si ya estaba, lo quitamos
+          prev.filter(
+            g =>
+              !(
+                g.entryGroupNumber === newGroup.entryGroupNumber &&
+                g.entryItemNumber === newGroup.entryItemNumber
+              )
+          )
+        : // si no estaba, lo agregamos
+          [...prev, newGroup];
+    });
   };
+  
   
 
   const handleSaveSalida = async () => {
@@ -161,26 +175,34 @@ const CrearMovSalidaHilado: React.FC = () => {
     }
   
     const period = 2025; // Cambia esto según el período actual
-    const supplierCode = dataIngreso.supplierCode; // Ajusta el campo según tu objeto dataIngreso
+    const supplierCode = suppliers.find((supplier) => supplier.code === selectedSupplier)?.code || "";
     const serviceOrderId = dataOS.id; // Id de la orden de servicio
-    const nrodir = selectedAddress; // Toma el nrodir directamente del estado seleccionado
-    const detail = selectedGroups.map((group) => ({
-      itemNumber: group.entryItemNumber, // Ajusta si necesitas otro campo
-      entryNumber: group.entryNumber,
-      entryGroupNumber: group.groupNumber,
-      entryItemNumber: group.entryItemNumber,
-      entryPeriod: group.entryPeriod || period,
-      coneCount: group.coneCount,
-      packageCount: group.packageCount,
-      grossWeight: group.grossWeight,
-      netWeight: group.netWeight,
-    }));
-  
-    const payload = {
+    const nrodir = selectedAddress; // Dirección seleccionada
+    const detail = selectedGroups
+  .filter((g) =>
+    g.itemNumber !== undefined &&      // o `typeof g.itemNumber === "number"`
+    g.entryNumber !== undefined &&
+    g.entryGroupNumber !== undefined &&
+    g.entryItemNumber !== undefined &&
+    g.entryPeriod !== undefined
+  )
+  .map((g) => ({
+    itemNumber: g.itemNumber,
+    entryNumber: g.entryNumber,
+    entryGroupNumber: g.entryGroupNumber,
+    entryItemNumber: g.entryItemNumber,
+    entryPeriod: g.entryPeriod,
+    coneCount: g.coneCount,
+    packageCount: g.packageCount,
+    grossWeight: g.grossWeight,
+    netWeight: g.netWeight,
+  }));
+
+    const payload: YarnDispatch = {
       period,
       supplierCode,
-      documentNote: null, // Campo opcional, ajusta según lo necesario
-      nrodir, // Aquí se incluye la dirección seleccionada
+      documentNote: null, // Ajusta según lo necesario
+      nrodir,
       serviceOrderId,
       detail,
     };
@@ -188,8 +210,9 @@ const CrearMovSalidaHilado: React.FC = () => {
     console.log("Payload enviado:", JSON.stringify(payload, null, 2));
   
     try {
-      await createYarnDispatch(payload);
+      const response = await createYarnDispatch(payload);
       alert("Movimiento de salida creado exitosamente.");
+      console.log("Respuesta del backend:", response);
     } catch (error) {
       console.error("Error al guardar el movimiento de salida:", error);
       alert("Hubo un error al intentar guardar el movimiento de salida.");
@@ -366,18 +389,23 @@ const CrearMovSalidaHilado: React.FC = () => {
                             fullWidth />
                         </TableCell>
                         <TableCell className="border-b border-gray-300 px-4 py-5">
-                          <Checkbox
-                            checked={selectedGroups.some(
-                              (g) => g.entryGroupNumber === group.groupNumber &&
-                                g.entryItemNumber === item.itemNumber
-                            )}
-                            onChange={() => toggleGroupSelection({
-                              ...group,
-                              entryGroupNumber: group.groupNumber,
-                              entryItemNumber: item.itemNumber,
-                              entryNumber: dataIngreso.entryNumber,
-                              entryPeriod: dataIngreso.period,
-                            })} />
+                        <Checkbox
+                        checked={selectedGroups.some(
+                          (g) =>
+                            g.entryGroupNumber === group.groupNumber &&
+                            g.entryItemNumber === item.itemNumber
+                        )}
+                        onChange={() =>
+                          toggleGroupSelection({
+                            ...group,
+                            itemNumber: item.itemNumber,
+                            entryNumber: dataIngreso.entryNumber,
+                            entryGroupNumber: group.groupNumber,
+                            entryItemNumber: item.itemNumber,
+                            entryPeriod: dataIngreso.period,
+                          })
+                        }
+                      />
                         </TableCell>
                       </TableRow>
                     ))}

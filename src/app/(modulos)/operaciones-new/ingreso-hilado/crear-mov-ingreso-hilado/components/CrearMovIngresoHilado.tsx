@@ -178,53 +178,62 @@ const CrearMovIngresoHilado: React.FC = () => {
     );
   };
 
-  const handleCreate = async () => {
-    if (!selectedOrden) {
-      setSnackbarMessage("Debe seleccionar una orden de compra válida.");
-      setOpenSnackbar(true);
-      return;
-    }
-  
-    const payload: Partial<YarnPurchaseEntry> = {
-      period,
-      supplierPoCorrelative: guiaCorrelativa,
-      supplierPoSeries: facturaSerie,
-      fecgf: new Date().toISOString().split("T")[0],
-      purchaseOrderNumber: selectedOrden.purchaseOrderNumber,
-      documentNote: nota,
-      supplierBatch: loteProveedor,
-      detail: details.map((detail, index) => ({
-        itemNumber: index + 1,
-        yarnId: detail.yarnId,
-        guideNetWeight: detail.guideNetWeight,
-        guideGrossWeight: detail.guideGrossWeight,
-        guidePackageCount: detail.guidePackageCount,
-        guideConeCount: detail.guideConeCount,
-        detailHeavy: detail.isWeighted ? detail.detailHeavy : [],
-        isWeighted: detail.isWeighted,
-        statusFlag: "P",
-      })),
-    };
-  
-    try {
-      const response = await createYarnPurchaseEntry(payload);
-  
-      if (response.entryNumber) {
-        // Guardar el número de entrada en el localStorage
-        localStorage.setItem("entryNumber", JSON.stringify({ entryNumber: response.entryNumber }));
-  
-        setSnackbarMessage("Movimiento creado exitosamente.");
+    const handleCreate = async () => {
+      if (!selectedOrden) {
+        setSnackbarMessage("Debe seleccionar una orden de compra válida.");
         setOpenSnackbar(true);
-  
-        // Redirigir al componente principal
-        router.push("/operaciones-new/ingreso-hilado");
+        return;
       }
-    } catch (error: any) {
-      console.error("Error al crear el movimiento:", error);
-      setSnackbarMessage(error.message || "Error al crear el movimiento.");
-      setOpenSnackbar(true);
-    }
-  };  
+    
+      const payload: YarnPurchaseEntry = {
+        period,
+        supplierPoCorrelative: guiaCorrelativa,
+        supplierPoSeries: facturaSerie,
+        fecgf: new Date().toISOString().split("T")[0],
+        purchaseOrderNumber: selectedOrden.purchaseOrderNumber,
+        documentNote: nota || "", // Opcional, se envía vacío si no se completa
+        supplierBatch: loteProveedor,
+        detail: details.map((detail, index) => ({
+          itemNumber: index + 1,
+          yarnId: detail.yarnId,
+          guideNetWeight: detail.guideNetWeight,
+          guideGrossWeight: detail.guideGrossWeight,
+          guidePackageCount: detail.guidePackageCount,
+          guideConeCount: detail.guideConeCount,
+          detailHeavy: detail.isWeighted
+            ? detail.detailHeavy.map((heavy) => ({
+                groupNumber: heavy.groupNumber,
+                coneCount: heavy.coneCount,
+                packageCount: heavy.packageCount,
+                grossWeight: heavy.grossWeight,
+                netWeight: heavy.netWeight,
+              }))
+            : [],
+          isWeighted: detail.isWeighted,
+        })),
+      };
+    
+      try {
+        const response = await createYarnPurchaseEntry(payload);
+    
+        if (response?.entryNumber) {
+          localStorage.setItem(
+            "entryNumber",
+            JSON.stringify({ entryNumber: response.entryNumber })
+          );
+    
+          setSnackbarMessage("Movimiento creado exitosamente.");
+          setOpenSnackbar(true);
+    
+          // Redirigir al componente principal
+          router.push("/operaciones-new/ingreso-hilado");
+        }
+      } catch (error: any) {
+        console.error("Error al crear el movimiento:", error);
+        setSnackbarMessage(error.message || "Error al crear el movimiento.");
+        setOpenSnackbar(true);
+      }
+    };    
 
   const handleCancel = () => {
     router.push("/operaciones-new/ingreso-hilado");
