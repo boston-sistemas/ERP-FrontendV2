@@ -63,9 +63,10 @@ const MovSalidaHilado: React.FC = () => {
     router.push("/operaciones-new/salida-hilado/crear-mov-salida-hilado");
   };
 
-  const handleDetailsClick = (exitNumber: string) => {
-    router.push(`/operaciones-new/salida-hilado/detalles-mov-salida-hilado/${exitNumber}`);
-  };
+  const handleDetailsClick = (exitNumber: string, period: number) => {
+    // En este caso, como query param
+    router.push(`/operaciones-new/salida-hilado/detalles-mov-salida-hilado/${exitNumber}?period=${period}`);
+  };    
 
   const handleDialogOpen = (documentNote: string | null) => {
     setDialogContent(
@@ -192,17 +193,13 @@ const MovSalidaHilado: React.FC = () => {
                       </IconButton>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
-                      <IconButton
-                        color="primary"
-                        onClick={() =>
-                          router.push(
-                            `/operaciones-new/salida-hilado/detalles-mov-salida-hilado/${dispatch.exitNumber}`
-                          )
-                        }
-                      >
-                        <Visibility />
-                      </IconButton>
-                    </td>
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleDetailsClick(dispatch.exitNumber, dispatch.period)}
+                    >
+                      <Visibility />
+                    </IconButton>
+                  </td>
                   </tr>
                 ))
               ) : (

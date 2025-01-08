@@ -55,3 +55,19 @@ export const checkIfServiceOrderIsUpdatable = async (orderId: string) => {
   const response = await instance.get(`/operations/v1/service-orders/${orderId}/is-updatable`);
   return response.data;
 }
+
+// services/ordenesServicioService.ts (o donde definas)
+export const fetchServiceOrderStatus = async () => {
+  // Suponiendo que el backend responde con:
+  // {
+  //   "serviceOrderStatus": [
+  //       { "id": 1028, "value": "NO INICIADO" },
+  //       { "id": 1029, "value": "EN PROCESO" },
+  //       ...
+  //   ]
+  // }
+  const response = await instance.get<{
+    serviceOrderStatus: Array<{ id: number; value: string }>;
+  }>("/security/v1/parameters/public/service-order-status");
+  return response.data; 
+};
