@@ -19,6 +19,10 @@ export interface MecsaColor {
   isActive: boolean;
 }
 
+export interface MecsaColorResponse {
+  mecsaColors: MecsaColor[];
+}
+
 export interface Fibra {
   id: string;
   categoryId: number;
@@ -203,36 +207,37 @@ export interface Supplier {
   addresses: Record<string, string>;
 }
 
-export interface FabricRecipe {
-  yarnId: string; // ID del hilo
-  proportion: number; // Proporción requerida
-  numPlies: number; // Cantidad de capas
-  galgue: number; // Galga (medida de densidad de tejido)
-  diameter: number; // Diámetro
-  stitchLength: number; // Longitud de la puntada
-}
-
 export interface FabricType {
   id: number;
   value: string;
 }
 
-export interface Fabric {
-  id: string; // Identificador del tejido
-  inventoryUnitCode: string; // Código de unidad de inventario
-  purchaseUnitCode: string; // Código de unidad de compra
-  description: string; // Descripción del tejido
-  purchaseDescription: string; // Descripción de compra
-  barcode: number; // Código de barras
-  isActive: boolean; // Indicador de estado activo
-  density: number; // Densidad del tejido
-  width: number; // Ancho del tejido
-  fabricType: FabricType; // Tipo de tejido
-  color: Color; // Color asociado
-  structurePattern: string; // Patrón de estructura
-  recipe: FabricRecipe[]; // Lista de recetas
+export interface FabricRecipe {
+  yarnId: string; 
+  proportion: number; 
+  numPlies: number; 
+  gauge: number; 
+  diameter: number; 
+  stitchLength: number;
 }
 
+export interface Fabric {
+  id: string;
+  fabricTypeId: number;
+  density: number;
+  width: number;
+  colorId: string | null;
+  structurePattern: string;
+  description: string;
+  isActive: boolean;
+  recipe: FabricRecipe[];
+  fabricType: {
+    id: number;
+    value: string;
+  };
+}
+
+// Para la respuesta de GET /operations/v1/fabrics
 export interface FabricResponse {
   fabrics: Fabric[];
 }

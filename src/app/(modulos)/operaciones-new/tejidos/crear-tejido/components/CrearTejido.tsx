@@ -1,27 +1,49 @@
 ﻿"use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Button,
   TextField,
+  Button,
   IconButton,
   Dialog,
-  DialogActions,
-  DialogContent,
   DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
   TablePagination,
   Snackbar,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import MuiAlert, { AlertProps } from "@mui/material/Alert";
-import { Add, Close, Visibility } from "@mui/icons-material";
+import { Add, Close } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 
-const hardcodedHilados = [
-  { id: 1, titulo: "Hilado Algodón", acabado: "Brillante", descripcion: "Hilado suave", receta: "-", estado: "Activo" },
-  { id: 2, titulo: "Hilado Polyester", acabado: "Mate", descripcion: "Hilado fuerte", receta: "-", estado: "Activo" },
-  { id: 3, titulo: "Hilado Mixto", acabado: "Semimate", descripcion: "Hilado mixto algodón/polyester", receta: "-", estado: "Inactivo" },
-  { id: 4, titulo: "Hilado Seda", acabado: "Brillante", descripcion: "Hilado lujoso", receta: "-", estado: "Activo" },
-];
+import {
+  createFabric,
+  fetchFabricTypes,
+  fetchMecsaColors,
+  fetchHilados,
+  FabricType,
+} from "../../services/tejidosService";
+
+import { MecsaColor } from "../../../models/models";
+
+// Estructura minimal para un ítem de la receta
+interface RecipeItem {
+  yarnId: string;      // ID del hilado
+  proportion: number;  // Proporción
+  numPlies: number;    // # de cabos
+  gauge: number;       // Galga
+  diameter: number;    // Diámetro
+  stitchLength: number; // Stitch length
+}
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
   props,
@@ -32,260 +54,362 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
 
 const CrearTejido: React.FC = () => {
   const router = useRouter();
-  const [familia, setFamilia] = useState("");
-  const [ancho, setAncho] = useState("");
-  const [densidad, setDensidad] = useState("");
-  const [desagujado, setDesagujado] = useState("");
-  const [pagina, setPagina] = useState(0);
-  const [filasPorPagina, setFilasPorPagina] = useState(5);
-  const [selectedHilados, setSelectedHilados] = useState<any[]>([]);
-  const [openHiladosDialog, setOpenHiladosDialog] = useState(false);
+
+  // State para selects
+  const [fabricTypes, setFabricTypes] = useState<FabricType[]>([]);
+  const [colors, setColors] = useState<MecsaColor[]>([]);
+
+  // Campos del Tejido
+  const [fabricTypeId, setFabricTypeId] = useState<number>(0); // se llenará con un <Select>
+  const [density, setDensity] = useState<number>(100);
+  const [width, setWidth] = useState<number>(80);
+  const [colorId, setColorId] = useState<string>(""); // se llenará con un <Select>
+  const [structurePattern, setStructurePattern] = useState<string>("LISO");
+  const [description, setDescription] = useState<string>("");
+
+  // Receta
+  const [recipe, setRecipe] = useState<RecipeItem[]>([]);
+
+  // Yarn/hilados
+  const [hilados, setHilados] = useState<any[]>([]);
+  const [hiladosDialogOpen, setHiladosDialogOpen] = useState(false);
+  const [paginaH, setPaginaH] = useState(0);
+  const [filasPorPaginaH, setFilasPorPaginaH] = useState(5);
+
+  // Snackbar
   const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("Hilado añadido correctamente");
-  const [descripcion, setDescripcion] = useState("");
+  const [snackbarMsg, setSnackbarMsg] = useState("");
 
-  const toggleHiladosDialog = () => {
-    setOpenHiladosDialog(!openHiladosDialog);
-  };
+  // Cargar combos (fabricTypes, colors) al montar
+  useEffect(() => {
+    const loadCombos = async () => {
+      try {
+        const [typesResp, colorsResp] = await Promise.all([
+          fetchFabricTypes(),
+          fetchMecsaColors(),
+        ]);
+        setFabricTypes(typesResp.fabricTypes || []);
+        setColors(colorsResp.mecsaColors || []);
+      } catch (err) {
+        console.error("Error al cargar combos:", err);
+      }
+    };
+    loadCombos();
+  }, []);
 
-  const handleAddHilado = (hilado: any) => {
-    if (!selectedHilados.some((h) => h.id === hilado.id)) {
-      setSelectedHilados([...selectedHilados, { ...hilado, nroCabos: "", galga: "", diametro: "", lm: "", proporcion: "" }]);
+  // Handler para crear
+  const handleCreateFabric = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      fabricTypeId,
+      density,
+      width,
+      colorId,
+      structurePattern,
+      description,
+      recipe, // array de { yarnId, proportion, etc.}
+    };
+
+    try {
+      await createFabric(payload);
+      setSnackbarMsg("Tejido creado exitosamente");
       setOpenSnackbar(true);
+      // Redirigir
+      router.push("/operaciones-new/tejidos");
+    } catch (err) {
+      console.error("Error al crear tejido:", err);
+      alert("Ocurrió un error al crear el tejido.");
     }
   };
 
-  const handleDeleteSelectedHilado = (id: number) => {
-    setSelectedHilados((prev) => prev.filter((hilado) => hilado.id !== id));
+  // Diálogo de Hilados
+  const handleOpenHiladosDialog = async () => {
+    try {
+      const hiladosResp = await fetchHilados();
+      setHilados(hiladosResp.yarns || []);
+      setHiladosDialogOpen(true);
+    } catch (err) {
+      console.error("Error al cargar hilados:", err);
+      alert("No se pudo cargar la lista de hilados.");
+    }
+  };
+  const handleCloseHiladosDialog = () => setHiladosDialogOpen(false);
+
+  const handleSelectHilado = (h: any) => {
+    // Agregar un item a la receta
+    const newItem: RecipeItem = {
+      yarnId: h.id,
+      proportion: 0,
+      numPlies: 1,
+      gauge: 0,
+      diameter: 0,
+      stitchLength: 0,
+    };
+    setRecipe((prev) => [...prev, newItem]);
   };
 
-  const handleFieldChange = (id: number, field: string, value: string) => {
-    setSelectedHilados((prev) =>
-      prev.map((hilado) =>
-        hilado.id === id ? { ...hilado, [field]: value } : hilado
+  // Manejo local de recipe
+  const handleRecipeFieldChange = (idx: number, field: keyof RecipeItem, value: number) => {
+    setRecipe((prev) =>
+      prev.map((item, i) =>
+        i === idx ? { ...item, [field]: value } : item
       )
     );
   };
-
-  const handleCreateTejido = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Tejido creado con:", { familia, ancho, densidad, desagujado, selectedHilados });
-    setFamilia("");
-    setAncho("");
-    setDensidad("");
-    setDesagujado("");
-    setSelectedHilados([]);
+  const handleRemoveRecipeItem = (idx: number) => {
+    setRecipe((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const handleCancel = () => {
-    router.push("/operaciones-new/tejidos");
+  // Table Pagination (Hilados)
+  const handleChangePageH = (event: unknown, newPage: number) => setPaginaH(newPage);
+  const handleChangeRowsPerPageH = (
+    event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
+  ) => {
+    setFilasPorPaginaH(parseInt(event.target.value, 10));
+    setPaginaH(0);
   };
 
-  const handleCloseSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === "clickaway") {
-      return;
-    }
-    setOpenSnackbar(false);
-  };
+  // Snackbar
+  const handleCloseSnackbar = () => setOpenSnackbar(false);
 
   return (
-    <div className="flex justify-center items-start min-h-screen bg-gray-100 dark:bg-gray-900 py-10">
-      <div
-        className="bg-white dark:bg-gray-800 border border-gray-300 rounded-lg shadow-lg p-6 w-full"
-        style={{
-          maxWidth: "90%",
-          margin: "auto",
-        }}
-      >
-        <h2 className="text-2xl font-semibold text-center text-blue-800 dark:text-blue-400 mb-6">Crear Tejido</h2>
-        <form onSubmit={handleCreateTejido}>
-          <TextField
-            label="Familia *"
-            fullWidth
-            value={familia}
-            onChange={(e) => setFamilia(e.target.value)}
-            margin="dense"
-            variant="outlined"
-          />
-          <TextField
-            label="Ancho *"
-            fullWidth
-            value={ancho}
-            onChange={(e) => setAncho(e.target.value)}
-            margin="dense"
-            variant="outlined"
-          />
-          <TextField
-            label="Densidad *"
-            fullWidth
-            value={densidad}
-            onChange={(e) => setDensidad(e.target.value)}
-            margin="dense"
-            variant="outlined"
-          />
-          <TextField
-            label="Desagujado *"
-            fullWidth
-            value={desagujado}
-            onChange={(e) => setDesagujado(e.target.value)}
-            margin="dense"
-            variant="outlined"
-          />
-
-          <div className="mt-4">
-            <h3 className="text-lg font-semibold text-black dark:text-white mb-2">Seleccionar Hilados</h3>
-            <table className="w-full table-auto">
-              <thead>
-                <tr className="bg-blue-900 uppercase text-center">
-                  {["Título", "Nro Cabos", "Galga", "Diámetro", "LM", "Proporción", "Eliminar"].map((col, index) => (
-                    <th key={index} className="px-4 py-4 text-center font-normal text-white">
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {selectedHilados.map((hilado) => (
-                  <tr key={hilado.id} className="text-center">
-                    <td className="border-b border-[#eee] px-4 py-5">{hilado.titulo}</td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      <TextField
-                        variant="outlined"
-                        size="small"
-                        value={hilado.nroCabos}
-                        onChange={(e) => handleFieldChange(hilado.id, "nroCabos", e.target.value)}
-                        placeholder="Nro Cabos"
-                      />
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      <TextField
-                        variant="outlined"
-                        size="small"
-                        value={hilado.galga}
-                        onChange={(e) => handleFieldChange(hilado.id, "galga", e.target.value)}
-                        placeholder="Galga"
-                      />
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      <TextField
-                        variant="outlined"
-                        size="small"
-                        value={hilado.diametro}
-                        onChange={(e) => handleFieldChange(hilado.id, "diametro", e.target.value)}
-                        placeholder="Diámetro"
-                      />
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      <TextField
-                        variant="outlined"
-                        size="small"
-                        value={hilado.lm}
-                        onChange={(e) => handleFieldChange(hilado.id, "lm", e.target.value)}
-                        placeholder="LM"
-                      />
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      <TextField
-                        variant="outlined"
-                        size="small"
-                        value={hilado.proporcion}
-                        onChange={(e) => handleFieldChange(hilado.id, "proporcion", e.target.value)}
-                        placeholder="Proporción"
-                      />
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      <IconButton
-                        style={{ backgroundColor: "#ffff", color: "#d32f2f" }}
-                        onClick={() => handleDeleteSelectedHilado(hilado.id)}
-                      >
-                        <Close />
-                      </IconButton>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <IconButton onClick={toggleHiladosDialog}>
-              <Add />
-            </IconButton>
-          </div>
-
-          <div className="flex justify-end mt-6 gap-4">
-            <Button
-              onClick={handleCancel}
-              variant="contained"
-              style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+    <div className="p-5">
+      <h2 className="text-xl font-semibold mb-4">Crear Tejido</h2>
+      <form onSubmit={handleCreateFabric} className="space-y-4">
+        <div className="flex gap-4">
+          <div className="w-1/2">
+            <InputLabel id="fabric-type-label">Tipo de Tejido</InputLabel>
+            <Select
+              labelId="fabric-type-label"
+              fullWidth
+              value={fabricTypeId || ""}
+              onChange={(e) => setFabricTypeId(Number(e.target.value))}
+              style={{ marginBottom: "16px" }}
             >
-              Cancelar
-            </Button>
-            <Button type="submit" variant="contained" style={{ backgroundColor: "#1976d2", color: "#fff" }}>
-              Crear
-            </Button>
+              <MenuItem value="" disabled>
+                -- Seleccione un tipo --
+              </MenuItem>
+              {fabricTypes.map((ft) => (
+                <MenuItem key={ft.id} value={ft.id}>
+                  {ft.value}
+                </MenuItem>
+              ))}
+            </Select>
           </div>
-        </form>
-      </div>
 
-      {/* Diálogo para seleccionar hilados */}
+          <div className="w-1/2">
+            <InputLabel id="color-label">Color</InputLabel>
+            <Select
+              labelId="color-label"
+              fullWidth
+              value={colorId}
+              onChange={(e) => setColorId(e.target.value as string)}
+              style={{ marginBottom: "16px" }}
+            >
+              <MenuItem value="" disabled>
+                -- Seleccione un color --
+              </MenuItem>
+              {colors.map((c) => (
+                <MenuItem key={c.id} value={c.id}>
+                  {c.name} ({c.sku})
+                </MenuItem>
+              ))}
+            </Select>
+          </div>
+        </div>
+
+        <TextField
+          label="Densidad"
+          type="number"
+          fullWidth
+          value={density}
+          onChange={(e) => setDensity(parseInt(e.target.value, 10))}
+        />
+        <TextField
+          label="Ancho"
+          type="number"
+          fullWidth
+          value={width}
+          onChange={(e) => setWidth(parseInt(e.target.value, 10))}
+        />
+        <TextField
+          label="Patrón"
+          fullWidth
+          value={structurePattern}
+          onChange={(e) => setStructurePattern(e.target.value)}
+        />
+        <TextField
+          label="Descripción"
+          fullWidth
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+
+        <h3 className="text-lg font-semibold mt-4 mb-2">Receta (Hilados)</h3>
+        <Table size="small" className="w-full">
+          <TableHead>
+            <TableRow className="bg-blue-900 text-white text-center">
+              <TableCell>Hilado (ID)</TableCell>
+              <TableCell>Proporción</TableCell>
+              <TableCell># Cabos</TableCell>
+              <TableCell>Galga</TableCell>
+              <TableCell>Diámetro</TableCell>
+              <TableCell>Stitch Length</TableCell>
+              <TableCell>Acciones</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {recipe.map((item, idx) => (
+              <TableRow key={idx} className="text-center">
+                <TableCell>{item.yarnId}</TableCell>
+                <TableCell>
+                  <TextField
+                    type="number"
+                    variant="standard"
+                    value={item.proportion}
+                    onChange={(e) =>
+                      handleRecipeFieldChange(idx, "proportion", parseFloat(e.target.value))
+                    }
+                    style={{ width: "60px" }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <TextField
+                    type="number"
+                    variant="standard"
+                    value={item.numPlies}
+                    onChange={(e) =>
+                      handleRecipeFieldChange(idx, "numPlies", parseInt(e.target.value, 10))
+                    }
+                    style={{ width: "60px" }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <TextField
+                    type="number"
+                    variant="standard"
+                    value={item.gauge}
+                    onChange={(e) =>
+                      handleRecipeFieldChange(idx, "gauge", parseInt(e.target.value, 10))
+                    }
+                    style={{ width: "60px" }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <TextField
+                    type="number"
+                    variant="standard"
+                    value={item.diameter}
+                    onChange={(e) =>
+                      handleRecipeFieldChange(idx, "diameter", parseFloat(e.target.value))
+                    }
+                    style={{ width: "60px" }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <TextField
+                    type="number"
+                    variant="standard"
+                    value={item.stitchLength}
+                    onChange={(e) =>
+                      handleRecipeFieldChange(idx, "stitchLength", parseFloat(e.target.value))
+                    }
+                    style={{ width: "60px" }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <IconButton onClick={() => handleRemoveRecipeItem(idx)} color="error">
+                    <Close />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <Button
+          variant="outlined"
+          startIcon={<Add />}
+          onClick={handleOpenHiladosDialog}
+          style={{ marginTop: "8px" }}
+        >
+          Agregar Hilado
+        </Button>
+
+        <div className="flex justify-end gap-4 mt-6">
+          <Button
+            variant="contained"
+            color="inherit"
+            onClick={() => router.push("/operaciones-new/tejidos")}
+          >
+            Cancelar
+          </Button>
+          <Button variant="contained" color="primary" type="submit">
+            Crear
+          </Button>
+        </div>
+      </form>
+
+      {/* Diálogo para seleccionar Hilados (tabla en español) */}
       <Dialog
-        open={openHiladosDialog}
-        onClose={toggleHiladosDialog}
-        maxWidth="md"
+        open={hiladosDialogOpen}
+        onClose={handleCloseHiladosDialog}
+        maxWidth="lg"
         fullWidth
       >
-        <DialogTitle>Seleccionar Hilados</DialogTitle>
+        <DialogTitle>Seleccionar Hilado</DialogTitle>
         <DialogContent>
-          <table className="w-full table-auto">
-            <thead>
-              <tr className="bg-blue-900 uppercase text-center">
-                {["ID", "Título", "Acabado", "Descripción", "Estado", "Receta", "Agregar"].map((col, index) => (
-                  <th key={index} className="px-4 py-4 text-center font-normal text-white">
-                    {col}
-                  </th>
+          <Table size="small">
+            <TableHead>
+              <TableRow className="bg-blue-900 text-white text-center">
+                <TableCell>ID</TableCell>
+                <TableCell>Descripción</TableCell>
+                <TableCell>Count (Título)</TableCell>
+                <TableCell>Color</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell>Acción</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {hilados
+                .slice(paginaH * filasPorPaginaH, paginaH * filasPorPaginaH + filasPorPaginaH)
+                .map((h) => (
+                  <TableRow key={h.id} className="text-center">
+                    <TableCell>{h.id}</TableCell>
+                    <TableCell>{h.description}</TableCell>
+                    <TableCell>{h.yarnCount}</TableCell>
+                    <TableCell>{h.color?.name || ""}</TableCell>
+                    <TableCell>
+                      {h.isActive ? (
+                        <span className="text-green-600">Activo</span>
+                      ) : (
+                        <span className="text-red-600">Inactivo</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="contained"
+                        onClick={() => {
+                          handleSelectHilado(h);
+                        }}
+                      >
+                        Agregar
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {hardcodedHilados
-                .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
-                .map((hilado) => (
-                  <tr key={hilado.id} className="text-center">
-                    <td className="border-b border-[#eee] px-4 py-5">{hilado.id}</td>
-                    <td className="border-b border-[#eee] px-4 py-5">{hilado.titulo}</td>
-                    <td className="border-b border-[#eee] px-4 py-5">{hilado.acabado}</td>
-                    <td className="border-b border-[#eee] px-4 py-5">{hilado.descripcion}</td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      <span className={`text-sm ${hilado.estado === "Activo" ? "text-green-500" : "text-red-500"}`}>{hilado.estado}</span>
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      <IconButton color="primary">
-                        <Visibility />
-                      </IconButton>
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      <IconButton color="primary" onClick={() => handleAddHilado(hilado)}>
-                        <Add />
-                      </IconButton>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
           <TablePagination
             component="div"
-            count={hardcodedHilados.length}
-            page={pagina}
-            onPageChange={(_, newPage) => setPagina(newPage)}
-            rowsPerPage={filasPorPagina}
-            onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))}
+            count={hilados.length}
+            page={paginaH}
+            onPageChange={handleChangePageH}
+            rowsPerPage={filasPorPaginaH}
+            onRowsPerPageChange={handleChangeRowsPerPageH}
           />
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={toggleHiladosDialog}
-            style={{ backgroundColor: "#1976d2", color: "#fff" }}
-          >
-            Guardar
-          </Button>
+          <Button onClick={handleCloseHiladosDialog}>Cerrar</Button>
         </DialogActions>
       </Dialog>
 
@@ -296,8 +420,8 @@ const CrearTejido: React.FC = () => {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: "100%" }}>
-          {snackbarMessage}
+        <Alert onClose={handleCloseSnackbar} severity="success">
+          {snackbarMsg}
         </Alert>
       </Snackbar>
     </div>
