@@ -57,14 +57,14 @@ const OrdenesServicio: React.FC = () => {
   const [newOrder, setNewOrder] = useState<{
     supplierId: string;
     detail: Array<{
-      tissueId: string;
+      fabricId: string;
       quantityOrdered: number;
       price: number;
     }>;
   }>({
     supplierId: "",
     detail: [
-      { tissueId: "", quantityOrdered: 0, price: 0 },
+      { fabricId: "", quantityOrdered: 0, price: 0 },
     ],
   });
 
@@ -118,9 +118,9 @@ const OrdenesServicio: React.FC = () => {
   // (NUEVO) Al seleccionar un tejido de la tabla
   const [selectedDetailIndex, setSelectedDetailIndex] = useState<number>(0);
   const handleSelectFabric = (fabricId: string) => {
-    // p.ej., actualizamos newOrder.detail[selectedDetailIndex].tissueId = fabricId
+    // p.ej., actualizamos newOrder.detail[selectedDetailIndex].fabricId = fabricId
     const updated = [...newOrder.detail];
-    updated[selectedDetailIndex].tissueId = fabricId;
+    updated[selectedDetailIndex].fabricId = fabricId;
     setNewOrder((prev) => ({ ...prev, detail: updated }));
     setIsFabricDialogOpen(false);
   };
@@ -132,7 +132,7 @@ const OrdenesServicio: React.FC = () => {
   const handleAddDetailRow = () => {
     setNewOrder((prev) => ({
       ...prev,
-      detail: [...prev.detail, { tissueId: "", quantityOrdered: 0, price: 0 }],
+      detail: [...prev.detail, { fabricId: "", quantityOrdered: 0, price: 0 }],
     }));
   };
 
@@ -308,9 +308,9 @@ const OrdenesServicio: React.FC = () => {
               <div key={index} className="flex items-center gap-2 mb-2">
                 <TextField
                   label="Tejido"
-                  value={detail.tissueId}
+                  value={detail.fabricId}
                   onChange={(e) =>
-                    handleDetailChange(index, "tissueId", e.target.value)
+                    handleDetailChange(index, "fabricId", e.target.value)
                   }
                   // Se oculta, y mejor se usa la selección via tabla:
                   style={{ display: "none" }}
@@ -320,7 +320,7 @@ const OrdenesServicio: React.FC = () => {
                   onClick={() => handleOpenFabricDialog(index)}
                   startIcon={<Search />}
                 >
-                  {detail.tissueId ? `Tejido: ${detail.tissueId}` : "Seleccionar Tejido"}
+                  {detail.fabricId ? `Tejido: ${detail.fabricId}` : "Seleccionar Tejido"}
                 </Button>
 
                 <TextField

@@ -11,4 +11,9 @@ const instance = axios.create({
   withCredentials: true,
 });
 
-export default instance;
+const instance2 = axios.create({
+  baseURL: server,
+  withCredentials: true,
+});
+
+export default instance; instance2;

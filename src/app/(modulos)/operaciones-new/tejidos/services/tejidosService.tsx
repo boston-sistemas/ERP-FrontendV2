@@ -12,7 +12,7 @@ export interface FabricType {
 export const fetchTejidos = async (): Promise<FabricResponse> => {
     const response = await instance.get<FabricResponse>("/operations/v1/fabrics");
     return response.data;
-  };
+};
   
   // 2) Crear tejido
   export const createFabric = async (payload: {

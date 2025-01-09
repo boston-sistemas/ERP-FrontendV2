@@ -17,8 +17,19 @@ export const fetchServiceOrderById = async (orderId: string) => {
   return response.data;
 };
   
-export const updateServiceOrder = async (orderId: string, details: { detail: ServiceOrderDetail[] }): Promise<void> => {
-  await instance.patch(`/operations/v1/service-orders/${orderId}`, details);
+export const updateServiceOrder = async (
+  orderId: string,
+  payload: {
+    statusParamId: number;  // <--- Requerido a nivel raíz
+    detail: Array<{
+      fabricId: string;
+      quantityOrdered: number;
+      price: number;
+      statusParamId: number;
+    }>
+  }
+): Promise<void> => {
+  await instance.patch(`/operations/v1/service-orders/${orderId}`, payload);
 };
 
 export const fetchSuppliers = async (
@@ -38,7 +49,7 @@ export const fetchSuppliers = async (
 export const createServiceOrder = async (data: {
   supplierId: string;
   detail: {
-    tissueId: string;
+    fabricId: string;
     quantityOrdered: number;
     price: number;
   }[];
