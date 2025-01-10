@@ -6,138 +6,58 @@ import {
   IconButton,
   Button,
   TextField,
-  Menu,
-  CircularProgress,
+  Snackbar,
+  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
 } from "@mui/material";
-import {
-  Visibility,
-  Add,
-  Edit,
-  PowerSettingsNew,
-  FilterList,
-  Search,
-  Close,
-} from "@mui/icons-material";
+import { Add, Edit, PowerSettingsNew, Search, Close } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-import {
-  fetchTejidos,
-  updateFabricStatus,
-  updateFabric,
-} from "../../services/tejidosService";
+import { fetchTejidos, updateFabricStatus, updateFabric } from "../../services/tejidosService";
 import { Fabric } from "../../../models/models";
 
 const Tejidos: React.FC = () => {
   const router = useRouter();
 
   const [tejidos, setTejidos] = useState<Fabric[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
 
-  // Mostrar/ocultar columnas de Editar / Deshabilitar
-  const [mostrarEditar, setMostrarEditar] = useState(false);
-  const [mostrarDeshabilitar, setMostrarDeshabilitar] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
-  // Diálogo para confirmar deshabilitación
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [selectedTejido, setSelectedTejido] = useState<Fabric | null>(null);
-  const [loadingUpdate, setLoadingUpdate] = useState(false);
-
-  // Diálogo para Editar
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [fabricToEdit, setFabricToEdit] = useState<Fabric | null>(null);
+
+  const [showEditColumn, setShowEditColumn] = useState(true);
+  const [showDisableColumn, setShowDisableColumn] = useState(true);
 
   useEffect(() => {
     const loadTejidos = async () => {
       try {
-        setLoading(true);
         const data = await fetchTejidos();
         setTejidos(data.fabrics || []);
       } catch (error) {
-        console.error("Error fetching tejidos:", error);
-        setError(true);
-      } finally {
-        setLoading(false);
+        console.error("Error al cargar tejidos:", error);
       }
     };
 
     loadTejidos();
   }, []);
 
-  // Filtros
-  const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
-    setFilterAnchorEl(event.currentTarget);
-  };
-  const handleFilterClose = () => setFilterAnchorEl(null);
-
-  // Búsqueda
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
   const filteredTejidos = tejidos.filter((t) =>
     t.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Paginación
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPagina(newPage);
-  };
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
-  ) => {
-    setFilasPorPagina(parseInt(event.target.value, 10));
-    setPagina(0);
-  };
-
-  // CREAR → Navega a /operaciones-new/tejidos/crear-tejido
-  const handleCreateTejido = () => {
-    router.push("/operaciones-new/tejidos/crear-tejido");
-  };
-
-  // Confirmar Deshabilitar
-  const handleConfirmDisableTejido = (tejido: Fabric) => {
-    setSelectedTejido(tejido);
-    setConfirmDialogOpen(true);
-  };
-  const handleDisableTejido = async () => {
-    if (!selectedTejido) return;
-    setLoadingUpdate(true);
-    try {
-      await updateFabricStatus(selectedTejido.id, !selectedTejido.isActive);
-      // Actualizar local
-      setTejidos((prev) =>
-        prev.map((t) =>
-          t.id === selectedTejido.id ? { ...t, isActive: !t.isActive } : t
-        )
-      );
-    } catch (err) {
-      console.error("Error al cambiar estado del tejido:", err);
-      alert("Hubo un error al cambiar el estado.");
-    } finally {
-      setLoadingUpdate(false);
-      setConfirmDialogOpen(false);
-      setSelectedTejido(null);
-    }
-  };
-
-  // Editar
   const handleEditTejido = (tejido: Fabric) => {
-    setFabricToEdit({ ...tejido }); // Clonar
+    setFabricToEdit({ ...tejido });
     setEditDialogOpen(true);
   };
+
   const handleSaveEditTejido = async () => {
     if (!fabricToEdit) return;
     const payload = {
@@ -148,23 +68,44 @@ const Tejidos: React.FC = () => {
     };
     try {
       await updateFabric(fabricToEdit.id, payload);
-      // Actualizar local
       setTejidos((prev) =>
         prev.map((t) => (t.id === fabricToEdit.id ? { ...fabricToEdit } : t))
       );
+      setSnackbarMessage("Tejido actualizado correctamente.");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
       setEditDialogOpen(false);
-      setFabricToEdit(null);
     } catch (err) {
       console.error("Error al actualizar tejido:", err);
-      alert("Hubo un error al actualizar el tejido.");
+      setSnackbarMessage("Hubo un error al actualizar el tejido.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
+
+  const handleToggleFabricStatus = async (id: string, isActive: boolean) => {
+    try {
+      await updateFabricStatus(id, !isActive);
+      setTejidos((prev) =>
+        prev.map((tejido) =>
+          tejido.id === id ? { ...tejido, isActive: !isActive } : tejido
+        )
+      );
+      setSnackbarMessage(`Tejido ${!isActive ? "habilitado" : "deshabilitado"} correctamente.`);
+      setSnackbarSeverity("success");
+    } catch (err) {
+      console.error("Error al cambiar estado del tejido:", err);
+      setSnackbarMessage("Error al cambiar el estado del tejido.");
+      setSnackbarSeverity("error");
+    } finally {
+      setSnackbarOpen(true);
     }
   };
 
   return (
     <div className="space-y-5">
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default">
-        {/* Encabezado */}
-        <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
             <div className="flex items-center border border-gray-300 rounded-md px-2">
               <Search />
@@ -172,28 +113,19 @@ const Tejidos: React.FC = () => {
                 variant="standard"
                 placeholder="Buscar por descripción..."
                 value={searchTerm}
-                onChange={handleSearch}
-                InputProps={{ disableUnderline: true }}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  disableUnderline: true,
+                }}
               />
             </div>
-            <Button startIcon={<FilterList />} variant="outlined" onClick={handleFilterClick}>
-              Filtros
-            </Button>
-            <Menu
-              anchorEl={filterAnchorEl}
-              open={Boolean(filterAnchorEl)}
-              onClose={handleFilterClose}
-            >
-              {/* (Opcional) Aquí podrías agregar más filtros. */}
-            </Menu>
           </div>
-
-          <div className="flex items-center gap-2">
+          <div className="space-x-2">
             <Button
               startIcon={<Add />}
               variant="contained"
               style={{ backgroundColor: "#1976d2", color: "#fff" }}
-              onClick={handleCreateTejido}
+              onClick={() => router.push("/operaciones-new/tejidos/crear-tejido")}
             >
               CREAR
             </Button>
@@ -201,134 +133,104 @@ const Tejidos: React.FC = () => {
               startIcon={<Edit />}
               variant="contained"
               style={{ backgroundColor: "#1976d2", color: "#fff" }}
-              onClick={() => setMostrarEditar(!mostrarEditar)}
+              onClick={() => setShowEditColumn((prev) => !prev)}
             >
-              EDITAR
+              {showEditColumn ? "Ocultar Editar" : "Mostrar Editar"}
             </Button>
             <Button
               startIcon={<PowerSettingsNew />}
               variant="contained"
               style={{ backgroundColor: "#d32f2f", color: "#fff" }}
-              onClick={() => setMostrarDeshabilitar(!mostrarDeshabilitar)}
+              onClick={() => setShowDisableColumn((prev) => !prev)}
             >
-              DESHABILITAR
+              {showDisableColumn ? "Ocultar Deshabilitar" : "Mostrar Deshabilitar"}
             </Button>
           </div>
         </div>
 
-        {/* Tabla */}
-        {loading ? (
-          <div className="flex justify-center items-center h-40">
-            <CircularProgress />
-          </div>
-        ) : error ? (
-          <div>Hubo un error al cargar los tejidos.</div>
-        ) : tejidos.length === 0 ? (
-          <div className="py-10 text-center text-gray-500">No hay datos para mostrar</div>
-        ) : (
+        <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center text-white">
-                <th className="px-4 py-4">ID</th>
-                <th className="px-4 py-4">Descripción</th>
-                <th className="px-4 py-4">Densidad</th>
-                <th className="px-4 py-4">Ancho</th>
-                <th className="px-4 py-4">Estado</th>
-                <th className="px-4 py-4">Patrón</th>
-                <th className="px-4 py-4">Tipo de Tejido</th>
-                {mostrarEditar && <th className="px-4 py-4">Editar</th>}
-                {mostrarDeshabilitar && <th className="px-4 py-4">Deshabilitar</th>}
+                <th className="px-4 py-4 font-normal">ID</th>
+                <th className="px-4 py-4 font-normal">Descripción</th>
+                <th className="px-4 py-4 font-normal">Densidad</th>
+                <th className="px-4 py-4 font-normal">Ancho</th>
+                <th className="px-4 py-4 font-normal">Estado</th>
+                {showEditColumn && <th className="px-4 py-4 font-normal">Editar</th>}
+                {showDisableColumn && <th className="px-4 py-4 font-normal">Deshabilitar</th>}
               </tr>
             </thead>
             <tbody>
-              {filteredTejidos
-                .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
-                .map((tej) => (
-                  <tr key={tej.id} className="text-center">
-                    <td className="border-b border-[#eee] px-4 py-4">{tej.id}</td>
-                    <td className="border-b border-[#eee] px-4 py-4">{tej.description}</td>
-                    <td className="border-b border-[#eee] px-4 py-4">{tej.density}</td>
-                    <td className="border-b border-[#eee] px-4 py-4">{tej.width}</td>
-                    <td className="border-b border-[#eee] px-4 py-4">
-                      {tej.isActive ? (
-                        <span className="text-green-600">Activo</span>
-                      ) : (
-                        <span className="text-red-600">Inactivo</span>
+              {filteredTejidos.length > 0 ? (
+                filteredTejidos
+                  .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
+                  .map((tejido) => (
+                    <tr key={tejido.id} className="text-center text-black">
+                      <td className="border-b border-gray-300 px-4 py-5">{tejido.id}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">{tejido.description}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">{tejido.density}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">{tejido.width}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        <span
+                          className={`text-sm ${
+                            tejido.isActive ? "text-green-500" : "text-red-500"
+                          }`}
+                        >
+                          {tejido.isActive ? "Activo" : "Inactivo"}
+                        </span>
+                      </td>
+                      {showEditColumn && (
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          <IconButton onClick={() => handleEditTejido(tejido)}>
+                            <Edit />
+                          </IconButton>
+                        </td>
                       )}
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-4">{tej.structurePattern}</td>
-                    <td className="border-b border-[#eee] px-4 py-4">
-                      {tej.fabricType?.value || ""}
-                    </td>
-                    {mostrarEditar && (
-                      <td className="border-b border-[#eee] px-4 py-4">
-                        <IconButton onClick={() => handleEditTejido(tej)}>
-                          <Edit />
-                        </IconButton>
-                      </td>
-                    )}
-                    {mostrarDeshabilitar && (
-                      <td className="border-b border-[#eee] px-4 py-4">
-                        <IconButton onClick={() => handleConfirmDisableTejido(tej)}>
-                          <PowerSettingsNew />
-                        </IconButton>
-                      </td>
-                    )}
-                  </tr>
-                ))}
+                      {showDisableColumn && (
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          <IconButton
+                            onClick={() => handleToggleFabricStatus(tejido.id, tejido.isActive)}
+                          >
+                            <PowerSettingsNew />
+                          </IconButton>
+                        </td>
+                      )}
+                    </tr>
+                  ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="pt-5 pb-5 text-center text-black">
+                    No hay datos disponibles
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
-        )}
-
-        {/* Paginación */}
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 50]}
-          component="div"
-          count={filteredTejidos.length}
-          rowsPerPage={filasPorPagina}
-          page={pagina}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          labelRowsPerPage="Filas por página:"
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
-          }
-        />
+          <TablePagination
+            rowsPerPageOptions={[10, 25, 50]}
+            component="div"
+            count={filteredTejidos.length}
+            rowsPerPage={filasPorPagina}
+            page={pagina}
+            onPageChange={(_, newPage) => setPagina(newPage)}
+            onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))}
+          />
+        </div>
       </div>
 
-      {/* Diálogo Confirmar Deshabilitar */}
-      <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
-        <DialogTitle>Confirmar Deshabilitar</DialogTitle>
-        <DialogContent>
-          <p>
-            ¿Deseas cambiar el estado de <strong>{selectedTejido?.description}</strong>?
-          </p>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setConfirmDialogOpen(false)}
-            style={{ backgroundColor: "#d32f2f", color: "#fff" }}
-            disabled={loadingUpdate}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleDisableTejido}
-            style={{ backgroundColor: "#1976d2", color: "#fff" }}
-            disabled={loadingUpdate}
-          >
-            Confirmar
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Diálogo Editar */}
-      <Dialog
-        open={editDialogOpen}
-        onClose={() => setEditDialogOpen(false)}
-        fullWidth
-        maxWidth="md"
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
+        <Alert severity={snackbarSeverity} onClose={() => setSnackbarOpen(false)}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>Editar Tejido</DialogTitle>
         <DialogContent>
           {fabricToEdit && (
@@ -365,22 +267,16 @@ const Tejidos: React.FC = () => {
                   })
                 }
               />
-              <TextField
-                label="Patrón"
-                fullWidth
-                value={fabricToEdit.structurePattern}
-                onChange={(e) =>
-                  setFabricToEdit({
-                    ...fabricToEdit,
-                    structurePattern: e.target.value,
-                  })
-                }
-              />
             </div>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancelar</Button>
+          <Button
+            onClick={() => setEditDialogOpen(false)}
+            style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+          >
+            Cancelar
+          </Button>
           <Button
             onClick={handleSaveEditTejido}
             style={{ backgroundColor: "#1976d2", color: "#fff" }}

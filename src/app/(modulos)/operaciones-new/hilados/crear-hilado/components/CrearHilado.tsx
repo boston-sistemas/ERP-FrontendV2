@@ -38,7 +38,8 @@ const CrearHilado: React.FC = () => {
   const [spinningMethods, setSpinningMethods] = useState<{ id: number; value: string }[]>([]);
   const [openFibrasDialog, setOpenFibrasDialog] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("Fibra añadida correctamente");
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -49,6 +50,9 @@ const CrearHilado: React.FC = () => {
         setSpinningMethods(methods);
       } catch (error) {
         console.error("Error fetching data:", error);
+        setSnackbarMessage("Error al cargar los datos.");
+        setSnackbarSeverity("error");
+        setOpenSnackbar(true);
       }
     };
     fetchData();
@@ -62,6 +66,7 @@ const CrearHilado: React.FC = () => {
     if (!selectedRecipes.some((recipe) => recipe.fiber.id === fibra.id)) {
       setSelectedRecipes([...selectedRecipes, { fiber: fibra, proportion: 0 }]);
       setSnackbarMessage("Fibra añadida correctamente.");
+      setSnackbarSeverity("success");
       setOpenSnackbar(true);
     }
   };
@@ -84,6 +89,7 @@ const CrearHilado: React.FC = () => {
 
     if (selectedRecipes.length === 0) {
       setSnackbarMessage("Debe seleccionar al menos una fibra.");
+      setSnackbarSeverity("error");
       setOpenSnackbar(true);
       return;
     }
@@ -91,6 +97,7 @@ const CrearHilado: React.FC = () => {
     const totalProportion = selectedRecipes.reduce((acc, recipe) => acc + recipe.proportion, 0);
     if (totalProportion !== 100) {
       setSnackbarMessage("La suma de las proporciones debe ser igual a 100.");
+      setSnackbarSeverity("error");
       setOpenSnackbar(true);
       return;
     }
@@ -110,6 +117,7 @@ const CrearHilado: React.FC = () => {
     try {
       await createYarn(payload);
       setSnackbarMessage("Hilado creado exitosamente.");
+      setSnackbarSeverity("success");
       setOpenSnackbar(true);
 
       // Limpiar el formulario
@@ -123,6 +131,7 @@ const CrearHilado: React.FC = () => {
     } catch (error) {
       console.error("Error creando el hilado:", error);
       setSnackbarMessage("Error al crear el hilado. Por favor, inténtelo de nuevo.");
+      setSnackbarSeverity("error");
       setOpenSnackbar(true);
     }
   };
@@ -282,7 +291,7 @@ const CrearHilado: React.FC = () => {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: "100%" }}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: "100%" }}>
           {snackbarMessage}
         </Alert>
       </Snackbar>

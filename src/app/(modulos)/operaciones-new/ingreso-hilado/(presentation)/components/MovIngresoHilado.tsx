@@ -8,6 +8,9 @@ import {
   TextField,
   Switch,
   FormControlLabel,
+  Select,
+  MenuItem,
+  Typography,
 } from "@mui/material";
 import { Visibility, Add, Search } from "@mui/icons-material";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -22,28 +25,18 @@ const MovIngresoHilado: React.FC = () => {
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [includeInactive, setIncludeInactive] = useState(false); // Controla el estado del switch
+  const [includeInactive, setIncludeInactive] = useState(false);
+  const [period, setPeriod] = useState(2024); // Período inicial
 
-  // Cargar datos del servicio
-
-  useEffect(() => {
-    const savedEntry = localStorage.getItem("entryNumber");
-    if (savedEntry) {
-      const { entryNumber } = JSON.parse(savedEntry);
-      localStorage.removeItem("entryNumber"); // Asegura que solo redirija una vez
-      router.push(`/operaciones-new/ingreso-hilado/detalles-mov-ingreso-hilado/${entryNumber}`);
-    }
-  }, [router]);
-  
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
         const response = await fetchYarnPurchaseEntries(
-          2024, // Cambia el periodo si es dinámico
+          period, // Periodo dinámico
           filasPorPagina,
           pagina * filasPorPagina,
-          includeInactive // Parámetro adicional para incluir inactivos
+          includeInactive
         );
         setHilados(response.yarnPurchaseEntries);
       } catch (error) {
@@ -54,7 +47,7 @@ const MovIngresoHilado: React.FC = () => {
     };
 
     fetchData();
-  }, [pagina, filasPorPagina, includeInactive]);
+  }, [pagina, filasPorPagina, includeInactive, period]);
 
   const handleSwitchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setIncludeInactive(event.target.checked);
@@ -69,8 +62,9 @@ const MovIngresoHilado: React.FC = () => {
   };
 
   const handleDetailsClick = (entryNumber: string) => {
-    router.push(`/operaciones-new/ingreso-hilado/detalles-mov-ingreso-hilado/${entryNumber}`);
-  };
+    localStorage.setItem("selectedPeriod", JSON.stringify(period)); // Guarda el periodo en localStorage
+    router.push(`/operaciones-new/ingreso-hilado/detalles-mov-ingreso-hilado/${entryNumber}`); // Redirige al componente de detalles
+  };  
 
   const filteredHilados = hilados.filter((hilado) =>
     Object.values(hilado).some((value) =>
@@ -83,7 +77,7 @@ const MovIngresoHilado: React.FC = () => {
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
         <div className="max-w-full overflow-x-auto">
           <div className="flex items-center justify-between gap-2 mb-4">
-            {/* Contenedor de Búsqueda y Switch */}
+            {/* Contenedor de Período, Búsqueda y Switch */}
             <div className="flex items-center gap-2">
               <div className="flex items-center border border-gray-300 rounded-md px-2">
                 <Search />
@@ -107,6 +101,25 @@ const MovIngresoHilado: React.FC = () => {
                 }
                 label="Mostrar inactivos"
               />
+              <FormControlLabel
+                label={<Typography variant="body2">Período</Typography>}
+                control={
+                  <Select
+                    value={period}
+                    onChange={(e) => setPeriod(Number(e.target.value))}
+                    displayEmpty
+                    variant="outlined"
+                    size="small"
+                  >
+                    {[2023, 2024, 2025].map((year) => (
+                      <MenuItem key={year} value={year}>
+                        {year}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                }
+                
+              />
             </div>
 
             {/* Botón Crear */}
@@ -123,21 +136,10 @@ const MovIngresoHilado: React.FC = () => {
           </div>
 
           {/* Tabla de Movimientos */}
-          <table className="table-auto border-collapse">
+          <table className="w-full table-auto border-collapse">
             <thead>
               <tr className="bg-blue-900 uppercase text-center">
-                {[
-                  "Nro Ingreso",
-                  "Periodo",
-                  "Fecha",
-                  "Hora",
-                  "Proveedor",
-                  "Estado",
-                  "Nro O/C",
-                  "Lote Proveedor",
-                  "Lote Mecsa",
-                  "Detalles/Edición",
-                ].map((col, index) => (
+                {["Nro Ingreso", "Periodo", "Fecha", "Hora", "Proveedor", "Estado", "Nro O/C", "Lote Proveedor", "Lote Mecsa", "Detalles/Edición"].map((col, index) => (
                   <th
                     key={index}
                     className="px-4 py-4 text-center font-normal text-white"

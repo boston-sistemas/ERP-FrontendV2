@@ -19,6 +19,8 @@ import {
   TextField,
   Switch,
   Tooltip,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Edit, ExpandMore, ExpandLess, Save, Cancel, Add, Delete, Block } from "@mui/icons-material";
 import { useRouter, useParams } from "next/navigation";
@@ -37,6 +39,20 @@ const DetallesMovIngresoHilado: React.FC = () => {
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedData, setEditedData] = useState<YarnPurchaseEntry | null>(null);
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+  
+  const showSnackbar = (message: string, severity: "success" | "error") => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };  
 
   const handleGenerateSalida = () => {
     if (detalle) {
@@ -69,20 +85,20 @@ const DetallesMovIngresoHilado: React.FC = () => {
       const loadDetails = async () => {
         setIsLoading(true);
         try {
-          if (entryNumber) {
-            const period = 2024;
+          const savedPeriod = localStorage.getItem("selectedPeriod");
+          const period = savedPeriod ? JSON.parse(savedPeriod) : 2024;
     
-            // Llama a los servicios necesarios
+          if (entryNumber) {
             const data = await fetchYarnPurchaseEntryDetails(entryNumber, period);
             const updatableResponse = await checkIfYarnPurchaseEntryIsUpdatable(entryNumber);
     
-            // Actualiza los estados con base en la respuesta
             setDetalle(data);
-            setIsEditable(updatableResponse.updatable); // Basado en el campo `updatable` de la respuesta
-            setIsAnulable(updatableResponse.updatable); // Igual que `isEditable`
+            setIsEditable(updatableResponse.updatable);
+            setIsAnulable(updatableResponse.updatable);
           }
         } catch (error) {
-          //console.error("Error al cargar los detalles del movimiento:", error);
+          showSnackbar("Error al cargar los detalles del movimiento.", "error");
+          console.error("Error al cargar los detalles del movimiento:", error);
         } finally {
           setIsLoading(false);
         }
@@ -90,7 +106,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
     
       loadDetails();
     }, [entryNumber]);
-    
+      
 
   const toggleRow = (index: number) => {
     setOpenRows((prevState) => ({
@@ -118,31 +134,30 @@ const DetallesMovIngresoHilado: React.FC = () => {
   const handleAnulateEntry = async (entryNumber: string) => {
     try {
       await anulateYarnPurchaseEntry(entryNumber);
-      alert(`Movimiento de ingreso N° ${entryNumber} anulado con éxito.`);
+      showSnackbar(`Movimiento de ingreso N° ${entryNumber} anulado con éxito.`, "success");
       setDetalle((prev) =>
         prev
           ? {
               ...prev,
-              statusFlag: "A", // Actualiza el estado del movimiento a "Anulado".
+              statusFlag: "A",
             }
           : null
       );
-      setIsEditable(false); // Deshabilita la edición.
-      setIsAnulable(false); // Deshabilita la anulación.
+      setIsEditable(false);
+      setIsAnulable(false);
     } catch (error) {
+      showSnackbar("Error al anular el movimiento.", "error");
       console.error(`Error al anular el movimiento N° ${entryNumber}:`, error);
-      //alert("Ocurrió un error al intentar anular el movimiento.");
     }
-  };
+  };  
   
   const handleSaveChanges = async () => {
     if (!editedData || !editedData.entryNumber) {
-      //console.error("No hay datos para guardar.");
+      showSnackbar("No hay datos para guardar.", "error");
       return;
     }
-
+  
     try {
-      // Prepara el payload basado en los datos editados
       const payload: Partial<YarnPurchaseEntry> = {
         period: 2024,
         supplierPoCorrelative: editedData.supplierPoCorrelative,
@@ -152,31 +167,28 @@ const DetallesMovIngresoHilado: React.FC = () => {
         documentNote: editedData.documentNote || "",
         supplierBatch: editedData.supplierBatch,
         detail: editedData.detail.map((detail, index) => ({
-          itemNumber: detail.itemNumber || index + 1, // Usa itemNumber o un índice por defecto
+          itemNumber: detail.itemNumber || index + 1,
           yarnId: detail.yarnId,
           guideNetWeight: detail.guideNetWeight,
           guideGrossWeight: detail.guideGrossWeight,
           guidePackageCount: detail.guidePackageCount,
           guideConeCount: detail.guideConeCount,
-          detailHeavy: detail.detailHeavy, // Incluye detailHeavy solo si isWeighted es true
+          detailHeavy: detail.detailHeavy,
           isWeighted: detail.isWeighted,
-          statusFlag: detail.statusFlag, // Asegura que siempre se envíe el mismo flag
+          statusFlag: detail.statusFlag,
         })),
       };
   
-      const period = new Date().getFullYear();
+      await updateYarnPurchaseEntry(editedData.entryNumber, 2024, payload);
   
-      // Llama al servicio de actualización con el payload
-      await updateYarnPurchaseEntry(editedData.entryNumber, period, payload);
-  
-      // Actualiza el estado con los datos editados
       setDetalle(editedData);
       setIsEditDialogOpen(false);
-      //console.log("Movimiento actualizado correctamente.");
+      showSnackbar("Movimiento actualizado correctamente.", "success");
     } catch (error) {
-      //console.error("Error al guardar los cambios:", error);
+      showSnackbar("Error al guardar los cambios.", "error");
+      console.error("Error al guardar los cambios:", error);
     }
-  };    
+  };     
 
   if (isLoading) {
     return (
@@ -211,10 +223,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
               <strong>O/C N°:</strong> {detalle.purchaseOrderNumber}
             </Typography>
             <Typography style={{ color: "black" }}>
-              <strong>Guía:</strong> {detalle.supplierPoCorrelative || "N/A"}
-            </Typography>
-            <Typography style={{ color: "black" }}>
-              <strong>Factura:</strong> {detalle.supplierPoSeries || "N/A"}
+              <strong>Guia/Factura:</strong> {detalle.supplierPoCorrelative} {detalle.supplierPoSeries || "N/A"}
             </Typography>
           </div>
           <div>
@@ -771,6 +780,25 @@ const DetallesMovIngresoHilado: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarSeverity}
+          sx={{
+            width: "100%",
+            backgroundColor: snackbarSeverity === "success" ? "#1976d2" : "#d32f2f",
+            color: "#fff",
+          }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
     </div>
   );
 };

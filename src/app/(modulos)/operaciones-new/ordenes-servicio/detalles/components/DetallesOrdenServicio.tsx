@@ -81,21 +81,15 @@ const DetallesOrdenServicio: React.FC = () => {
     const fetchData = async () => {
       if (!id) return;
       setIsLoading(true);
-
+  
       try {
-        // Convertimos el id a string si es un array
         const realId = Array.isArray(id) ? id[0] : id;
         const so = await fetchServiceOrderById(realId);
         setOrden(so);
-
+  
         const updatableResp = await checkIfServiceOrderIsUpdatable(realId);
-        if (so.statusFlag === "A") {
-          setIsEditable(false);
-          setIsAnulable(false);
-        } else {
-          setIsEditable(updatableResp.updatable);
-          setIsAnulable(so.statusFlag !== "A");
-        }
+        setIsEditable(updatableResp.updatable);
+        setIsAnulable(so.statusFlag !== "A"); // Solo anulable si no está ya anulada
       } catch (err) {
         console.error(err);
         setError("Error al cargar la Orden de Servicio.");
@@ -103,9 +97,9 @@ const DetallesOrdenServicio: React.FC = () => {
         setIsLoading(false);
       }
     };
-
+  
     fetchData();
-  }, [id]);
+  }, [id]);  
 
   // ================== Efecto: cargar suppliers para combo ==================
   useEffect(() => {
@@ -286,6 +280,16 @@ const DetallesOrdenServicio: React.FC = () => {
     }
   };
 
+  const isEditableOrAnulable = (statusFlag: string, isUpdatable: boolean): boolean => {
+    // Habilitar si el estado es "No iniciado" y la orden es editable
+    return statusFlag === "P" && isUpdatable; // Ajusta "P" si "No iniciado" tiene otro valor
+  };
+  
+  const isOrderCanceled = (statusFlag: string): boolean => {
+    return statusFlag === "A"; // Ajusta "A" si "Anulada" tiene otro valor
+  };
+  
+
   // ================== Volver ==================
   const handleGoBack = () => {
     router.push("/operaciones-new/ordenes-servicio");
@@ -321,61 +325,96 @@ const DetallesOrdenServicio: React.FC = () => {
           </Button>
 
           {/* EDITAR */}
-          <Tooltip title={isEditable ? "" : "No se puede editar"}>
-            <span>
-              <Button
-                startIcon={<Edit />}
-                variant="contained"
-                disabled={!isEditable}
-                onClick={isEditable ? handleOpenEditDialog : undefined}
-                style={
-                  isEditable
-                    ? { backgroundColor: "#1976d2", color: "#fff" }
-                    : { backgroundColor: "#b0b0b0", color: "#fff" }
-                }
-              >
-                Editar
-              </Button>
-            </span>
-          </Tooltip>
-
+          <Tooltip
+          title={
+            isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
+              ? ""
+              : "No se puede editar en este estado"
+          }
+        >
+          <span>
+            <Button
+              startIcon={<Edit />}
+              variant="contained"
+              disabled={
+                !isEditableOrAnulable(orden.statusFlag, isEditable) || isOrderCanceled(orden.statusFlag)
+              }
+              onClick={
+                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
+                  ? handleOpenEditDialog
+                  : undefined
+              }
+              style={
+                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
+                  ? { backgroundColor: "#1976d2", color: "#fff" }
+                  : { backgroundColor: "#b0b0b0", color: "#fff" }
+              }
+            >
+              Editar
+            </Button>
+          </span>
+        </Tooltip>
           {/* CAMBIAR ESTADO */}
-          <Tooltip title={isEditable ? "" : "No se puede cambiar estado"}>
-            <span>
-              <Button
-                startIcon={<Settings />}
-                variant="contained"
-                disabled={!isEditable}
-                onClick={isEditable ? handleOpenStatusDialog : undefined}
-                style={
-                  isEditable
-                    ? { backgroundColor: "#1976d2", color: "#fff" }
-                    : { backgroundColor: "#b0b0b0", color: "#fff" }
-                }
-              >
-                Cambiar Estado
-              </Button>
-            </span>
-          </Tooltip>
+          <Tooltip
+          title={
+            isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
+              ? ""
+              : "No se puede cambiar estado en este estado"
+          }
+        >
+          <span>
+            <Button
+              startIcon={<Settings />}
+              variant="contained"
+              disabled={
+                !isEditableOrAnulable(orden.statusFlag, isEditable) || isOrderCanceled(orden.statusFlag)
+              }
+              onClick={
+                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
+                  ? handleOpenStatusDialog
+                  : undefined
+              }
+              style={
+                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
+                  ? { backgroundColor: "#1976d2", color: "#fff" }
+                  : { backgroundColor: "#b0b0b0", color: "#fff" }
+              }
+            >
+              Cambiar Estado
+            </Button>
+          </span>
+        </Tooltip>
 
           {/* ANULAR */}
-          <Tooltip title={isAnulable ? "" : "Ya está anulada"}>
-            <span>
-              <Button
-                startIcon={<Block />}
-                variant="contained"
-                disabled={!isAnulable}
-                onClick={isAnulable ? handleOpenAnulateDialog : undefined}
-                style={
-                  isAnulable
-                    ? { backgroundColor: "#d32f2f", color: "#fff" }
-                    : { backgroundColor: "#b0b0b0", color: "#fff" }
-                }
-              >
-                Anular
-              </Button>
-            </span>
-          </Tooltip>
+          <Tooltip
+          title={
+            isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
+              ? ""
+              : "No se puede anular en este estado"
+          }
+        >
+          <span>
+            <Button
+              startIcon={<Block />}
+              variant="contained"
+              disabled={
+                !isEditableOrAnulable(orden.statusFlag, isEditable) || isOrderCanceled(orden.statusFlag)
+              }
+              onClick={
+                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
+                  ? handleOpenAnulateDialog
+                  : undefined
+              }
+              style={
+                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
+                  ? { backgroundColor: "#d32f2f", color: "#fff" }
+                  : { backgroundColor: "#b0b0b0", color: "#fff" }
+              }
+            >
+              Anular
+            </Button>
+          </span>
+        </Tooltip>
         </div>
       </div>
 
