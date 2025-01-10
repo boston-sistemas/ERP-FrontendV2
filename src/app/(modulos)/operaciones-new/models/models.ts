@@ -241,3 +241,51 @@ export interface Fabric {
 export interface FabricResponse {
   fabrics: Fabric[];
 }
+
+export interface WeavingServiceEntry {
+  entryNumber: string;
+  period: number;
+  creationDate: string;
+  creationTime: string;
+  supplierCode: string;
+  statusFlag: string;
+  supplierPoCorrelative?: string;
+  supplierPoSeries?: string;
+  documentNote?: string;
+  fecgf?: string;
+  userId?: string;
+  detail?: Detail[];
+}
+
+export interface Detail {
+  itemNumber: number;
+  fabridId: string;
+  mecsaWeight: number;
+  statusFlag: string;
+  serviceOrderId: string;
+  detailCard: DetailCard[];
+  guideNetWeight: number;
+  rollCount: number;
+  fabricType: string;
+  tintColorId: string;
+  tintSupplierId: string;
+  tintSupplierColorId: string | null;
+}
+
+export interface DetailCard {
+  id: string;
+  fabricId: string;
+  netWeight: number;
+  tintSupplierId: string;
+  tintColorId: string;
+  yarnSupplierId: string;
+  cardType: string;
+  productId: string;
+  statusFlag: string;
+  documentNumber: string;
+  exitNumber: string;
+  serviceOrderId: string;
+  supplierWeavingTej: string;
+  suppliersYarn: string[];
+  serviceOrders: string[];
+}

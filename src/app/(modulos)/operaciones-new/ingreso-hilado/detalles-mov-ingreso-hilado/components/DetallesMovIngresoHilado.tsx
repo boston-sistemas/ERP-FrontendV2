@@ -90,7 +90,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
     
           if (entryNumber) {
             const data = await fetchYarnPurchaseEntryDetails(entryNumber, period);
-            const updatableResponse = await checkIfYarnPurchaseEntryIsUpdatable(entryNumber);
+            const updatableResponse = await checkIfYarnPurchaseEntryIsUpdatable(entryNumber, period);
     
             setDetalle(data);
             setIsEditable(updatableResponse.updatable);

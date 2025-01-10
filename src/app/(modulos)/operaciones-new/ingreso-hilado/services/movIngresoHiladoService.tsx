@@ -32,9 +32,9 @@ export const fetchYarnPurchaseEntryDetails = async (
   };
   
   // Servicio para verificar si el movimiento de ingreso de hilado es actualizable
-  export const checkIfYarnPurchaseEntryIsUpdatable = async (entryNumber: string) => {
+  export const checkIfYarnPurchaseEntryIsUpdatable = async (entryNumber: string, period: number) => {
     const response = await instance.get(
-      `/operations/v1/yarn-purchase-entries/${entryNumber}/is-updatable?period=2024`
+      `/operations/v1/yarn-purchase-entries/${entryNumber}/is-updatable?period=${period}`
     );
     return response.data; // Devuelve la respuesta del API
   };

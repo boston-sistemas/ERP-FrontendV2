@@ -100,7 +100,7 @@ const CrearMovIngresoHilado: React.FC = () => {
 
   const handleSelectOrden = (orden: PurchaseOrder) => {
     setSelectedOrden(orden);
-  
+
     const initialDetails = orden.detail.map((detalle) => ({
       yarnId: detalle.yarn.id,
       guideNetWeight: 0,
@@ -111,12 +111,11 @@ const CrearMovIngresoHilado: React.FC = () => {
       isWeighted: false,
     }));
     setDetails(initialDetails);
-  
+
     setSnackbarMessage(`Orden de Compra ${orden.purchaseOrderNumber} seleccionada.`);
-    setSnackbarSeverity("success"); // Cambiar severidad a éxito
     setOpenSnackbar(true);
     toggleOrdenesDialog();
-  };  
+  };
 
   const handleDetailChange = (index: number, field: string, value: any) => {
     setDetails((prevDetails) =>
@@ -183,36 +182,62 @@ const CrearMovIngresoHilado: React.FC = () => {
     );
   };
 
-  const handleCreate = async () => {
-    if (!selectedOrden) {
-      setSnackbarMessage("Debe seleccionar una orden de compra válida.");
-      setSnackbarSeverity("error"); // Cambiar severidad a error
-      setOpenSnackbar(true);
-      return;
-    }
-  
-    try {
-      const response = await createYarnPurchaseEntry(payload);
-  
-      if (response?.entryNumber) {
-        localStorage.setItem(
-          "entryNumber",
-          JSON.stringify({ entryNumber: response.entryNumber })
-        );
-  
-        setSnackbarMessage("Movimiento creado exitosamente.");
-        setSnackbarSeverity("success"); // Cambiar severidad a éxito
+    const handleCreate = async () => {
+      if (!selectedOrden) {
+        setSnackbarMessage("Debe seleccionar una orden de compra válida.");
         setOpenSnackbar(true);
-  
-        router.push("/operaciones-new/ingreso-hilado");
+        return;
       }
-    } catch (error: any) {
-      console.error("Error al crear el movimiento:", error);
-      setSnackbarMessage(error.message || "Error al crear el movimiento.");
-      setSnackbarSeverity("error"); // Cambiar severidad a error
-      setOpenSnackbar(true);
-    }
-  };      
+    
+      const payload: YarnPurchaseEntry = {
+        period,
+        supplierPoCorrelative: guiaCorrelativa,
+        supplierPoSeries: facturaSerie,
+        fecgf: new Date().toISOString().split("T")[0],
+        purchaseOrderNumber: selectedOrden.purchaseOrderNumber,
+        documentNote: nota || "", // Opcional, se envía vacío si no se completa
+        supplierBatch: loteProveedor,
+        detail: details.map((detail, index) => ({
+          itemNumber: index + 1,
+          yarnId: detail.yarnId,
+          guideNetWeight: detail.guideNetWeight,
+          guideGrossWeight: detail.guideGrossWeight,
+          guidePackageCount: detail.guidePackageCount,
+          guideConeCount: detail.guideConeCount,
+          detailHeavy: detail.isWeighted
+            ? detail.detailHeavy.map((heavy) => ({
+                groupNumber: heavy.groupNumber,
+                coneCount: heavy.coneCount,
+                packageCount: heavy.packageCount,
+                grossWeight: heavy.grossWeight,
+                netWeight: heavy.netWeight,
+              }))
+            : [],
+          isWeighted: detail.isWeighted,
+        })),
+      };
+    
+      try {
+        const response = await createYarnPurchaseEntry(payload);
+    
+        if (response?.entryNumber) {
+          localStorage.setItem(
+            "entryNumber",
+            JSON.stringify({ entryNumber: response.entryNumber })
+          );
+    
+          setSnackbarMessage("Movimiento creado exitosamente.");
+          setOpenSnackbar(true);
+    
+          // Redirigir al componente principal
+          router.push("/operaciones-new/ingreso-hilado");
+        }
+      } catch (error: any) {
+        console.error("Error al crear el movimiento:", error);
+        setSnackbarMessage(error.message || "Error al crear el movimiento.");
+        setOpenSnackbar(true);
+      }
+    };    
 
   const handleCancel = () => {
     router.push("/operaciones-new/ingreso-hilado");
@@ -539,15 +564,7 @@ const CrearMovIngresoHilado: React.FC = () => {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbarSeverity} // Usar severidad dinámica
-          sx={{
-            width: "100%",
-            backgroundColor: snackbarSeverity === "success" ? "#1976d2" : "#d32f2f",
-            color: "#fff",
-          }}
-        >
+        <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: "100%" }}>
           {snackbarMessage}
         </Alert>
       </Snackbar>
