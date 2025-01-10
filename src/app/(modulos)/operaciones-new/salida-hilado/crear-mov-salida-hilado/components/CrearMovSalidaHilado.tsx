@@ -19,6 +19,8 @@ import {
   Select,
   MenuItem,
   SelectChangeEvent,
+  Alert,
+  Snackbar,
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import {
@@ -45,8 +47,28 @@ const CrearMovSalidaHilado: React.FC = () => {
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [selectedSupplier, setSelectedSupplier] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<string>("");
+  const [period, setPeriod] = useState<number>(2024);
+  const [snackbarMessage, setSnackbarMessage] = useState<string>("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  
+  const showSnackbar = (message: string, severity: "success" | "error") => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setOpenSnackbar(true);
+  };
+  
+  const handleSnackbarClose = () => {
+    setOpenSnackbar(false);
+  };
 
+  useEffect(() => {
+    // Cargar ingresos y órdenes de servicio cuando cambie el período
+    loadIngresosAndOrders();
+  }, [period]); // Dependencia del estado `period`  
+  
   useEffect(() => {
     const savedEntryNumber = localStorage.getItem("entryNumber");
   
@@ -62,32 +84,33 @@ const CrearMovSalidaHilado: React.FC = () => {
   }, []);  
 
   const loadIngresosAndOrders = async () => {
+    setIsLoading(true);
     try {
-      const period = 2024;
       const [ingresosResponse, ordenesServicioResponse] = await Promise.all([
-        fetchYarnPurchaseEntries(period, 50, 0, false),
+        fetchYarnPurchaseEntries(period, 50, 0, false), // Usa el período actualizado
         fetchServiceOrders(50, 0, false),
       ]);
       setIngresos(ingresosResponse.yarnPurchaseEntries || []);
       setOrdenesServicio(ordenesServicioResponse.serviceOrders || []);
     } catch (error) {
-      console.error("Error al cargar datos:", error);
+      showSnackbar("Error al cargar datos. Inténtelo de nuevo.", "error");
+    } finally {
+      setIsLoading(false);
     }
   };
-
+  
   const loadIngresoDetails = async (entryNumber: string) => {
     try {
-      const period = 2024;
-      const response = await fetchYarnPurchaseEntryDetails(entryNumber, period);
+      const response = await fetchYarnPurchaseEntryDetails(entryNumber, period); // Usa el período actualizado
       setDataIngreso({
         ...response,
         detail: response.detail || [], // Asegura que siempre haya un array de detalles
       });
       setIsIngresoDialogOpen(false); // Cierra el diálogo después de seleccionar
     } catch (error) {
-      console.error("Error al cargar detalles del ingreso:", error);
+      showSnackbar("Error al cargar detalles del ingreso.", "error");
     }
-  };
+  };    
 
   const loadSupplierData = async () => {
     try {
@@ -160,19 +183,19 @@ const CrearMovSalidaHilado: React.FC = () => {
 
   const handleSaveSalida = async () => {
     if (!dataIngreso || !dataOS) {
-      alert("Debe seleccionar un movimiento de ingreso y una orden de servicio.");
+      showSnackbar("Debe seleccionar un movimiento de ingreso y una orden de servicio.", "error");
       return;
     }
-  
+    
     if (!selectedAddress) {
-      alert("Debe seleccionar una dirección de proveedor.");
+      showSnackbar("Debe seleccionar una dirección de proveedor.", "error");
       return;
     }
-  
+    
     if (selectedGroups.length === 0) {
-      alert("Debe seleccionar al menos un grupo para generar la salida.");
+      showSnackbar("Debe seleccionar al menos un grupo para generar la salida.", "error");
       return;
-    }
+    }    
   
     const period = 2025; // Cambia esto según el período actual
     const supplierCode = suppliers.find((supplier) => supplier.code === selectedSupplier)?.code || "";
@@ -286,7 +309,28 @@ const CrearMovSalidaHilado: React.FC = () => {
         )}
       </div>
     </div>
-  </div>  
+  </div> 
+  <FormControl fullWidth style={{ maxWidth: "300px" }}>
+  <InputLabel id="period-label">Período</InputLabel>
+    <Select
+    labelId="period-label"
+    value={period}
+    onChange={(e) => {
+      const selectedPeriod = Number(e.target.value);
+      if ([2023, 2024, 2025].includes(selectedPeriod)) {
+        setPeriod(selectedPeriod); // Solo actualiza si el período es válido
+      } else {
+        showSnackbar("Período no válido.", "error");
+      }
+    }}
+    >
+      {[2023, 2024, 2025].map((year) => (
+        <MenuItem key={year} value={year}>
+          {year}
+        </MenuItem>
+      ))}
+    </Select>
+  </FormControl> 
     <div>
         {/* Movimiento de ingreso */}
         <div className="flex items-center justify-between mb-4">
@@ -565,7 +609,19 @@ const CrearMovSalidaHilado: React.FC = () => {
             Guardar Salida
           </Button>
         )}
+        <Snackbar
+          open={openSnackbar}
+          autoHideDuration={3000}
+          onClose={handleSnackbarClose}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        >
+          <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: "100%" }}>
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+
       </div></>
+      
   );
 };
 

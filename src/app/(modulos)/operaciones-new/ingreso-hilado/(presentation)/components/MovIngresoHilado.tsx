@@ -101,25 +101,25 @@ const MovIngresoHilado: React.FC = () => {
                 }
                 label="Mostrar inactivos"
               />
-              <FormControlLabel
-                label={<Typography variant="body2">Período</Typography>}
-                control={
-                  <Select
-                    value={period}
-                    onChange={(e) => setPeriod(Number(e.target.value))}
-                    displayEmpty
-                    variant="outlined"
-                    size="small"
-                  >
-                    {[2023, 2024, 2025].map((year) => (
-                      <MenuItem key={year} value={year}>
-                        {year}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                }
-                
-              />
+              <div className="flex items-center gap-2">
+                              <Typography variant="body2" className="font-semibold">
+                                Período:
+                              </Typography>
+                              <Select
+                                value={period}
+                                onChange={(e) => setPeriod(Number(e.target.value))}
+                                displayEmpty
+                                variant="outlined"
+                                size="small"
+                                style={{ width: "120px", backgroundColor: "#fff" }}
+                              >
+                                {[2023, 2024, 2025].map((year) => (
+                                  <MenuItem key={year} value={year}>
+                                    {year}
+                                  </MenuItem>
+                                ))}
+                              </Select>
+                            </div>
             </div>
 
             {/* Botón Crear */}

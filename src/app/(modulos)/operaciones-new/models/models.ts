@@ -102,12 +102,6 @@ export interface YarnPurchaseEntryDetail {
 }
 
 export interface YarnPurchaseEntry {
-  entryNumber: ReactNode;
-  creationDate: ReactNode;
-  creationTime: ReactNode;
-  supplierCode: ReactNode;
-  statusFlag: ReactNode;
-  mecsaBatch: ReactNode;
   period: number;
   supplierPoCorrelative: string;
   supplierPoSeries: string;

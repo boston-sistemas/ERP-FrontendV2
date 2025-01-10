@@ -12,6 +12,9 @@ import {
   DialogActions,
   Switch,
   FormControlLabel,
+  MenuItem,
+  Select,
+  Typography,
 } from "@mui/material";
 import { Visibility, Add, Close, Search } from "@mui/icons-material";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -27,6 +30,7 @@ const MovSalidaHilado: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [period, setPeriod] = useState(2024); // Período inicial
 
   // Estado para manejar el diálogo
   const [openDialog, setOpenDialog] = useState(false);
@@ -38,7 +42,7 @@ const MovSalidaHilado: React.FC = () => {
       setIsLoading(true);
       try {
         const response = await fetchYarnDispatches(
-          2024,
+          period, // Usar el período seleccionado
           filasPorPagina,
           pagina * filasPorPagina,
           includeInactive
@@ -52,7 +56,7 @@ const MovSalidaHilado: React.FC = () => {
     };
 
     fetchData();
-  }, [pagina, filasPorPagina, includeInactive]);
+  }, [pagina, filasPorPagina, includeInactive, period]); // Actualizar cuando cambie el período
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -65,12 +69,16 @@ const MovSalidaHilado: React.FC = () => {
 
   const handleDetailsClick = (exitNumber: string, period: number) => {
     // En este caso, como query param
-    router.push(`/operaciones-new/salida-hilado/detalles-mov-salida-hilado/${exitNumber}?period=${period}`);
-  };    
+    router.push(
+      `/operaciones-new/salida-hilado/detalles-mov-salida-hilado/${exitNumber}?period=${period}`
+    );
+  };
 
   const handleDialogOpen = (documentNote: string | null) => {
     setDialogContent(
-      documentNote && documentNote.trim() ? documentNote : "No existe Nota de documento"
+      documentNote && documentNote.trim()
+        ? documentNote
+        : "No existe Nota de documento"
     );
     setOpenDialog(true);
   };
@@ -94,7 +102,7 @@ const MovSalidaHilado: React.FC = () => {
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
         <div className="max-w-full overflow-x-auto">
           <div className="flex items-center justify-between gap-2 mb-4">
-            {/* Contenedor de Búsqueda y Switch */}
+            {/* Contenedor de Período, Búsqueda y Switch */}
             <div className="flex items-center gap-2">
               <div className="flex items-center border border-gray-300 rounded-md px-2">
                 <Search />
@@ -118,6 +126,25 @@ const MovSalidaHilado: React.FC = () => {
                 }
                 label="Mostrar inactivos"
               />
+              <div className="flex items-center gap-2">
+                <Typography variant="body2" className="font-semibold">
+                  Período:
+                </Typography>
+                <Select
+                  value={period}
+                  onChange={(e) => setPeriod(Number(e.target.value))}
+                  displayEmpty
+                  variant="outlined"
+                  size="small"
+                  style={{ width: "120px", backgroundColor: "#fff" }}
+                >
+                  {[2023, 2024, 2025].map((year) => (
+                    <MenuItem key={year} value={year}>
+                      {year}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </div>
             </div>
 
             {/* Botón Crear */}
@@ -187,19 +214,23 @@ const MovSalidaHilado: React.FC = () => {
                     <td className="border-b border-[#eee] px-4 py-5">
                       <IconButton
                         color="primary"
-                        onClick={() => handleDialogOpen(dispatch.documentNote)}
+                        onClick={() =>
+                          handleDialogOpen(dispatch.documentNote)
+                        }
                       >
                         <Visibility />
                       </IconButton>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleDetailsClick(dispatch.exitNumber, dispatch.period)}
-                    >
-                      <Visibility />
-                    </IconButton>
-                  </td>
+                      <IconButton
+                        color="primary"
+                        onClick={() =>
+                          handleDetailsClick(dispatch.exitNumber, dispatch.period)
+                        }
+                      >
+                        <Visibility />
+                      </IconButton>
+                    </td>
                   </tr>
                 ))
               ) : (
