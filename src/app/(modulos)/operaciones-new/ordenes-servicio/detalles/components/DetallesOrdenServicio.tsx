@@ -570,7 +570,8 @@ const DetallesOrdenServicio: React.FC = () => {
           </Button>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseEditDialog}>Cancelar</Button>
+          <Button style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+onClick={handleCloseEditDialog}>Cancelar</Button>
           <Button
             variant="contained"
             onClick={handleSaveChanges}
@@ -588,26 +589,37 @@ const DetallesOrdenServicio: React.FC = () => {
         fullWidth
         maxWidth="lg"
       >
-        <DialogTitle>Seleccionar Tejido</DialogTitle>
+        <DialogTitle>
+          Seleccionar Tejido
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseFabricDialog}
+            sx={{ position: "absolute", right: 8, top: 8 }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
-          <div className="overflow-x-auto">
+          <div style={{ overflowX: "auto", border: "1px solid #ddd", borderRadius: "8px" }}>
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Descripción</TableCell>
-                  <TableCell>Acción</TableCell>
+                <TableRow style={{ backgroundColor: "#f5f5f5" }}>
+                  <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>ID</TableCell>
+                  <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Descripción</TableCell>
+                  <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Acciones</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {fabrics.map((fab) => (
-                  <TableRow key={fab.id}>
-                    <TableCell>{fab.id}</TableCell>
-                    <TableCell>{fab.description}</TableCell>
+                {fabrics.map((fabric) => (
+                  <TableRow key={fabric.id} hover>
+                    <TableCell>{fabric.id}</TableCell>
+                    <TableCell>{fabric.description}</TableCell>
                     <TableCell>
                       <Button
                         variant="contained"
-                        onClick={() => handleSelectFabric(fab.id)}
+                        style={{ backgroundColor: "#1976d2", color: "#fff" }}
+                        size="small"
+                        onClick={() => handleSelectFabric(fabric.id)}
                       >
                         Seleccionar
                       </Button>
@@ -619,7 +631,8 @@ const DetallesOrdenServicio: React.FC = () => {
           </div>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseFabricDialog}>Cerrar</Button>
+          <Button onClick={handleCloseFabricDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+          >Cerrar</Button>
         </DialogActions>
       </Dialog>
 
@@ -635,10 +648,11 @@ const DetallesOrdenServicio: React.FC = () => {
           ¿Seguro de anular esta orden? Esta acción no se puede deshacer.
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseAnulateDialog}>Cancelar</Button>
+          <Button onClick={handleCloseAnulateDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+          >Cancelar</Button>
           <Button
             variant="contained"
-            color="error"
+            style={{ backgroundColor: "#1976d2", color: "#fff" }}
             onClick={handleAnulateOrder}
           >
             Anular
@@ -675,7 +689,8 @@ const DetallesOrdenServicio: React.FC = () => {
           </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsStatusDialogOpen(false)}>Cancelar</Button>
+          <Button style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+ onClick={() => setIsStatusDialogOpen(false)}>Cancelar</Button>
           <Button
             variant="contained"
             style={{ backgroundColor: "#1976d2", color: "#fff" }}

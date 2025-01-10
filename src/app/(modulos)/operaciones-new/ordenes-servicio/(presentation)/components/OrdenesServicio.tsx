@@ -357,7 +357,8 @@ const OrdenesServicio: React.FC = () => {
           </div>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} color="error">
+          <Button onClick={handleCloseDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+          >
             Cancelar
           </Button>
           <Button
@@ -371,56 +372,58 @@ const OrdenesServicio: React.FC = () => {
       </Dialog>
 
       {/* Diálogo para seleccionar tejido */}
-      <Dialog
-        open={isFabricDialogOpen}
-        onClose={handleCloseFabricDialog}
-        fullWidth
-        maxWidth="lg"
-      >
-        <DialogTitle>
-          Seleccionar Tejido
-          <IconButton
-            aria-label="close"
-            onClick={handleCloseFabricDialog}
-            sx={{ position: "absolute", right: 8, top: 8 }}
-          >
-            <Close />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Descripción</TableCell>
-                  {/* Agrega más columnas si tu API retorna más info */}
-                  <TableCell>Acciones</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {fabrics.map((fabric) => (
-                  <TableRow key={fabric.id}>
-                    <TableCell>{fabric.id}</TableCell>
-                    <TableCell>{fabric.description}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="contained"
-                        onClick={() => handleSelectFabric(fabric.id)}
-                      >
-                        Seleccionar
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseFabricDialog}>Cerrar</Button>
-        </DialogActions>
-      </Dialog>
+<Dialog
+  open={isFabricDialogOpen}
+  onClose={handleCloseFabricDialog}
+  fullWidth
+  maxWidth="lg"
+>
+  <DialogTitle>
+    Seleccionar Tejido
+    <IconButton
+      aria-label="close"
+      onClick={handleCloseFabricDialog}
+      sx={{ position: "absolute", right: 8, top: 8 }}
+    >
+      <Close />
+    </IconButton>
+  </DialogTitle>
+  <DialogContent>
+    <div style={{ overflowX: "auto", border: "1px solid #ddd", borderRadius: "8px" }}>
+      <Table>
+        <TableHead>
+          <TableRow style={{ backgroundColor: "#f5f5f5" }}>
+            <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>ID</TableCell>
+            <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Descripción</TableCell>
+            <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Acciones</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {fabrics.map((fabric) => (
+            <TableRow key={fabric.id} hover>
+              <TableCell>{fabric.id}</TableCell>
+              <TableCell>{fabric.description}</TableCell>
+              <TableCell>
+                <Button
+                  variant="contained"
+                  style={{ backgroundColor: "#1976d2", color: "#fff" }}
+                  size="small"
+                  onClick={() => handleSelectFabric(fabric.id)}
+                >
+                  Seleccionar
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={handleCloseFabricDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+    >Cerrar</Button>
+  </DialogActions>
+</Dialog>
     </div>
   );
 };
