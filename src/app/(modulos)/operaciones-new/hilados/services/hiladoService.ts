@@ -1,8 +1,8 @@
 ﻿import { YarnResponse } from "../../models/models";
 import instance from "@/infrastructure/config/AxiosConfig";
 
-export const fetchHilados = async (): Promise<YarnResponse> => {
-    const response = await instance.get<YarnResponse>('/operations/v1/yarns');
+export const fetchHilados = async (include_inactive:boolean): Promise<YarnResponse> => {
+    const response = await instance.get<YarnResponse>(`/operations/v1/yarns/?include_inactives=${include_inactive}`);
     return response.data;
 }
 

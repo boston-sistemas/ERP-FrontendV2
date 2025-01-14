@@ -18,8 +18,12 @@ import {
   TableRow,
   TableCell,
   Menu,
+  Select,
+  MenuItem,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
-import { Edit, PowerSettingsNew, Add, Search, FilterList, Close } from "@mui/icons-material";
+import { Edit, PowerSettingsNew, Add, Search, FilterList, Close, Visibility } from "@mui/icons-material";
 import { fetchHilados, updateYarnStatus, fetchSpinningMethods } from "../../services/hiladoService";
 import { handleUpdateYarn } from "../../use-cases/hilado";
 import { Yarn, Recipe, Fiber} from "../../../models/models";
@@ -44,6 +48,9 @@ const Hilados: React.FC = () => {
   const [showAvailableFibers, setShowAvailableFibers] = useState(false);
   const [showFiberDialog, setShowFiberDialog] = useState(false);
   const [spinningMethods, setSpinningMethods] = useState<{ id: number; value: string }[]>([]);
+  const [includeInactive, setIncludeInactive] = useState(false);
+  const [openRecipeDialog, setOpenRecipeDialog] = useState(false);
+  const [selectedRecipe, setSelectedRecipe] = useState<any[]>([]); 
   const [editForm, setEditForm] = useState<{
     title: string;
     finish: string;
@@ -59,19 +66,33 @@ const Hilados: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await fetchHilados();
-        const dataFibers = await fetchFibras();
-        const methods = await fetchSpinningMethods();
-        setHilados(data.yarns);
+        const data = await fetchHilados(includeInactive);
+        const spinningMethods = await fetchSpinningMethods();
+        const dataFibers = await fetchFibras(includeInactive);
         setAvailableFibras(dataFibers.fibers);
-        setSpinningMethods(methods);
+        setHilados(data.yarns); 
+        setSpinningMethods(spinningMethods);
+        console.log("Estado actualizado de hilados:", data.yarns); 
       } catch (error) {
         console.error("Error fetching hilados:", error);
+        setSnackbarMessage("Error al cargar los datos de hilados.");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
       }
     };
     fetchData();
-  }, []);
-
+  }, [includeInactive]);
+  
+  const handleOpenRecipeDialog = (recipe: any[]) => {
+    setSelectedRecipe(recipe); // Guarda la receta seleccionada
+    setOpenRecipeDialog(true); // Abre el diálogo
+  };
+  
+  const handleCloseRecipeDialog = () => {
+    setSelectedRecipe([]);
+    setOpenRecipeDialog(false);
+  };
+  
   const handleEditClick = (yarn: Yarn) => {
     setEditingYarn(yarn);
     setEditForm({
@@ -118,6 +139,10 @@ const Hilados: React.FC = () => {
         return detail;
     }
   };  
+
+  const handleSwitchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setIncludeInactive(event.target.checked);
+  }
 
   const handleEditSave = async () => {
     if (editingYarn) {
@@ -203,16 +228,16 @@ const Hilados: React.FC = () => {
           hilado.id === id ? { ...hilado, isActive: !isActive } : hilado
         )
       );
-      setSnackbarMessage(`Hilado ${!isActive ? "habilitado" : "deshabilitado"} correctamente`);
+      setSnackbarMessage(`Hilado ${!isActive ? "habilitado" : "deshabilitado"} correctamente.`);
       setSnackbarSeverity("success");
     } catch (error) {
       console.error("Error actualizando el estado del hilado:", error);
-      setSnackbarMessage("Error al actualizar el estado del hilado");
+      setSnackbarMessage("Error al actualizar el estado del hilado.");
       setSnackbarSeverity("error");
     } finally {
       setSnackbarOpen(true);
     }
-  };
+  };  
 
   const handleCrearHilado = () => {
     router.push("/operaciones-new/hilados/crear-hilado");
@@ -281,6 +306,16 @@ const Hilados: React.FC = () => {
                 }}
               />
             </div>
+            <FormControlLabel
+            control={
+              <Switch
+                checked={includeInactive}
+                onChange={handleSwitchChange} 
+                color="primary"
+              />
+            }
+            label="Mostrar inactivos"
+            />
           </div>
           <div className="space-x-2">
             <Button startIcon={<Add />} variant="contained" style={{ backgroundColor: "#1976d2", color: "#fff" }} onClick={handleCrearHilado}>
@@ -312,9 +347,14 @@ const Hilados: React.FC = () => {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center text-white">
-                <th className="px-4 py-4 font-normal">SKU</th>
-                <th className="px-4 py-4 font-normal">Título</th>
-                <th className="px-4 py-4 font-normal">Acabado</th>
+                <th className="px-4 py-4 font-normal">CÓDIGO DE BARRAS</th>
+                <th className="px-4 py-4 font-normal">DESCRIPCIÓN</th>
+                <th className="px-4 py-4 font-normal">ID</th>
+                <th className="px-4 py-4 font-normal">código de unidad de inventario</th>
+                <th className="px-4 py-4 font-normal">sistema de numeración</th>
+                <th className="px-4 py-4 font-normal">NÚMERO DE HILOS</th>
+                <th className="px-4 py-4 font-normal">Método de giro</th>
+                <th className="px-4 py-4 font-normal">RECETA</th>
                 <th className="px-4 py-4 font-normal">Estado</th>
                 {showEditColumn && <th className="px-4 py-4 font-normal">Editar</th>}
                 {showDisableColumn && <th className="px-4 py-4 font-normal">Deshabilitar</th>}
@@ -327,8 +367,74 @@ const Hilados: React.FC = () => {
                   .map((hilado) => (
                     <tr key={hilado.id} className="text-center text-black">
                       <td className="border-b border-gray-300 px-4 py-5">{hilado.barcode}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">{hilado.description}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">{hilado.id}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">{hilado.inventoryUnitCode}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">{hilado.numberingSystem}</td>
                       <td className="border-b border-gray-300 px-4 py-5">{hilado.yarnCount}</td>
                       <td className="border-b border-gray-300 px-4 py-5">{hilado.spinningMethod.value}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        <IconButton onClick={() => handleOpenRecipeDialog(hilado.recipe)}>
+                          <Visibility />
+                        </IconButton>
+                      </td>
+                      <Dialog open={openRecipeDialog} onClose={handleCloseRecipeDialog} maxWidth="md" fullWidth>
+  <DialogContent>
+    <h3 className="text-lg font-semibold text-black mb-4">Receta del Hilado</h3>
+    <div className="max-w-full overflow-x-auto">
+      <table className="w-full table-auto border-collapse">
+        <thead>
+          <tr className="bg-blue-900 uppercase text-center text-white">
+            <th className="px-4 py-4 text-center font-normal">Fibra</th>
+            <th className="px-4 py-4 text-center font-normal">Categoría</th>
+            <th className="px-4 py-4 text-center font-normal">Procedencia</th>
+            <th className="px-4 py-4 text-center font-normal">Color</th>
+            <th className="px-4 py-4 text-center font-normal">Proporción (%)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {selectedRecipe.length > 0 ? (
+            selectedRecipe.map((item, index) => (
+              <tr key={index} className="text-center">
+                <td className="border-b border-gray-300 px-4 py-5">
+                  {item.fiber?.denomination || "Sin denominación"}
+                </td>
+                <td className="border-b border-gray-300 px-4 py-5">
+                  {item.fiber?.category?.value || "Sin categoría"}
+                </td>
+                <td className="border-b border-gray-300 px-4 py-5">
+                  {item.fiber?.origin || "Sin procedencia"}
+                </td>
+                <td className="border-b border-gray-300 px-4 py-5">
+                  {item.fiber?.color?.name || "Sin color"}
+                </td>
+                <td className="border-b border-gray-300 px-4 py-5">
+                  {item.proportion}%
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={5} className="text-center py-4 text-gray-500">
+                No hay datos disponibles.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  </DialogContent>
+  <DialogActions>
+    <Button
+      onClick={handleCloseRecipeDialog}
+      variant="contained"
+      style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+    >
+      Cerrar
+    </Button>
+  </DialogActions>
+</Dialog>
+
                       <td className="border-b border-gray-300 px-4 py-5">
                         <span
                           className={`text-sm ${
@@ -402,19 +508,28 @@ const Hilados: React.FC = () => {
         <label htmlFor="spinningMethod" className="block text-sm font-medium text-gray-700 mb-1">
           Método de Hilado
         </label>
-        <select
-          id="spinningMethod"
-          className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 sm:text-sm text-gray-900"
-          value={editForm.finish} // Aquí se refleja el ID del método seleccionado
-          onChange={(e) => setEditForm({ ...editForm, finish: e.target.value })}
-        >
-          <option value="">Seleccione un método</option>
-          {spinningMethods.map((method) => (
-            <option key={method.id} value={method.id}>
-              {method.value}
-            </option>
-          ))}
-        </select>
+        <Select
+        id="spinningMethod"
+        value={editForm.finish} // Aquí se refleja el ID del método seleccionado
+        onChange={(e) => setEditForm({ ...editForm, finish: e.target.value })}
+        displayEmpty
+        fullWidth
+        variant="outlined"
+        sx={{
+          backgroundColor: "white",
+          borderRadius: "4px",
+          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+        }}
+      >
+        <MenuItem value="">
+          <em>Seleccione un método</em>
+        </MenuItem>
+        {spinningMethods.map((method) => (
+          <MenuItem key={method.id} value={method.id}>
+            {method.value}
+          </MenuItem>
+        ))}
+      </Select>
       </div>
         <TextField
           label="Descripción"
