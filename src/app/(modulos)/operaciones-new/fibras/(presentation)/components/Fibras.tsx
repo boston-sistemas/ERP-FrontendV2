@@ -15,6 +15,8 @@ import {
   TablePagination,
   Select,
   MenuItem,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import { Edit, PowerSettingsNew, Add, FilterList, Search } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
@@ -50,16 +52,26 @@ const Fibras: React.FC = () => {
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
   const [showEditColumn, setShowEditColumn] = useState(true);
   const [showDisableColumn, setShowDisableColumn] = useState(true);
+  const [includeInactive, setIncludeInactive] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      await handleFetchFibras(setFibras, setLoading, setError);
-      await handleFetchFiberCategories(setCategories, setError);
-      await handleFetchCountries(setCountries, setError);
-      await handleFetchColors(setColors, setError);
+      await handleFetchFibras(setFibras, setLoading, includeInactive);
+      await handleFetchFiberCategories(setCategories);
+      await handleFetchCountries(setCountries);
+      await handleFetchColors(setColors);
     };
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      await handleFetchFibras(setFibras, setLoading, includeInactive);
+    };
+    fetchData();
+  }, [includeInactive]); // Agrega includeInactive como dependencia
+  
 
   const handleEditFibra = (fibra: Fiber) => {
     setSelectedFibra({
@@ -82,32 +94,35 @@ const Fibras: React.FC = () => {
     if (selectedFibra) {
       const payload = {
         categoryId: selectedFibra.categoryId || null,
-        denomination: selectedFibra.denomination || null,
+        denomination: selectedFibra.denomination?.toUpperCase() || null,
         origin: selectedFibra.origin || null,
         colorId: selectedFibra.colorId || null,
       };
   
       try {
-        await handleUpdateFiber(
-          selectedFibra.id,
-          payload,
-          setFibras,
-          setSnackbarMessage,
-          setSnackbarSeverity,
-          setSnackbarOpen
-        );
+        // Llama al servicio para actualizar la fibra
+        await handleUpdateFiber(selectedFibra.id, payload, setFibras, setSnackbarMessage, setSnackbarSeverity, setSnackbarOpen);
+        
+        // Éxito
+        setSnackbarMessage("Fibra actualizada correctamente");
+        setSnackbarSeverity("success");
+        setSnackbarOpen(true);
+  
+        // Actualiza la lista de fibras
+        await handleFetchFibras(setFibras, setLoading, includeInactive);
+        
+        // Cierra el cuadro de diálogo
         setOpenEditDialog(false);
-        await handleFetchFibras(setFibras, setLoading, setError);
-      } catch (error) {
-        console.error("Error al guardar la fibra:", error);
-        setSnackbarMessage("Error al guardar la fibra. Por favor, revisa los datos.");
+      } catch (error: any) {
+        // Manejo del error
+        setSnackbarMessage(error.message || "Error al guardar la fibra.");
         setSnackbarSeverity("error");
         setSnackbarOpen(true);
       }
     }
   };
   
-
+  
   const handleDeshabilitarFibra = async (fibra: Fiber) => {
     try {
       setLoading(true);
@@ -164,6 +179,10 @@ const Fibras: React.FC = () => {
   const handleOriginFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setOriginFilter(event.target.value);
   };
+
+  const handleSwitchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setIncludeInactive(event.target.checked);
+  }
 
   const filteredFibras = fibras.filter((fibra) => {
     const categoryValue = fibra.category?.value || "";
@@ -249,6 +268,16 @@ const Fibras: React.FC = () => {
                 />
               </div>
             </Menu>
+            <FormControlLabel
+                control={
+                  <Switch
+                    checked={includeInactive}
+                    onChange={handleSwitchChange}
+                    color="primary"
+                  />
+                }
+                label="Mostrar inactivos"
+              />
           </div>
           <div className="space-x-2">
             <Button

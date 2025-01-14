@@ -44,7 +44,7 @@ const CrearHilado: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const fibras = await fetchFibras();
+        const fibras = await fetchFibras(false);
         const methods = await fetchSpinningMethods();
         setAvailableFibras(fibras.fibers);
         setSpinningMethods(methods);

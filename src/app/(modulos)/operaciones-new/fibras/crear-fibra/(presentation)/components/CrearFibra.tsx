@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Button, TextField, MenuItem, Snackbar, Alert } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { handleFetchFiberCategories, handleFetchCountries, handleFetchColors, handleCreateFiber } from "../../../use-cases/fibra";
+import { handleError } from "../../../services/fibraService";
 
 const CrearFibra: React.FC = () => {
   const router = useRouter();
@@ -22,9 +23,9 @@ const CrearFibra: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        await handleFetchFiberCategories(setCategories, () => null);
-        await handleFetchCountries(setCountries, () => null);
-        await handleFetchColors(setColors, () => null); 
+        await handleFetchFiberCategories(setCategories);
+        await handleFetchCountries(setCountries);
+        await handleFetchColors(setColors); 
       } catch (error) {
         console.error("Error cargando datos:", error);
       }
@@ -34,34 +35,47 @@ const CrearFibra: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     const newErrors = {
       categoria: !categoria,
       variedad: !variedad,
     };
     setErrors(newErrors);
-
+  
     if (!Object.values(newErrors).includes(true)) {
       const payload = {
         categoryId: Number(categoria),
         denomination: variedad.toUpperCase(),
         origin: procedencia || null,
         colorId: color || null,
-      };      
-
-      await handleCreateFiber(payload, setSnackbarMessage, setSnackbarSeverity, setSnackbarOpen);
-
-      setCategoria("");
-      setVariedad("");
-      setProcedencia("");
-      setColor("");
-      
-      setTimeout(() => {
-        router.push("/operaciones-new/fibras");
-      }, 2000);
+      };
+  
+      try {
+        // Intentar crear la fibra
+        await handleCreateFiber(payload);
+  
+        // Si se crea correctamente, mostrar mensaje de éxito
+        setSnackbarMessage("Fibra creada exitosamente");
+        setSnackbarSeverity("success");
+        setSnackbarOpen(true);
+  
+        // Redirigir después de mostrar el mensaje de éxito
+        setTimeout(() => {
+          router.push("/operaciones-new/fibras");
+        }, 1000);
+      } catch (error: any) {
+        // Centraliza el manejo del error utilizando handleError
+        const errorMessage = handleError(error);
+  
+        // Mostrar mensaje de error en el Snackbar
+        console.error("Error al intentar crear la fibra:", errorMessage);
+        setSnackbarMessage(errorMessage); // Mostrar el mensaje procesado
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+      }
     }
   };
-
+  
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
   };
