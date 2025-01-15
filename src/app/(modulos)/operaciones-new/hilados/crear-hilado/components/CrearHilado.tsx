@@ -40,6 +40,7 @@ const CrearHilado: React.FC = () => {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,6 +62,16 @@ const CrearHilado: React.FC = () => {
   const toggleFibrasDialog = () => {
     setOpenFibrasDialog(!openFibrasDialog);
   };
+
+  const filteredFibras = availableFibras.filter((fibra) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      fibra.category?.value.toLowerCase().includes(searchLower) ||
+      fibra.color?.name.toLowerCase().includes(searchLower) ||
+      fibra.origin?.toLowerCase().includes(searchLower) ||
+      (fibra.isActive ? "activo" : "inactivo").toLowerCase().includes(searchLower)
+    );
+  });  
 
   const handleAddFiber = (fibra: Fiber) => {
     if (!selectedRecipes.some((recipe) => recipe.fiber.id === fibra.id)) {
@@ -232,57 +243,66 @@ const CrearHilado: React.FC = () => {
       </div>
 
       {/* Diálogo para seleccionar fibras */}
-      <Dialog open={openFibrasDialog} onClose={toggleFibrasDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Seleccionar Fibras</DialogTitle>
-        <DialogContent>
-          <table className="w-full table-auto">
-            <thead>
-              <tr className="bg-blue-900 uppercase text-center">
-                {["Categoría", "Color", "Procedencia", "Estado"].map((col, index) => (
-                  <th key={index} className="px-4 py-4 text-center font-normal text-white">
-                    {col}
-                  </th>
-                ))}
-                <th className="px-4 py-4 text-center font-normal text-white">Agregar</th>
-              </tr>
-            </thead>
-            <tbody>
-              {availableFibras
-                .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
-                .map((fibra) => (
-                  <tr key={fibra.id} className="text-center">
-                    <td className="border-b border-[#eee] px-4 py-5">{fibra.category?.value || "Sin categoría"}</td>
-                    <td className="border-b border-[#eee] px-4 py-5">{fibra.color?.name || "Sin color"}</td>
-                    <td className="border-b border-[#eee] px-4 py-5">{fibra.origin || "Sin procedencia"}</td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      <span className={`text-sm ${fibra.isActive ? "text-green-500" : "text-red-500"}`}>
-                        {fibra.isActive ? "Activo" : "Inactivo"}
-                      </span>
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      <IconButton color="primary" onClick={() => handleAddFiber(fibra)}>
-                        <Add />
-                      </IconButton>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-          <TablePagination
-            component="div"
-            count={availableFibras.length}
-            page={pagina}
-            onPageChange={(_, newPage) => setPagina(newPage)}
-            rowsPerPage={filasPorPagina}
-            onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))}
+<Dialog open={openFibrasDialog} onClose={toggleFibrasDialog} maxWidth="md" fullWidth>
+  <DialogTitle>Seleccionar Fibras</DialogTitle>
+  <DialogContent>
+    {/* Buscador */}
+    <TextField
+            variant="outlined"
+            placeholder="Buscar..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            size="small"
+            style={{ width: "50%" }}
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={toggleFibrasDialog} style={{ backgroundColor: "#1976d2", color: "#fff" }}>
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
+    <table className="w-full table-auto mt-4">
+      <thead>
+        <tr className="bg-blue-900 uppercase text-center">
+          {["Categoría", "Color", "Procedencia", "Estado"].map((col, index) => (
+            <th key={index} className="px-4 py-4 text-center font-normal text-white">
+              {col}
+            </th>
+          ))}
+          <th className="px-4 py-4 text-center font-normal text-white">Agregar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {filteredFibras
+          .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
+          .map((fibra) => (
+            <tr key={fibra.id} className="text-center">
+              <td className="border-b border-[#eee] px-4 py-5">{fibra.category?.value || "Sin categoría"}</td>
+              <td className="border-b border-[#eee] px-4 py-5">{fibra.color?.name || "Sin color"}</td>
+              <td className="border-b border-[#eee] px-4 py-5">{fibra.origin || "Sin procedencia"}</td>
+              <td className="border-b border-[#eee] px-4 py-5">
+                <span className={`text-sm ${fibra.isActive ? "text-green-500" : "text-red-500"}`}>
+                  {fibra.isActive ? "Activo" : "Inactivo"}
+                </span>
+              </td>
+              <td className="border-b border-[#eee] px-4 py-5">
+                <IconButton color="primary" onClick={() => handleAddFiber(fibra)}>
+                  <Add />
+                </IconButton>
+              </td>
+            </tr>
+          ))}
+      </tbody>
+    </table>
+    <TablePagination
+      component="div"
+      count={filteredFibras.length}
+      page={pagina}
+      onPageChange={(_, newPage) => setPagina(newPage)}
+      rowsPerPage={filasPorPagina}
+      onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))}
+    />
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={toggleFibrasDialog} style={{ backgroundColor: "#1976d2", color: "#fff" }}>
+      Guardar
+    </Button>
+  </DialogActions>
+</Dialog>
 
       {/* Snackbar */}
       <Snackbar
