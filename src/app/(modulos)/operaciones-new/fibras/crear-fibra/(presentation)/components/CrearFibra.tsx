@@ -85,8 +85,8 @@ const CrearFibra: React.FC = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900" style={{ marginTop: "-10vh" }}>
-      <div className="p-8 bg-white dark:bg-gray-800 border border-gray-300 rounded-lg shadow-lg w-full max-w-md">
+    <div className="flex justify-center items-start min-h-screen bg-gray-100 dark:bg-gray-900 py-10">
+      <div className="bg-white dark:bg-gray-800 border border-gray-300 rounded-lg shadow-lg p-6 w-full" style={{ maxWidth: "90%", margin: "auto" }}>
         <h2 className="text-2xl font-semibold text-center text-blue-800 dark:text-blue-400 mb-6">Crear Fibra</h2>
         <form onSubmit={handleSubmit}>
           <TextField

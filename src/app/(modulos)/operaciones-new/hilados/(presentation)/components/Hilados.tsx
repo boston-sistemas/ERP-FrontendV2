@@ -123,17 +123,6 @@ const Hilados: React.FC = () => {
     setIncludeInactive(event.target.checked);
   }
 
-  const filteredFibras = availableFibras.filter((fibra) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      fibra.denomination?.toLowerCase().includes(searchLower) ||
-      fibra.category?.value?.toLowerCase().includes(searchLower) ||
-      fibra.origin?.toLowerCase().includes(searchLower) ||
-      fibra.color?.name?.toLowerCase().includes(searchLower)
-    );
-  });
-  
-
   const handleEditSave = async () => {
     if (editingYarn) {
       try {
@@ -149,18 +138,25 @@ const Hilados: React.FC = () => {
           })),
         });
   
+        // Mostrar mensaje de éxito
         setSnackbarMessage("Hilado actualizado correctamente.");
         setSnackbarSeverity("success");
         setSnackbarOpen(true);
+  
+        // Cerrar el diálogo de edición
         handleEditClose();
+  
+        // Recargar los datos desde el backend
+        const data = await fetchHilados(includeInactive);
+        setHilados(data.yarns); // Actualizar la tabla con los datos más recientes
       } catch (error: any) {
-        setSnackbarMessage(error.message);
+        setSnackbarMessage(error.message || "Error al actualizar el hilado.");
         setSnackbarSeverity("error");
         setSnackbarOpen(true);
       }
     }
   };  
-  
+
   const handleToggleYarnStatus = async (id: string, isActive: boolean) => {
     try {
       await updateYarnStatus(id, !isActive);
@@ -184,13 +180,42 @@ const Hilados: React.FC = () => {
     router.push("/operaciones-new/hilados/crear-hilado");
   }
 
+  const filteredFibras = availableFibras.filter((fibra) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      fibra.denomination?.toLowerCase().includes(searchLower) ||
+      fibra.category?.value?.toLowerCase().includes(searchLower) ||
+      fibra.origin?.toLowerCase().includes(searchLower) ||
+      fibra.color?.name?.toLowerCase().includes(searchLower)
+    );
+  });
+
   const filteredHilados = hilados.filter((h) => {
     const searchLower = searchTerm.toLowerCase();
-    const searchableFields = [h.yarnCount, h.description, h.color?.name];
-    return searchableFields.some((value) =>
-      value?.toString().toLowerCase().includes(searchLower)
-    );
-  });  
+    return (
+      h.yarnCount.toLowerCase().includes(searchLower) ||
+      h.description.toLowerCase().includes(searchLower) ||
+      h.color?.name.toLowerCase().includes(searchLower) ||
+      h.description.toLowerCase().includes(searchLower) ||
+      h.spinningMethod?.value.toLowerCase().includes(searchLower) || 
+      h.barcode.toString().includes(searchLower) 
+    )
+  });
+
+  const handleReloadFibras = async () => {
+    try {
+      const fibras = await fetchFibras(false);
+      setAvailableFibras(fibras.fibers);
+      setSnackbarMessage("Fibras recargadas correctamente.");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error("Error recargando las fibras:", error);
+      setSnackbarMessage("Error al recargar las fibras. Inténtelo de nuevo.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
 
   const handleAddFiber = (fibra: Fiber) => {
     const fiberExists = editForm.recipe.some((r) => r.fiber.id === fibra.id);
@@ -277,7 +302,7 @@ const Hilados: React.FC = () => {
               color="primary"
               onClick={() => setShowEditColumn((prev) => !prev)}
             >
-              {showEditColumn ? "Ocultar Editar" : "Mostrar Editar"}
+              Editar
             </Button>
             <Button
               startIcon={<PowerSettingsNew />}
@@ -286,7 +311,7 @@ const Hilados: React.FC = () => {
               color="error"
               onClick={() => setShowDisableColumn((prev) => !prev)}
             >
-              {showDisableColumn ? "Ocultar Deshabilitar" : "Mostrar Deshabilitar"}
+              Deshabilitar
             </Button>
           </div>
         </div>
@@ -446,7 +471,7 @@ const Hilados: React.FC = () => {
       <DialogTitle>Editar Hilado</DialogTitle>
       <DialogContent>
         <TextField
-          label="Título"
+          label="Número de hilos"
           fullWidth
           margin="dense"
           value={editForm.title}
@@ -454,30 +479,41 @@ const Hilados: React.FC = () => {
         />
         <div className="mt-4">
         <label htmlFor="spinningMethod" className="block text-sm font-medium text-gray-700 mb-1">
-          Método de Hilado
+          Acabado de tejido
         </label>
         <Select
-        id="spinningMethod"
-        value={editForm.finish} // Aquí se refleja el ID del método seleccionado
-        onChange={(e) => setEditForm({ ...editForm, finish: e.target.value })}
-        displayEmpty
-        fullWidth
-        variant="outlined"
-        sx={{
-          backgroundColor: "white",
-          borderRadius: "4px",
-          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-        }}
-      >
-        <MenuItem value="">
-          <em>Sin método de hilado</em>
-        </MenuItem>
-        {spinningMethods.map((method) => (
-          <MenuItem key={method.id} value={method.id}>
-            {method.value}
-          </MenuItem>
-        ))}
-      </Select>
+  id="spinningMethod"
+  value={editForm.finish} // Aquí se refleja el ID del método seleccionado
+  onChange={(e) => setEditForm({ ...editForm, finish: e.target.value })}
+  displayEmpty
+  fullWidth
+  margin="dense"
+  variant="outlined"
+  sx={{
+    "& .MuiOutlinedInput-root": {
+      "& fieldset": {
+        borderColor: "#444444", // Color negro por defecto
+      },
+      "&:hover fieldset": {
+        borderColor: "#444444", // Color negro al pasar el cursor
+      },
+      "&.Mui-focused fieldset": {
+        borderColor: "#444444", // Color negro al enfocar
+      },
+    },
+    "& .MuiInputLabel-root": { color: "#444444" },
+    "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+  }}
+>
+  <MenuItem value="">
+    <em>Sin método de hilado</em>
+  </MenuItem>
+  {spinningMethods.map((method) => (
+    <MenuItem key={method.id} value={method.id}>
+      {method.value}
+    </MenuItem>
+  ))}
+</Select>
       </div>
         <TextField
           label="Descripción"
@@ -550,14 +586,22 @@ const Hilados: React.FC = () => {
     <h3 className="text-lg font-semibold text-black dark:text-white mb-4">Fibras Disponibles</h3>
     <div className="mb-4 flex justify-between items-center">
       {/* Buscador */}
-      <TextField
-        variant="outlined"
-        placeholder="Buscar..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        size="small"
-        style={{ width: "50%" }}
-      />
+      <div className="flex justify-between items-center">
+        <TextField
+          variant="outlined"
+          placeholder="Buscar..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          size="small"
+          style={{ width: "50%" }}
+        />
+        <Button
+          onClick={handleReloadFibras}
+          style={{ backgroundColor: "#1976d2", color: "#fff" }}
+        >
+          Recargar Fibras
+        </Button>
+      </div>
     </div>
     <div className="max-w-full overflow-x-auto">
       <table className="w-full table-auto">
@@ -576,7 +620,12 @@ const Hilados: React.FC = () => {
             .map((fibra) => {
               const isSelected = editForm.recipe.some((r) => r.fiber?.id === fibra.id);
               return (
-                <tr key={fibra.id} className="text-center">
+                <tr
+                      key={fibra.id}
+                      className={`text-center ${
+                        isSelected ? "bg-green-100" : ""
+                      }`}
+                    >
                   <td className="border-b border-[#eee] px-4 py-5">{fibra.denomination || "Sin denominación"}</td>
                   <td className="border-b border-[#eee] px-4 py-5">{fibra.category?.value || "Sin categoría"}</td>
                   <td className="border-b border-[#eee] px-4 py-5">{fibra.origin || "Sin procedencia"}</td>

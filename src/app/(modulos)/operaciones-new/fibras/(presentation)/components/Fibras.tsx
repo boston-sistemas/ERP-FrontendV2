@@ -294,7 +294,7 @@ const Fibras: React.FC = () => {
               style={{ backgroundColor: "#1976d2", color: "#fff" }}
               onClick={handleToggleEditColumn}
             >
-              {showEditColumn ? "Ocultar Editar" : "Mostrar Editar"}
+              Editar
             </Button>
             <Button
               startIcon={<PowerSettingsNew />}
@@ -302,7 +302,7 @@ const Fibras: React.FC = () => {
               style={{ backgroundColor: "#d32f2f", color: "#fff" }}
               onClick={handleToggleDisableColumn}
             >
-              {showDisableColumn ? "Ocultar Deshabilitar" : "Mostrar Deshabilitar"}
+              Deshabilitar
             </Button>
           </div>
         </div>
