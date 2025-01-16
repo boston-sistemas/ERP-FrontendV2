@@ -321,14 +321,13 @@ const Hilados: React.FC = () => {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center text-white">
-                <th className="px-4 py-4 font-normal">CÓDIGO DE BARRAS</th>
-                <th className="px-4 py-4 font-normal">DESCRIPCIÓN</th>
                 <th className="px-4 py-4 font-normal">ID</th>
-                <th className="px-4 py-4 font-normal">código de unidad de inventario</th>
+                <th className="px-4 py-4 font-normal">DESCRIPCIÓN</th>
+                <th className="px-4 py-4 font-normal">UNIDAD</th>
+                <th className="px-4 py-4 font-normal">TITULO</th>
                 <th className="px-4 py-4 font-normal">sistema de numeración</th>
-                <th className="px-4 py-4 font-normal">NÚMERO DE HILOS</th>
-                <th className="px-4 py-4 font-normal">Acabado del hilado</th>
                 <th className="px-4 py-4 font-normal">RECETA</th>
+                <th className="px-4 py-4 font-normal">Acabado</th>
                 <th className="px-4 py-4 font-normal">Estado</th>
                 {showEditColumn && <th className="px-4 py-4 font-normal">Editar</th>}
                 {showDisableColumn && <th className="px-4 py-4 font-normal">Deshabilitar</th>}
@@ -340,18 +339,17 @@ const Hilados: React.FC = () => {
                   .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
                   .map((hilado) => (
                     <tr key={hilado.id} className="text-center text-black">
-                      <td className="border-b border-gray-300 px-4 py-5">{hilado.barcode}</td>
-                      <td className="border-b border-gray-300 px-4 py-5">{hilado.description}</td>
                       <td className="border-b border-gray-300 px-4 py-5">{hilado.id}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">{hilado.description}</td>
                       <td className="border-b border-gray-300 px-4 py-5">{hilado.inventoryUnitCode}</td>
-                      <td className="border-b border-gray-300 px-4 py-5">{hilado.numberingSystem}</td>
                       <td className="border-b border-gray-300 px-4 py-5">{hilado.yarnCount}</td>
-                      <td className="border-b border-gray-300 px-4 py-5">{hilado.spinningMethod?.value || "-"}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">{hilado.numberingSystem}</td>
                       <td className="border-b border-gray-300 px-4 py-5">
                         <IconButton onClick={() => handleOpenRecipeDialog(hilado.recipe)}>
                           <Visibility />
                         </IconButton>
                       </td>
+                      <td className="border-b border-gray-300 px-4 py-5">{hilado.spinningMethod?.value}</td>                      
                       <td className="border-b border-gray-300 px-4 py-5">
                         <span
                           className={`text-sm ${

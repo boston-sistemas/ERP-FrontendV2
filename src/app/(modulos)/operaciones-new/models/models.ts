@@ -112,6 +112,9 @@ export interface YarnPurchaseEntry {
   detail: YarnPurchaseEntryDetail[];
 }
 
+export interface YarnPurchaseEntryResponse {
+  yarnPurchaseEntries: YarnPurchaseEntry[];
+}
 
 export interface PurchaseOrderDetail {
   quantityOrdered: number;

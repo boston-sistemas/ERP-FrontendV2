@@ -38,3 +38,8 @@ export const fetchYarnPurchaseEntryDetails = async (
     );
     return response.data; // Devuelve la respuesta del API
   };
+
+  export const fetchSuppliersHil = async () => {
+    const response = await instance.get(`operations/v1/suppliers/hil?limit=100&offset=0&include_annulled=false`);
+    return response.data;
+  }

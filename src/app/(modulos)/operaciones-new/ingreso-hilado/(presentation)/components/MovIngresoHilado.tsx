@@ -15,7 +15,7 @@ import {
 import { Visibility, Add, Search } from "@mui/icons-material";
 import { useRouter, useSearchParams } from "next/navigation";
 import { YarnPurchaseEntry } from "../../../models/models";
-import { fetchYarnPurchaseEntries } from "../../services/movIngresoHiladoService";
+import { fetchYarnPurchaseEntries, fetchSuppliersHil } from "../../services/movIngresoHiladoService";
 
 const MovIngresoHilado: React.FC = () => {
   const router = useRouter();
@@ -26,12 +26,14 @@ const MovIngresoHilado: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [includeInactive, setIncludeInactive] = useState(false);
-  const [period, setPeriod] = useState(2024); // Período inicial
+  const [period, setPeriod] = useState(2025); // Período inicial
+  const [suppliers, setSuppliers] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        const dataSuppliers = await fetchSuppliersHil();
         const response = await fetchYarnPurchaseEntries(
           period, // Periodo dinámico
           filasPorPagina,
@@ -39,6 +41,7 @@ const MovIngresoHilado: React.FC = () => {
           includeInactive
         );
         setHilados(response.yarnPurchaseEntries);
+        setSuppliers(dataSuppliers.suppliers);
       } catch (error) {
         console.error("Error al cargar los datos:", error);
       } finally {
@@ -136,10 +139,11 @@ const MovIngresoHilado: React.FC = () => {
           </div>
 
           {/* Tabla de Movimientos */}
-          <table className="w-full table-auto border-collapse">
+          <div className="max-w-full overflow-x-auto">
+          <table className="w-full table-auto ">
             <thead>
               <tr className="bg-blue-900 uppercase text-center">
-                {["Nro Ingreso", "Periodo", "Fecha", "Hora", "Proveedor", "Estado", "Nro O/C", "Lote Proveedor", "Lote Mecsa", "Detalles/Edición"].map((col, index) => (
+                {["Nro Ingreso", "Periodo", "Fecha", "Proveedor", "Estado", "Nro O/C", "Lote Proveedor", "Lote Mecsa", "Detalles/Edición"].map((col, index) => (
                   <th
                     key={index}
                     className="px-4 py-4 text-center font-normal text-white"
@@ -158,7 +162,7 @@ const MovIngresoHilado: React.FC = () => {
                 </tr>
               ) : filteredHilados.length > 0 ? (
                 filteredHilados.map((hilado, index) => (
-                  <tr key={index} className="text-center">
+                  <tr key={index} className="text-center text-black">
                     <td className="border-b border-[#eee] px-4 py-5">
                       {hilado.entryNumber}
                     </td>
@@ -169,10 +173,7 @@ const MovIngresoHilado: React.FC = () => {
                       {hilado.creationDate}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
-                      {hilado.creationTime}
-                    </td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      {hilado.supplierCode}
+                      {suppliers.map((supplier) => (supplier.code === hilado.supplierCode ? supplier.name : ""))}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
                       {hilado.promecStatus.name}
@@ -205,6 +206,7 @@ const MovIngresoHilado: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
         </div>
 
         {/* Paginación */}
