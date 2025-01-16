@@ -216,7 +216,7 @@ const CrearHilado: React.FC = () => {
   
           {/* Selector de método de hilado */}
           <TextField
-            label="Acabado de Tejido *"
+            label="Acabado del hilado "
             fullWidth
             select
             value={acabado}
@@ -233,7 +233,7 @@ const CrearHilado: React.FC = () => {
               "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
             }}
           >
-            <MenuItem value="">Seleccione un método</MenuItem>
+            <MenuItem value="">Seleccione un acabado</MenuItem>
             {spinningMethods.map((method) => (
               <MenuItem key={method.id} value={method.id}>
                 {method.value}

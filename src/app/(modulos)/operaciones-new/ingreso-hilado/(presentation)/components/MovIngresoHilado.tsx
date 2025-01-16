@@ -175,7 +175,7 @@ const MovIngresoHilado: React.FC = () => {
                       {hilado.supplierCode}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
-                      {hilado.statusFlag}
+                      {hilado.promecStatus.name}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
                       {hilado.purchaseOrderNumber}

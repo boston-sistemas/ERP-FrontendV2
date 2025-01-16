@@ -327,7 +327,7 @@ const Hilados: React.FC = () => {
                 <th className="px-4 py-4 font-normal">código de unidad de inventario</th>
                 <th className="px-4 py-4 font-normal">sistema de numeración</th>
                 <th className="px-4 py-4 font-normal">NÚMERO DE HILOS</th>
-                <th className="px-4 py-4 font-normal">Acabado de tejido</th>
+                <th className="px-4 py-4 font-normal">Acabado del hilado</th>
                 <th className="px-4 py-4 font-normal">RECETA</th>
                 <th className="px-4 py-4 font-normal">Estado</th>
                 {showEditColumn && <th className="px-4 py-4 font-normal">Editar</th>}
@@ -479,7 +479,7 @@ const Hilados: React.FC = () => {
         />
         <div className="mt-4">
         <label htmlFor="spinningMethod" className="block text-sm font-medium text-gray-700 mb-1">
-          Acabado de tejido
+          Acabado del hilado
         </label>
         <Select
   id="spinningMethod"
@@ -506,7 +506,7 @@ const Hilados: React.FC = () => {
   }}
 >
   <MenuItem value="">
-    <em>Sin método de hilado</em>
+    <em>Sin acabado de hilado</em>
   </MenuItem>
   {spinningMethods.map((method) => (
     <MenuItem key={method.id} value={method.id}>
