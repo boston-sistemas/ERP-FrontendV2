@@ -49,7 +49,7 @@ const OrdenesServicio: React.FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
-  // (NUEVO) Tejidos
+  //  Tejidos
   const [fabrics, setFabrics] = useState<any[]>([]);
   const [isFabricDialogOpen, setIsFabricDialogOpen] = useState(false);
 
@@ -240,7 +240,7 @@ const OrdenesServicio: React.FC = () => {
               </tr>
             ) : filteredOrders.length > 0 ? (
               filteredOrders.map((o) => (
-                <tr key={o.id} className="text-center">
+                <tr key={o.id} className="text-center text-black">
                   <td className="border-b border-[#eee] px-4 py-4">{o.id}</td>
                   <td className="border-b border-[#eee] px-4 py-4">
                     {getSupplierName(o.supplierId)}

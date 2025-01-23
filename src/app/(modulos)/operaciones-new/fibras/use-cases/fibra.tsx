@@ -7,6 +7,8 @@ import {
   fetchCountries,
   createFiber,
   fetchMecsaColors,
+  // IMPORTAR la función de servicio que obtendrá las denominaciones
+  fetchDenominationFibers,
 } from "../services/fibraService";
 
 export const handleFetchFibras = async (
@@ -80,7 +82,7 @@ export const handleFetchCountries = async (
 };
 
 export const handleCreateFiber = async (payload: any): Promise<void> => {
-  await createFiber(payload); // Llamada al servicio para crear la fibra
+  await createFiber(payload);
 };
 
 export const handleFetchColors = async (
@@ -88,4 +90,18 @@ export const handleFetchColors = async (
 ): Promise<void> => {
   const colors = await fetchMecsaColors();
   setColors(colors || []);
+};
+
+/** 
+ * NUEVA FUNCIÓN: Obtiene las denominaciones de fibras y setea en el estado
+ */
+export const handleFetchDenominationFibers = async (
+  setDenominations: (denominations: { id: number; value: string }[]) => void
+): Promise<void> => {
+  try {
+    const denominations = await fetchDenominationFibers();
+    setDenominations(denominations || []);
+  } catch (error) {
+    console.error("Error al obtener denominaciones de fibra", error);
+  }
 };

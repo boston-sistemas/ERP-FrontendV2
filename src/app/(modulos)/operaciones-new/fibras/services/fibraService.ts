@@ -23,7 +23,7 @@ export const handleError = (error: any): string => {
 export const fetchFibras = async (include_inactive: boolean): Promise<FibraResponse> => {
   try {
     const response = await instance.get<FibraResponse>(
-      `/operations/v1/fibers/?include_inactives=${include_inactive}`
+      `/operations/v1/fibers/?includeInactives=${include_inactive}`
     );
     return response.data;
   } catch (error) {
@@ -90,6 +90,34 @@ export const fetchMecsaColors = async (): Promise<MecsaColor[]> => {
   try {
     const response = await instance.get("/operations/v1/mecsa-colors");
     return response.data.mecsaColors;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+};
+
+// Obtener Denomination de Fibras
+export const fetchDenominationFibers = async (): Promise<string[]> => {
+  try {
+    const response = await instance.get("/security/v1/parameters/public/fiber-denominations");
+    return response.data.fiberDenominations;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+}
+
+//verificar si la fibra es actualizable
+export type FiberUpdatableCheck = {
+  updatable: boolean;
+  is_partial: boolean;
+  message: string;
+};
+
+export const checkIfFiberIsUpdatable = async (fiberId: string): Promise<FiberUpdatableCheck> => {
+  try {
+    const response = await instance.get(`/operations/v1/fibers/${fiberId}/is-updatable`);
+    return response.data;
   } catch (error) {
     handleError(error);
     throw error;

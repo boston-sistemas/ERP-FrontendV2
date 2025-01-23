@@ -11,316 +11,399 @@ import {
   DialogTitle,
   TablePagination,
   Snackbar,
+  Alert,
   MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  Checkbox,
+  ListItemText,
 } from "@mui/material";
-import MuiAlert, { AlertProps } from "@mui/material/Alert";
 import { Add, Close } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-import { fetchSpinningMethods, createYarn } from "../../services/hiladoService";
-import { fetchFibras } from "../../../fibras/services/fibraService";
-import { Fiber, Recipe } from "../../../models/models";
 
-const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
-  props,
-  ref
-) {
-  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
-});
+import {
+  createYarn,
+  fetchSpinningMethods,
+  fetchYarnCounts,
+  fetchManufacturingSites,
+  fetchYarnDistinctions,
+  // Agrega tu fetchMecsaColors (o donde corresponda)
+  fetchMecsaColors,
+} from "../../services/hiladoService";
+import { fetchFibras } from "../../../fibras/services/fibraService";
+
+import { Fiber, Recipe, MecsaColor } from "../../../models/models";
 
 const CrearHilado: React.FC = () => {
   const router = useRouter();
-  const [titulo, setTitulo] = useState("");
-  const [acabado, setAcabado] = useState("");
-  const [descripcion, setDescripcion] = useState("");
+
+  // 1) Campos básicos obligatorios
+  const [yarnCountId, setYarnCountId] = useState<number | "">("");
+  const [spinningMethodId, setSpinningMethodId] = useState<number | "">("");
+  const [manufacturedInId, setManufacturedInId] = useState<number | "">("");
+  const [description, setDescription] = useState("");
+
+  // 2) Distinctions (múltiples)
+  const [distinctions, setDistinctions] = useState<number[]>([]);
+  const [availableDistinctions, setAvailableDistinctions] = useState<
+    { id: number; value: string }[]
+  >([]);
+
+  // 3) Color
+  const [colorId, setColorId] = useState<string>(""); // si tu color ID es string
+  const [availableColors, setAvailableColors] = useState<MecsaColor[]>([]);
+
+  // 4) Receta
+  const [selectedRecipes, setSelectedRecipes] = useState<Recipe[]>([]);
+
+  // 5) Catálogos
+  const [availableYarnCounts, setAvailableYarnCounts] = useState<
+    { id: number; value: string }[]
+  >([]);
+  const [availableSpinningMethods, setAvailableSpinningMethods] = useState<
+    { id: number; value: string }[]
+  >([]);
+  const [availableManufacturingSites, setAvailableManufacturingSites] =
+    useState<{ id: number; value: string }[]>([]);
+  const [availableFibras, setAvailableFibras] = useState<Fiber[]>([]);
+
+  // 6) Diálogo de Fibras
+  const [openFibrasDialog, setOpenFibrasDialog] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(5);
-  const [selectedRecipes, setSelectedRecipes] = useState<Recipe[]>([]);
-  const [availableFibras, setAvailableFibras] = useState<Fiber[]>([]);
-  const [spinningMethods, setSpinningMethods] = useState<{ id: number; value: string }[]>([]);
-  const [openFibrasDialog, setOpenFibrasDialog] = useState(false);
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
-  const [searchTerm, setSearchTerm] = useState("");
 
+  // 7) Snackbar
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">(
+    "success"
+  );
+
+  // ---------------------------------------------------------------------------
+  // Cargar catálogos al iniciar
+  // ---------------------------------------------------------------------------
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const fibras = await fetchFibras(false);
+        // Yarn Counts
+        const counts = await fetchYarnCounts();
+        setAvailableYarnCounts(counts);
+
+        // Spinning Methods
         const methods = await fetchSpinningMethods();
-        setAvailableFibras(fibras.fibers);
-        setSpinningMethods(methods);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setSnackbarMessage("Error al cargar los datos.");
+        setAvailableSpinningMethods(methods);
+
+        // Manufacturing sites
+        const sites = await fetchManufacturingSites();
+        setAvailableManufacturingSites(sites);
+
+        // Distinctions
+        const dists = await fetchYarnDistinctions();
+        setAvailableDistinctions(dists);
+
+        // Fibras
+        const fibData = await fetchFibras(false);
+        setAvailableFibras(fibData.fibers);
+
+        // Colors (MecsaColors)
+        const mecsaCols = await fetchMecsaColors();
+        setAvailableColors(mecsaCols);
+      } catch (error: any) {
+        console.error("Error al cargar catálogos:", error);
+        setSnackbarMessage("Error al cargar datos para crear hilado.");
         setSnackbarSeverity("error");
-        setOpenSnackbar(true);
+        setSnackbarOpen(true);
       }
     };
     fetchData();
   }, []);
 
-  const toggleFibrasDialog = () => {
-    setOpenFibrasDialog(!openFibrasDialog);
-  };
-
+  // ---------------------------------------------------------------------------
+  // Filtro de fibras en el diálogo
+  // ---------------------------------------------------------------------------
   const filteredFibras = availableFibras.filter((fibra) => {
-    const searchLower = searchTerm.toLowerCase();
+    const s = searchTerm.toLowerCase();
     return (
-      fibra.category?.value.toLowerCase().includes(searchLower) ||
-      fibra.color?.name.toLowerCase().includes(searchLower) ||
-      fibra.origin?.toLowerCase().includes(searchLower) ||
-      fibra.denomination?.toLowerCase().includes(searchLower) ||
-      fibra.id.toString().includes(searchTerm) ||
-      (fibra.isActive ? "activo" : "inactivo").toLowerCase().includes(searchLower)
+      fibra.id.toLowerCase().includes(s) ||
+      fibra.denomination?.toLowerCase().includes(s) ||
+      fibra.category?.value?.toLowerCase().includes(s) ||
+      fibra.origin?.toLowerCase().includes(s) ||
+      fibra.color?.name?.toLowerCase().includes(s)
     );
-  });  
+  });
 
+  // ---------------------------------------------------------------------------
+  // Manejo de la receta
+  // ---------------------------------------------------------------------------
   const handleAddFiber = (fibra: Fiber) => {
-    if (!selectedRecipes.some((recipe) => recipe.fiber.id === fibra.id)) {
-      setSelectedRecipes([...selectedRecipes, { fiber: fibra, proportion: 0 }]);
-      setSnackbarMessage("Fibra añadida correctamente.");
+    if (!selectedRecipes.some((r) => r.fiber.id === fibra.id)) {
+      setSelectedRecipes((prev) => [...prev, { fiber, proportion: 0 }]);
+      setSnackbarMessage("Fibra añadida a la receta.");
       setSnackbarSeverity("success");
-      setOpenSnackbar(true);
+      setSnackbarOpen(true);
     }
   };
 
-  const handleReloadFibras = async () => {
-  try {
-    const fibras = await fetchFibras(false);
-    setAvailableFibras(fibras.fibers);
-    setSnackbarMessage("Fibras recargadas correctamente.");
-    setSnackbarSeverity("success");
-    setOpenSnackbar(true);
-  } catch (error) {
-    console.error("Error recargando las fibras:", error);
-    setSnackbarMessage("Error al recargar las fibras. Inténtelo de nuevo.");
-    setSnackbarSeverity("error");
-    setOpenSnackbar(true);
-  }
-};
+  const handleDeleteFiber = (fiberId: string) => {
+    setSelectedRecipes((prev) => prev.filter((r) => r.fiber.id !== fiberId));
+  };
 
-  const handleProportionChange = (id: string, value: string) => {
-    const proportion = Number(value);
+  const handleProportionChange = (fiberId: string, value: string) => {
+    const n = Number(value);
     setSelectedRecipes((prev) =>
-      prev.map((recipe) =>
-        recipe.fiber.id === id ? { ...recipe, proportion: proportion } : recipe
-      )
+      prev.map((r) => (r.fiber.id === fiberId ? { ...r, proportion: n } : r))
     );
   };
 
-  const handleDeleteSelectedFiber = (id: string) => {
-    setSelectedRecipes((prev) => prev.filter((recipe) => recipe.fiber.id !== id));
+  // ---------------------------------------------------------------------------
+  // Distinciones (múltiples)
+  // ---------------------------------------------------------------------------
+  const handleDistinctionsChange = (e: any) => {
+    const {
+      target: { value },
+    } = e;
+    setDistinctions(typeof value === "string" ? value.split(",") : value);
   };
 
-  const handleCreateHilado = async (e: React.FormEvent) => {
+  // ---------------------------------------------------------------------------
+  // Crear Hilado
+  // ---------------------------------------------------------------------------
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-  
-    // Validar título
-    const regexPattern = /^\d+(\/\d+)?$/;
-    if (titulo.length > 16 || !regexPattern.test(titulo)) {
-      setSnackbarMessage("El Título debe tener un máximo de 16 caracteres y seguir el formato válido.");
+    // Validar sum de proportions
+    const totalProp = selectedRecipes.reduce((acc, r) => acc + r.proportion, 0);
+    if (totalProp !== 100) {
+      setSnackbarMessage("Las proporciones deben sumar 100%.");
       setSnackbarSeverity("error");
-      setOpenSnackbar(true);
+      setSnackbarOpen(true);
       return;
     }
-  
-    if (selectedRecipes.length === 0) {
-      setSnackbarMessage("Debe seleccionar al menos una fibra.");
-      setSnackbarSeverity("error");
-      setOpenSnackbar(true);
-      return;
-    }
-  
-    const totalProportion = selectedRecipes.reduce((acc, recipe) => acc + recipe.proportion, 0);
-    if (totalProportion !== 100) {
-      setSnackbarMessage("La suma de las proporciones debe ser igual a 100.");
-      setSnackbarSeverity("error");
-      setOpenSnackbar(true);
-      return;
-    }
-  
+    // Armar payload
     const payload = {
-      yarnCount: titulo,
-      numberingSystem: "Ne",
-      spinningMethodId: parseInt(acabado, 10),
-      colorId: null, // Cambiar si es necesario agregar un color
-      description: descripcion,
-      recipe: selectedRecipes.map((recipe) => ({
-        fiberId: recipe.fiber.id,
-        proportion: recipe.proportion,
+      yarnCountId:
+        yarnCountId && yarnCountId !== "" ? Number(yarnCountId) : null,
+      spinningMethodId:
+        spinningMethodId && spinningMethodId !== ""
+          ? Number(spinningMethodId)
+          : null,
+      manufacturedInId:
+        manufacturedInId && manufacturedInId !== ""
+          ? Number(manufacturedInId)
+          : null,
+      colorId: colorId || null, // <-- colorId si se seleccionó, o null
+      distinctions, // array de IDs
+      description,
+      // Receta
+      recipe: selectedRecipes.map((r) => ({
+        fiberId: r.fiber.id,
+        proportion: r.proportion,
       })),
     };
-  
+
     try {
       await createYarn(payload);
-      setSnackbarMessage("Hilado creado exitosamente.");
+      setSnackbarMessage("Hilado creado con éxito");
       setSnackbarSeverity("success");
-      setOpenSnackbar(true);
-  
-      // Limpiar el formulario
-      setTitulo("");
-      setAcabado("");
-      setDescripcion("");
+      setSnackbarOpen(true);
+
+      // Reset form
+      setYarnCountId("");
+      setSpinningMethodId("");
+      setManufacturedInId("");
+      setColorId("");
+      setDistinctions([]);
+      setDescription("");
       setSelectedRecipes([]);
-  
-      // Redirigir a la lista de hilados
+
       router.push("/operaciones-new/hilados");
-    } catch (error) {
-      console.error("Error creando el hilado:", error);
-      setSnackbarMessage("Error al crear el hilado. Por favor, inténtelo de nuevo.");
+    } catch (error: any) {
+      console.error("Error al crear hilado:", error);
+      setSnackbarMessage(error.message || "Error al crear hilado");
       setSnackbarSeverity("error");
-      setOpenSnackbar(true);
+      setSnackbarOpen(true);
     }
-  };  
+  };
 
   const handleCancel = () => {
     router.push("/operaciones-new/hilados");
   };
 
-  const handleCloseSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === "clickaway") {
-      return;
-    }
-    setOpenSnackbar(false);
+  // ---------------------------------------------------------------------------
+  // Diálogo de Fibras
+  // ---------------------------------------------------------------------------
+  const toggleFibrasDialog = () => {
+    setOpenFibrasDialog(!openFibrasDialog);
   };
+  const handleCloseSnackbar = () => setSnackbarOpen(false);
 
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
   return (
-    <div className="flex justify-center items-start min-h-screen bg-gray-100 dark:bg-gray-900 py-10">
-      <div
-        className="bg-white dark:bg-gray-800 border border-gray-300 rounded-lg shadow-lg p-6 w-full"
-        style={{ maxWidth: "90%", margin: "auto" }}
-      >
-        <h2 className="text-2xl font-semibold text-center text-blue-800 dark:text-blue-400 mb-6">
+    <div className="flex justify-center items-start min-h-screen bg-gray-100 py-10">
+      <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-6 w-full max-w-5xl mx-auto">
+        <h2 className="text-2xl font-semibold text-center text-blue-800 mb-6">
           Crear Hilado
         </h2>
-        <form onSubmit={handleCreateHilado}>
-          {/* Campo de título */}
+
+        <form onSubmit={handleCreate}>
+          {/* YarnCount selector */}
           <TextField
-            label="Número de hilos *"
-            fullWidth
-            value={titulo}
-            onChange={(e) => setTitulo(e.target.value)}
-            margin="dense"
-            variant="outlined"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": { borderColor: "#444444" },
-                "&:hover fieldset": { borderColor: "#444444" },
-                "&.Mui-focused fieldset": { borderColor: "#444444" },
-              },
-              "& .MuiInputLabel-root": { color: "#444444" },
-              "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
-            }}
-          />
-  
-          {/* Selector de método de hilado */}
-          <TextField
-            label="Acabado del hilado "
-            fullWidth
+            label="Título de Hilado "
             select
-            value={acabado}
-            onChange={(e) => setAcabado(e.target.value)}
+            fullWidth
+            value={yarnCountId}
+            onChange={(e) => setYarnCountId(e.target.value as number | "")}
             margin="dense"
-            variant="outlined"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": { borderColor: "#444444" },
-                "&:hover fieldset": { borderColor: "#444444" },
-                "&.Mui-focused fieldset": { borderColor: "#444444" },
-              },
-              "& .MuiInputLabel-root": { color: "#444444" },
-              "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
-            }}
           >
-            <MenuItem value="">Seleccione un acabado</MenuItem>
-            {spinningMethods.map((method) => (
-              <MenuItem key={method.id} value={method.id}>
-                {method.value}
+            <MenuItem value="">-- Seleccione un Título --</MenuItem>
+            {availableYarnCounts.map((yc) => (
+              <MenuItem key={yc.id} value={yc.id}>
+                {yc.value}
               </MenuItem>
             ))}
           </TextField>
-  
-          {/* Campo de descripción */}
+
+          {/* SpinningMethod */}
+          <TextField
+            label="Acabado "
+            select
+            fullWidth
+            value={spinningMethodId}
+            onChange={(e) =>
+              setSpinningMethodId(e.target.value as number | "")
+            }
+            margin="dense"
+          >
+            <MenuItem value="">-- Sin acabado --</MenuItem>
+            {availableSpinningMethods.map((sm) => (
+              <MenuItem key={sm.id} value={sm.id}>
+                {sm.value}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          {/* ManufacturedIn */}
+          <TextField
+            label="Lugar de Fabricación"
+            select
+            fullWidth
+            value={manufacturedInId}
+            onChange={(e) =>
+              setManufacturedInId(e.target.value as number | "")
+            }
+            margin="dense"
+          >
+            <MenuItem value="">-- Sin definir --</MenuItem>
+            {availableManufacturingSites.map((ms) => (
+              <MenuItem key={ms.id} value={ms.id}>
+                {ms.value}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          {/* Color (MecsaColors) */}
+          <TextField
+            label="Color"
+            select
+            fullWidth
+            margin="dense"
+            value={colorId}
+            onChange={(e) => setColorId(e.target.value)}
+          >
+            <MenuItem value="">-- Sin color --</MenuItem>
+            {availableColors.map((c) => (
+              <MenuItem key={c.id} value={c.id}>
+                {c.name}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          {/* Distinctions (varios) */}
+          <FormControl fullWidth margin="dense">
+            <InputLabel id="distinctions-label">Distinciones</InputLabel>
+            <Select
+              labelId="distinctions-label"
+              multiple
+              value={distinctions}
+              onChange={handleDistinctionsChange}
+              renderValue={(selected) => {
+                return availableDistinctions
+                  .filter((d) => selected.includes(d.id))
+                  .map((x) => x.value)
+                  .join(", ");
+              }}
+            >
+              {availableDistinctions.map((d) => (
+                <MenuItem key={d.id} value={d.id}>
+                  <Checkbox checked={distinctions.includes(d.id)} />
+                  <ListItemText primary={d.value} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Descripción */}
           <TextField
             label="Descripción"
             fullWidth
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
             margin="dense"
-            variant="outlined"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": { borderColor: "#444444" },
-                "&:hover fieldset": { borderColor: "#444444" },
-                "&.Mui-focused fieldset": { borderColor: "#444444" },
-              },
-              "& .MuiInputLabel-root": { color: "#444444" },
-              "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
-            }}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
           />
-  
-          {/* Tabla de fibras seleccionadas */}
-          <div className="max-w-full overflow-x-auto mt-6">
-            <h3 className="text-lg font-semibold text-black dark:text-white mb-2">
-              Seleccionar Fibras
-            </h3>
+
+          {/* Receta (Fibra/Proporciones) */}
+          <h3 className="text-lg font-semibold text-black mt-6 mb-2">
+            Receta (Fibra/Proporciones)
+          </h3>
+          <div className="max-w-full overflow-x-auto">
             <table className="w-full table-auto">
               <thead>
-                <tr className="bg-blue-900 uppercase text-center">
-                  {[
-                    "Id",
-                    "Denominación",
-                    "Origen",
-                    "Categoría",
-                    "Color",
-                    "Proporción",
-                    "Eliminar",
-                  ].map((col, index) => (
-                    <th
-                      key={index}
-                      className="px-4 py-4 text-center font-normal text-white"
-                    >
-                      {col}
-                    </th>
-                  ))}
+                <tr className="bg-blue-900 uppercase text-white text-center">
+                  <th className="px-4 py-4">ID Fibra</th>
+                  <th className="px-4 py-4">Denominación</th>
+                  <th className="px-4 py-4">Origen</th>
+                  <th className="px-4 py-4">Categoría</th>
+                  <th className="px-4 py-4">Color</th>
+                  <th className="px-4 py-4">Proporción %</th>
+                  <th className="px-4 py-4">Eliminar</th>
                 </tr>
               </thead>
               <tbody>
-                {selectedRecipes.map((recipe) => (
-                  <tr key={recipe.fiber.id} className="text-center">
-                    <td className="border-b border-[#eee] px-4 py-5">{recipe.fiber.id}</td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      {recipe.fiber.denomination || "Sin denominación"}
+                {selectedRecipes.map((r) => (
+                  <tr key={r.fiber.id} className="text-center">
+                    <td className="border-b border-gray-300 px-4 py-5">
+                      {r.fiber.id}
                     </td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      {recipe.fiber.origin || "Sin procedencia"}
+                    <td className="border-b border-gray-300 px-4 py-5">
+                      {r.fiber.denomination || "--"}
                     </td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      {recipe.fiber.category?.value || "Sin categoría"}
+                    <td className="border-b border-gray-300 px-4 py-5">
+                      {r.fiber.origin || "--"}
                     </td>
-                    <td className="border-b border-[#eee] px-4 py-5">
-                      {recipe.fiber.color?.name || "Sin color"}
+                    <td className="border-b border-gray-300 px-4 py-5">
+                      {r.fiber.category?.value || "--"}
                     </td>
-                    <td className="border-b border-[#eee] px-4 py-5">
+                    <td className="border-b border-gray-300 px-4 py-5">
+                      {r.fiber.color?.name || "--"}
+                    </td>
+                    <td className="border-b border-gray-300 px-4 py-5">
                       <TextField
                         variant="outlined"
                         size="small"
-                        value={recipe.proportion}
-                        onChange={(e) =>
-                          handleProportionChange(recipe.fiber.id, e.target.value)
-                        }
                         type="number"
-                        placeholder="Proporción"
+                        value={r.proportion}
+                        onChange={(e) =>
+                          handleProportionChange(r.fiber.id, e.target.value)
+                        }
                       />
                     </td>
-                    <td className="border-b border-[#eee] px-4 py-5">
+                    <td className="border-b border-gray-300 px-4 py-5">
                       <IconButton
-                        style={{
-                          backgroundColor: "#ffffff",
-                          color: "#d32f2f",
-                        }}
-                        onClick={() => handleDeleteSelectedFiber(recipe.fiber.id)}
+                        style={{ color: "#d32f2f" }}
+                        onClick={() => handleDeleteFiber(r.fiber.id)}
                       >
                         <Close />
                       </IconButton>
@@ -329,126 +412,109 @@ const CrearHilado: React.FC = () => {
                 ))}
               </tbody>
             </table>
-            <IconButton onClick={toggleFibrasDialog} color="primary">
-              <Add />
-            </IconButton>
           </div>
-  
+          <Button
+            startIcon={<Add />}
+            variant="outlined"
+            onClick={() => setOpenFibrasDialog(true)}
+            className="mt-2"
+          >
+            Agregar Fibra
+          </Button>
+
           {/* Botones de acción */}
-          <div className="flex justify-end mt-6 gap-4">
+          <div className="flex justify-end gap-4 mt-6">
             <Button
               onClick={handleCancel}
               variant="contained"
-              style={{
-                backgroundColor: "#d32f2f",
-                color: "#fff",
-                borderRadius: "8px",
-              }}
+              style={{ backgroundColor: "#d32f2f", color: "#fff" }}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               variant="contained"
-              style={{
-                backgroundColor: "#1976d2",
-                color: "#fff",
-                borderRadius: "8px",
-              }}
+              style={{ backgroundColor: "#1976d2", color: "#fff" }}
             >
               Crear
             </Button>
           </div>
         </form>
       </div>
-  
-      {/* Diálogo para seleccionar fibras */}
-      <Dialog open={openFibrasDialog} onClose={toggleFibrasDialog} maxWidth="md" fullWidth>
+
+      {/* Diálogo para Fibras */}
+      <Dialog
+        open={openFibrasDialog}
+        onClose={() => setOpenFibrasDialog(false)}
+        fullWidth
+        maxWidth="md"
+      >
         <DialogTitle>Seleccionar Fibras</DialogTitle>
         <DialogContent>
-          <div className="flex justify-between items-center">
-            <TextField
-              variant="outlined"
-              placeholder="Buscar..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              size="small"
-              style={{ width: "50%" }}
-            />
-            <Button
-              onClick={handleReloadFibras}
-              style={{ backgroundColor: "#1976d2", color: "#fff" }}
-            >
-              Recargar Fibras
-            </Button>
+          <TextField
+            variant="outlined"
+            placeholder="Buscar fibra..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            size="small"
+            style={{ width: "50%" }}
+          />
+          <div className="max-w-full overflow-x-auto mt-4">
+            <table className="w-full table-auto">
+              <thead>
+                <tr className="bg-blue-900 uppercase text-white text-center">
+                  <th className="px-4 py-4">ID</th>
+                  <th className="px-4 py-4">Denominación</th>
+                  <th className="px-4 py-4">Origen</th>
+                  <th className="px-4 py-4">Categoría</th>
+                  <th className="px-4 py-4">Color</th>
+                  <th className="px-4 py-4">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredFibras
+                  .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
+                  .map((fibra) => {
+                    const alreadySelected = selectedRecipes.some(
+                      (r) => r.fiber.id === fibra.id
+                    );
+                    return (
+                      <tr key={fibra.id} className="text-center">
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          {fibra.id}
+                        </td>
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          {fibra.denomination || "--"}
+                        </td>
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          {fibra.origin || "--"}
+                        </td>
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          {fibra.category?.value || "--"}
+                        </td>
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          {fibra.color?.name || "--"}
+                        </td>
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          {alreadySelected ? (
+                            <span className="text-gray-500">Seleccionada</span>
+                          ) : (
+                            <IconButton
+                              color="primary"
+                              onClick={() => handleAddFiber(fibra)}
+                            >
+                              <Add />
+                            </IconButton>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
           </div>
-          <table className="w-full table-auto mt-4">
-            <thead>
-              <tr className="bg-blue-900 uppercase text-center">
-                {["Id", "Denominación", "Origen", "Categoría", "Color"].map(
-                  (col, index) => (
-                    <th
-                      key={index}
-                      className="px-4 py-4 text-center font-normal text-white"
-                    >
-                      {col}
-                    </th>
-                  )
-                )}
-                <th className="px-4 py-4 text-center font-normal text-white">
-                  Seleccionar
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredFibras
-                .slice(
-                  pagina * filasPorPagina,
-                  pagina * filasPorPagina + filasPorPagina
-                )
-                .map((fibra) => {
-                  const isSelected = selectedRecipes.some(
-                    (recipe) => recipe.fiber.id === fibra.id
-                  );
-                  return (
-                    <tr
-                      key={fibra.id}
-                      className={`text-center ${
-                        isSelected ? "bg-green-100" : ""
-                      }`}
-                    >
-                      <td className="border-b border-[#eee] px-4 py-5">{fibra.id}</td>
-                      <td className="border-b border-[#eee] px-4 py-5">
-                        {fibra.denomination || "Sin denominación"}
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5">
-                        {fibra.origin || "Sin procedencia"}
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5">
-                        {fibra.category?.value || "Sin categoría"}
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5">
-                        {fibra.color?.name || "Sin color"}
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5">
-                        {isSelected ? (
-                          <span className="text-green-600 font-medium">
-                            Seleccionada
-                          </span>
-                        ) : (
-                          <IconButton
-                            color="primary"
-                            onClick={() => handleAddFiber(fibra)}
-                          >
-                            <Add />
-                          </IconButton>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
+        </DialogContent>
+        <DialogActions>
           <TablePagination
             component="div"
             count={filteredFibras.length}
@@ -458,22 +524,21 @@ const CrearHilado: React.FC = () => {
             onRowsPerPageChange={(e) =>
               setFilasPorPagina(parseInt(e.target.value, 10))
             }
+            rowsPerPageOptions={[5, 10, 25]}
           />
-        </DialogContent>
-        <DialogActions>
           <Button
-            onClick={toggleFibrasDialog}
-            style={{ backgroundColor: "#1976d2", color: "#fff" }}
+            onClick={() => setOpenFibrasDialog(false)}
+            style={{ backgroundColor: "#d32f2f", color: "#fff" }}
           >
-            Guardar
+            Cerrar
           </Button>
         </DialogActions>
       </Dialog>
-  
+
       {/* Snackbar */}
       <Snackbar
-        open={openSnackbar}
-        autoHideDuration={3000}
+        open={snackbarOpen}
+        autoHideDuration={6000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
@@ -487,6 +552,6 @@ const CrearHilado: React.FC = () => {
       </Snackbar>
     </div>
   );
-}  
+};
 
 export default CrearHilado;

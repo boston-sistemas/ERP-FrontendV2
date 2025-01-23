@@ -43,3 +43,8 @@ export const fetchYarnPurchaseEntryDetails = async (
     const response = await instance.get(`operations/v1/suppliers/hil?limit=100&offset=0&include_annulled=false`);
     return response.data;
   }
+
+  export const fetchPurchaseOrderbyId = async (id: string) => {
+    const response = await instance.get(`operations/v1/orden-compra/yarns/${id}`);  
+    return response.data;
+  }

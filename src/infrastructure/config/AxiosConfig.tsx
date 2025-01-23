@@ -7,13 +7,8 @@ const server = 'http://10.0.1.13:8000/';
 const server2 = 'http://10.0.1.13:7000/';
 
 const instance = axios.create({
-  baseURL: server2,
-  withCredentials: true,
-});
-
-const instance2 = axios.create({
   baseURL: server,
   withCredentials: true,
 });
 
-export default instance; instance2;
+export default instance;
