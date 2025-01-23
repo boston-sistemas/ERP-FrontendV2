@@ -239,6 +239,8 @@ const CrearFibra: React.FC = () => {
 
           {/* TOGGLE PARA ACTIVAR/DESACTIVAR COLOR */}
           <FormControlLabel
+            label="¿Fibra con color?"
+            labelPlacement="start"
             control={
               <Switch
                 checked={isColorEnabled}
@@ -246,37 +248,37 @@ const CrearFibra: React.FC = () => {
                 color="primary"
               />
             }
-            label="Habilitar campo de color"
-            sx={{color: "black"}}
+            sx={{ color: "black" }}
           />
 
           {/* COLOR */}
-          <TextField
-            label="Color"
-            fullWidth
-            select
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            margin="dense"
-            variant="outlined"
-            disabled={!isColorEnabled} // Deshabilitado según el estado del toggle
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": { borderColor: "#444444" },
-                "&:hover fieldset": { borderColor: "#444444" },
-                "&.Mui-focused fieldset": { borderColor: "#444444" },
-              },
-              "& .MuiInputLabel-root": { color: "#444444" },
-              "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
-            }}
-          >
-            <MenuItem value="">Sin color</MenuItem>
-            {colors.map((col) => (
-              <MenuItem key={col.id} value={col.id}>
-                {col.name}
-              </MenuItem>
-            ))}
-          </TextField>
+          {isColorEnabled && (
+            <TextField
+              label="Color"
+              fullWidth
+              select
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              margin="dense"
+              variant="outlined"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": { borderColor: "#444444" },
+                  "&:hover fieldset": { borderColor: "#444444" },
+                  "&.Mui-focused fieldset": { borderColor: "#444444" },
+                },
+                "& .MuiInputLabel-root": { color: "#444444" },
+                "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+              }}
+            >
+              <MenuItem value="">Sin color</MenuItem>
+              {colors.map((col) => (
+                <MenuItem key={col.id} value={col.id}>
+                  {col.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
 
           {/* BOTONES */}
           <div className="flex justify-between mt-6">

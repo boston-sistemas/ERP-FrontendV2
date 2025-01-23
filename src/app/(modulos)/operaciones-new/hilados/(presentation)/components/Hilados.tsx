@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TablePagination,
   IconButton,
@@ -12,69 +12,145 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  Menu,
   Select,
   MenuItem,
   FormControlLabel,
   Switch,
+  InputLabel,
+  FormControl,
+  Checkbox,
+  ListItemText
 } from "@mui/material";
-import { Edit, PowerSettingsNew, Add, Search, FilterList, Close, Visibility } from "@mui/icons-material";
-import { fetchHilados, updateYarnStatus, fetchSpinningMethods, updateYarn } from "../../services/hiladoService";
-import { handleUpdateYarn } from "../../use-cases/hilado";
-import { Yarn, Recipe, Fiber} from "../../../models/models";
+import {
+  Edit,
+  PowerSettingsNew,
+  Add,
+  Search,
+  Close,
+  Visibility,
+} from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-import { fetchFibras } from "../../../fibras/services/fibraService";
+
+// --- import de servicios ---
+import {
+  fetchHilados,
+  updateYarnStatus,
+  fetchSpinningMethods,
+  updateYarn,
+  checkYarnUpdateStatus,  
+  fetchYarnCounts,
+  fetchManufacturingSites,
+  fetchYarnDistinctions
+} from "../../services/hiladoService";
+import { fetchFibras, fetchMecsaColors } from "../../../fibras/services/fibraService";
+
+import { Yarn, Recipe, Fiber, MecsaColor } from "../../../models/models";
 
 const Hilados: React.FC = () => {
   const router = useRouter();
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Estados generales
+  // ────────────────────────────────────────────────────────────────────────────
   const [hilados, setHilados] = useState<Yarn[]>([]);
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
+
+  // Snackbar
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
-  const [editingYarn, setEditingYarn] = useState<Yarn | null>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">(
+    "success"
+  );
+
+  // Para filtro/búsqueda
   const [searchTerm, setSearchTerm] = useState("");
+  const [includeInactive, setIncludeInactive] = useState(false);
+
+  // Mostrar/ocultar columnas
   const [showEditColumn, setShowEditColumn] = useState(true);
   const [showDisableColumn, setShowDisableColumn] = useState(true);
-  const [selectedFibras, setSelectedFibras] = useState<Fiber[]>([]);
-  const [availableFibras, setAvailableFibras] = useState<Fiber[]>([]);
-  const [showAvailableFibers, setShowAvailableFibers] = useState(false);
-  const [showFiberDialog, setShowFiberDialog] = useState(false);
-  const [spinningMethods, setSpinningMethods] = useState<{ id: number; value: string }[]>([]);
-  const [includeInactive, setIncludeInactive] = useState(false);
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Dialogos (visualizar receta, editar hilado, escoger fibras)
+  // ────────────────────────────────────────────────────────────────────────────
+  // Receta: diálogo de visualización
   const [openRecipeDialog, setOpenRecipeDialog] = useState(false);
-  const [selectedRecipe, setSelectedRecipe] = useState<any[]>([]); 
-  const [page, setPage] = useState(0); // Página actual
-  const [rowsPerPage, setRowsPerPage] = useState(5); // Filas por página
+  const [selectedRecipe, setSelectedRecipe] = useState<any[]>([]);
+
+  // Editar
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingYarn, setEditingYarn] = useState<Yarn | null>(null);
+
+  // Diálogo de Fibras
+  const [showFiberDialog, setShowFiberDialog] = useState(false);
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Atributos de la edición
+  // ────────────────────────────────────────────────────────────────────────────
+  const [availableFibras, setAvailableFibras] = useState<Fiber[]>([]);
+  const [availableYarnCounts, setAvailableYarnCounts] = useState<
+    { id: number; value: string }[]
+  >([]);
+  const [availableSpinningMethods, setAvailableSpinningMethods] = useState<
+    { id: number; value: string }[]
+  >([]);
+  const [availableColors, setAvailableColors] = useState<MecsaColor[]>([]);
+  const [availableManufacturingSites, setAvailableManufacturingSites] =
+    useState<{ id: number; value: string }[]>([]);
+  const [availableDistinctions, setAvailableDistinctions] = useState<
+    { id: number; value: string }[]
+  >([]);
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Estados del Form de edición
+  // ────────────────────────────────────────────────────────────────────────────
   const [editForm, setEditForm] = useState<{
-    title: string;
-    finish: string;
+    yarnCountId: number | "";
+    spinningMethodId: number | "";
+    colorId: string;
+    manufacturedInId: number | "";
+    distinctionIds: number[];
     description: string;
     recipe: Recipe[];
   }>({
-    title: "",
-    finish: "",
+    yarnCountId: "",
+    spinningMethodId: "",
+    colorId: "",
+    manufacturedInId: "",
+    distinctionIds: [],
     description: "",
     recipe: [],
   });
+
+  // Para controlar si es parcial
+  const [isPartial, setIsPartial] = useState(false);
+  const [allowedFields, setAllowedFields] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const data = await fetchHilados(includeInactive);
-        const spinningMethods = await fetchSpinningMethods();
-        const dataFibers = await fetchFibras(includeInactive);
-        setAvailableFibras(dataFibers.fibers);
-        setHilados(data.yarns); 
-        setSpinningMethods(spinningMethods);
-        console.log("Estado actualizado de hilados:", data.yarns); 
+        setHilados(data.yarns);
+
+        const spinningMeths = await fetchSpinningMethods();
+        setAvailableSpinningMethods(spinningMeths);
+
+        const fibers = await fetchFibras(includeInactive);
+        setAvailableFibras(fibers.fibers);
+
+        const yarnCounts = await fetchYarnCounts();
+        setAvailableYarnCounts(yarnCounts);
+
+        const colors = await fetchMecsaColors();
+        setAvailableColors(colors);
+
+        const sites = await fetchManufacturingSites();
+        setAvailableManufacturingSites(sites);
+
+        const dists = await fetchYarnDistinctions();
+        setAvailableDistinctions(dists);
+
       } catch (error) {
         console.error("Error fetching hilados:", error);
         setSnackbarMessage("Error al cargar los datos de hilados.");
@@ -84,188 +160,263 @@ const Hilados: React.FC = () => {
     };
     fetchData();
   }, [includeInactive]);
-  
-  const handleOpenRecipeDialog = (recipe: any[]) => {
-    setSelectedRecipe(recipe); // Guarda la receta seleccionada
-    setOpenRecipeDialog(true); // Abre el diálogo
-  };
-  
-  const handleCloseRecipeDialog = () => {
-    setSelectedRecipe([]);
-    setOpenRecipeDialog(false);
-  };
-  
-  const handleEditClick = (yarn: Yarn) => {
-    if (!yarn) {
-      console.error("El objeto 'yarn' es nulo o indefinido");
-      return;
-    }
-  
-    setEditingYarn(yarn);
-  
-    setEditForm({
-      title: yarn.yarnCount || "", // Verificar si yarnCount existe
-      finish: yarn.spinningMethod?.id?.toString() || "", // Verificar si spinningMethod e id existen
-      description: yarn.description || "", // Verificar si description existe
-      recipe: yarn.recipe ? [...yarn.recipe] : [], // Validar recipe
-    });
-  
-    setEditDialogOpen(true);
-  };
-  
 
-  const handleEditClose = () => {
-    setEditDialogOpen(false);
-    setEditingYarn(null);
-  };
-
+  // ────────────────────────────────────────────────────────────────────────────
+  // FILTROS
+  // ────────────────────────────────────────────────────────────────────────────
   const handleSwitchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setIncludeInactive(event.target.checked);
-  }
+  };
 
-  const handleEditSave = async () => {
-    if (editingYarn) {
-      try {
-        await updateYarn(editingYarn.id, {
-          yarnCount: editForm.title,
-          numberingSystem: "Ne",
-          spinningMethodId: parseInt(editForm.finish, 10),
-          colorId: editingYarn.color?.id || null,
-          description: editForm.description,
-          recipe: editForm.recipe.map((item) => ({
-            fiberId: item.fiber!.id,
-            proportion: item.proportion,
-          })),
-        });
-  
-        // Mostrar mensaje de éxito
-        setSnackbarMessage("Hilado actualizado correctamente.");
-        setSnackbarSeverity("success");
-        setSnackbarOpen(true);
-  
-        // Cerrar el diálogo de edición
-        handleEditClose();
-  
-        // Recargar los datos desde el backend
-        const data = await fetchHilados(includeInactive);
-        setHilados(data.yarns); // Actualizar la tabla con los datos más recientes
-      } catch (error: any) {
-        setSnackbarMessage(error.message || "Error al actualizar el hilado.");
-        setSnackbarSeverity("error");
-        setSnackbarOpen(true);
-      }
-    }
-  };  
-
-  const handleToggleYarnStatus = async (id: string, isActive: boolean) => {
-    try {
-      await updateYarnStatus(id, !isActive);
-      setHilados((prev) =>
-        prev.map((hilado) =>
-          hilado.id === id ? { ...hilado, isActive: !isActive } : hilado
-        )
-      );
-      setSnackbarMessage(`Hilado ${!isActive ? "habilitado" : "deshabilitado"} correctamente.`);
-      setSnackbarSeverity("success");
-    } catch (error) {
-      console.error("Error actualizando el estado del hilado:", error);
-      setSnackbarMessage("Error al actualizar el estado del hilado.");
-      setSnackbarSeverity("error");
-    } finally {
-      setSnackbarOpen(true);
-    }
-  };  
-
-  const handleCrearHilado = () => {
-    router.push("/operaciones-new/hilados/crear-hilado");
-  }
-
-  const filteredFibras = availableFibras.filter((fibra) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      fibra.denomination?.toLowerCase().includes(searchLower) ||
-      fibra.category?.value?.toLowerCase().includes(searchLower) ||
-      fibra.origin?.toLowerCase().includes(searchLower) ||
-      fibra.color?.name?.toLowerCase().includes(searchLower)
-    );
-  });
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
 
   const filteredHilados = hilados.filter((h) => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      h.yarnCount.toLowerCase().includes(searchLower) ||
-      h.description.toLowerCase().includes(searchLower) ||
-      h.color?.name.toLowerCase().includes(searchLower) ||
-      h.description.toLowerCase().includes(searchLower) ||
-      h.spinningMethod?.value.toLowerCase().includes(searchLower) || 
-      h.barcode.toString().includes(searchLower) 
-    )
+      (h.yarnCount?.value || "").toLowerCase().includes(searchLower) ||
+      (h.description || "").toLowerCase().includes(searchLower) ||
+      (h.color?.name || "").toLowerCase().includes(searchLower) ||
+      (h.spinningMethod?.value || "").toLowerCase().includes(searchLower) ||
+      String(h.barcode ?? "").toLowerCase().includes(searchLower)
+    );
   });
 
-  const handleReloadFibras = async () => {
+  // ────────────────────────────────────────────────────────────────────────────
+  // VISUALIZAR RECETA
+  // ────────────────────────────────────────────────────────────────────────────
+  const handleOpenRecipeDialog = (recipe: any[]) => {
+    setSelectedRecipe(recipe);
+    setOpenRecipeDialog(true);
+  };
+  const handleCloseRecipeDialog = () => {
+    setSelectedRecipe([]);
+    setOpenRecipeDialog(false);
+  };
+
+  const handleCrearHilado = () => {
+    router.push("/operaciones-new/hilados/crear-hilado");
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // EDITAR HILADO
+  // ────────────────────────────────────────────────────────────────────────────
+  const handleEditClick = async (yarn: Yarn) => {
     try {
-      const fibras = await fetchFibras(false);
-      setAvailableFibras(fibras.fibers);
-      setSnackbarMessage("Fibras recargadas correctamente.");
-      setSnackbarSeverity("success");
-      setSnackbarOpen(true);
-    } catch (error) {
-      console.error("Error recargando las fibras:", error);
-      setSnackbarMessage("Error al recargar las fibras. Inténtelo de nuevo.");
+      const status = await checkYarnUpdateStatus(yarn.id);
+      if (!status.updatable) {
+        setSnackbarMessage(status.message || "El hilado no es editable.");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+        return;
+      }
+
+      setIsPartial(status.isPartial);
+      setAllowedFields(status.fields || []); 
+
+      setEditingYarn(yarn);
+      setEditForm({
+        yarnCountId: yarn.yarnCount?.id || "",
+        spinningMethodId: yarn.spinningMethod?.id || "",
+        colorId: yarn.color?.id || "",
+        manufacturedInId: yarn.manufacturedIn?.id || "",
+        distinctionIds: yarn.distinctions
+          ? yarn.distinctions.map((dist) => dist.id)
+          : [],
+        description: yarn.description || "",
+        recipe: yarn.recipe ? [...yarn.recipe] : [],
+      });
+
+      setEditDialogOpen(true);
+    } catch (err: any) {
+      console.error("Error al chequear status de hilado:", err);
+      setSnackbarMessage(
+        err.message || "No se pudo verificar si el hilado es editable."
+      );
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
     }
   };
 
-  const handleAddFiber = (fibra: Fiber) => {
-    const fiberExists = editForm.recipe.some((r) => r.fiber.id === fibra.id);
+  const handleEditClose = () => {
+    setEditDialogOpen(false);
+    setEditingYarn(null);
+    setIsPartial(false);
+    setAllowedFields([]);
+  };
 
-    if (!fiberExists) {
-        setEditForm((prevEditForm) => ({
-            ...prevEditForm,
-            recipe: [
-                ...prevEditForm.recipe,
-                { proportion: 0, fiber: fibra }, // Inicializa la proporción a 0
-            ],
-        }));
-    setSnackbarMessage("Fibra añadida correctamente");
-    setSnackbarSeverity("success");
-    setSnackbarOpen(true);
+  const handleEditSave = async () => {
+    if (!editingYarn) return;
+  
+    let payload: any = {};
+  
+    if (isPartial) {
+      payload = {
+        description: editForm.description,
+      };
+    } else {
+      payload = {
+        yarnCountId:
+          editForm.yarnCountId !== "" ? Number(editForm.yarnCountId) : null,
+        spinningMethodId:
+          editForm.spinningMethodId !== ""
+            ? Number(editForm.spinningMethodId)
+            : null,
+        colorId: editForm.colorId || null,
+        manufacturedInId:
+          editForm.manufacturedInId !== ""
+            ? Number(editForm.manufacturedInId)
+            : null,
+        distinctionIds: editForm.distinctionIds,
+        description: editForm.description,
+        recipe: editForm.recipe.map((item) => ({
+          fiberId: item.fiber?.id,
+          proportion: item.proportion,
+        })),
+      };
     }
-};
 
-  const handleDeleteSelectedFibra = (id: string) => {
-    setEditForm((prevEditForm) => ({
-        ...prevEditForm,
-        recipe: prevEditForm.recipe.filter((r) => r.fiber.id !== id),
+    try {
+      await updateYarn(editingYarn.id, payload);
+
+      setSnackbarMessage("Hilado actualizado correctamente.");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+
+      // Recargar tabla
+      const data = await fetchHilados(includeInactive);
+      setHilados(data.yarns);
+
+      handleEditClose(); 
+    } catch (error: any) {
+      console.error("Error actualizando el hilado:", error);
+      setSnackbarMessage(error.message || "Error al actualizar el hilado.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // (DES)HABILITAR HILADO
+  // ────────────────────────────────────────────────────────────────────────────
+  const handleToggleYarnStatus = async (id: string, isActive: boolean) => {
+    try {
+      await updateYarnStatus(id, !isActive);
+      setHilados((prev) =>
+        prev.map((h) =>
+          h.id === id ? { ...h, isActive: !isActive } : h
+        )
+      );
+      setSnackbarMessage(
+        `Hilado ${!isActive ? "habilitado" : "deshabilitado"} correctamente.`
+      );
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error("Error al cambiar estado del hilado:", error);
+      setSnackbarMessage("Error al cambiar estado del hilado.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // FIBRAS EN EL DIALOGO
+  // ────────────────────────────────────────────────────────────────────────────
+  const [fiberSearchTerm, setFiberSearchTerm] = useState("");
+  const [fiberPage, setFiberPage] = useState(0);
+  const [fiberRowsPerPage, setFiberRowsPerPage] = useState(5);
+
+  const filteredFibras = availableFibras.filter((fibra) => {
+    const searchLower = fiberSearchTerm.toLowerCase();
+    return (
+      fibra.denomination?.value?.toLowerCase().includes(searchLower) ||
+      fibra.category?.value?.toLowerCase().includes(searchLower) ||
+      (fibra.origin || "").toLowerCase().includes(searchLower) ||
+      fibra.color?.name?.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const handleFiberDialogClose = () => setShowFiberDialog(false);
+
+  const handleReloadFibras = async () => {
+    try {
+      const fibs = await fetchFibras(false);
+      setAvailableFibras(fibs.fibers);
+      setSnackbarMessage("Fibras recargadas correctamente.");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+    } catch (error: any) {
+      console.error("Error recargando fibras:", error);
+      setSnackbarMessage("Error al recargar fibras.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Añadir / Eliminar fibras de la receta en EDICIÓN
+  // ────────────────────────────────────────────────────────────────────────────
+  const handleAddFiber = (fibra: Fiber) => {
+    if (!editForm.recipe.some((r) => r.fiber?.id === fibra.id)) {
+      setEditForm((prev) => ({
+        ...prev,
+        recipe: [...prev.recipe, { fiber: fibra, proportion: 0 }],
+      }));
+      setSnackbarMessage("Fibra añadida a la receta");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+    }
+  };
+
+  const handleDeleteSelectedFibra = (fiberId?: string) => {
+    setEditForm((prev) => ({
+      ...prev,
+      recipe: prev.recipe.filter((r) => r.fiber?.id !== fiberId),
     }));
   };
 
-  const handleProportionChange = (id: string, value: string) => {
-    setEditForm((prevEditForm) => ({
-        ...prevEditForm,
-        recipe: prevEditForm.recipe.map((r) =>
-            r.fiber.id === id ? { ...r, proportion: Number(value) } : r
-        ),
+  const handleProportionChange = (fiberId?: string, val?: string) => {
+    const num = Number(val || 0);
+    setEditForm((prev) => ({
+      ...prev,
+      recipe: prev.recipe.map((r) =>
+        r.fiber?.id === fiberId ? { ...r, proportion: num } : r
+      ),
     }));
   };
 
-  const toggleAvailableFibers = () => {
-    setShowAvailableFibers(!showAvailableFibers);
+  // ────────────────────────────────────────────────────────────────────────────
+  // Distinciones (múltiples) en EDICIÓN
+  // ────────────────────────────────────────────────────────────────────────────
+  const handleDistinctionChange = (e: any) => {
+    const { value } = e.target;
+    setEditForm((prev) => ({
+      ...prev,
+      distinctionIds: typeof value === "string" ? value.split(",") : value,
+    }));
   };
 
-  const handleFiberDialogClose = () => {
-    setShowFiberDialog(false);
+  // ────────────────────────────────────────────────────────────────────────────
+  // Funciones de ayuda para "edición parcial"
+  // ────────────────────────────────────────────────────────────────────────────
+  const isFieldDisabled = (fieldName: string) => {
+    // Si no es parcial → no deshabilitamos nada
+    if (!isPartial) return false;
+    // Si es parcial, sólo habilitamos los campos presentes en allowedFields
+    return !allowedFields.includes(fieldName);
   };
 
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchTerm(event.target.value);
-    };
+  const handleCloseSnackbar = () => setSnackbarOpen(false);
 
+  // ────────────────────────────────────────────────────────────────────────────
+  // RENDER
+  // ────────────────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default sm:px-7.5 xl:pb-1">
-        {/* Barra superior dentro del contenedor de la tabla */}
+        {/* Barra superior */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
             <div className="flex items-center border border-gray-300 rounded-md px-2">
@@ -281,18 +432,23 @@ const Hilados: React.FC = () => {
               />
             </div>
             <FormControlLabel
-            control={
-              <Switch
-                checked={includeInactive}
-                onChange={handleSwitchChange} 
-                color="primary"
-              />
-            }
-            label="Mostrar inactivos"
+              control={
+                <Switch
+                  checked={includeInactive}
+                  onChange={handleSwitchChange}
+                  color="primary"
+                />
+              }
+              label="Mostrar inactivos"
             />
           </div>
           <div className="space-x-2">
-            <Button startIcon={<Add />} variant="contained" style={{ backgroundColor: "#1976d2", color: "#fff" }} onClick={handleCrearHilado}>
+            <Button
+              startIcon={<Add />}
+              variant="contained"
+              style={{ backgroundColor: "#1976d2", color: "#fff" }}
+              onClick={handleCrearHilado}
+            >
               CREAR
             </Button>
             <Button
@@ -315,7 +471,7 @@ const Hilados: React.FC = () => {
             </Button>
           </div>
         </div>
-  
+
         {/* Tabla principal */}
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
@@ -324,36 +480,53 @@ const Hilados: React.FC = () => {
                 <th className="px-4 py-4 font-normal">ID</th>
                 <th className="px-4 py-4 font-normal">DESCRIPCIÓN</th>
                 <th className="px-4 py-4 font-normal">UNIDAD</th>
-                <th className="px-4 py-4 font-normal">TITULO</th>
-                <th className="px-4 py-4 font-normal">sistema de numeración</th>
+                <th className="px-4 py-4 font-normal">TÍTULO</th>
                 <th className="px-4 py-4 font-normal">RECETA</th>
-                <th className="px-4 py-4 font-normal">Acabado</th>
-                <th className="px-4 py-4 font-normal">Estado</th>
-                {showEditColumn && <th className="px-4 py-4 font-normal">Editar</th>}
-                {showDisableColumn && <th className="px-4 py-4 font-normal">Deshabilitar</th>}
+                <th className="px-4 py-4 font-normal">ACABADO</th>
+                <th className="px-4 py-4 font-normal">ESTADO</th>
+                {showEditColumn && <th className="px-4 py-4 font-normal">EDITAR</th>}
+                {showDisableColumn && (
+                  <th className="px-4 py-4 font-normal">DESHABILITAR</th>
+                )}
               </tr>
             </thead>
             <tbody>
               {filteredHilados.length > 0 ? (
                 filteredHilados
-                  .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
+                  .slice(
+                    pagina * filasPorPagina,
+                    pagina * filasPorPagina + filasPorPagina
+                  )
                   .map((hilado) => (
                     <tr key={hilado.id} className="text-center text-black">
-                      <td className="border-b border-gray-300 px-4 py-5">{hilado.id}</td>
-                      <td className="border-b border-gray-300 px-4 py-5">{hilado.description}</td>
-                      <td className="border-b border-gray-300 px-4 py-5">{hilado.inventoryUnitCode}</td>
-                      <td className="border-b border-gray-300 px-4 py-5">{hilado.yarnCount}</td>
-                      <td className="border-b border-gray-300 px-4 py-5">{hilado.numberingSystem}</td>
                       <td className="border-b border-gray-300 px-4 py-5">
-                        <IconButton onClick={() => handleOpenRecipeDialog(hilado.recipe)}>
+                        {hilado.id}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {hilado.description}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {hilado.inventoryUnitCode}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {hilado.yarnCount?.value || ""}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        <IconButton
+                          onClick={() => handleOpenRecipeDialog(hilado.recipe)}
+                        >
                           <Visibility />
                         </IconButton>
                       </td>
-                      <td className="border-b border-gray-300 px-4 py-5">{hilado.spinningMethod?.value}</td>                      
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {hilado.spinningMethod?.value || ""}
+                      </td>
                       <td className="border-b border-gray-300 px-4 py-5">
                         <span
                           className={`text-sm ${
-                            hilado.isActive ? "text-green-500 font-normal" : "text-red-500 font-normal"
+                            hilado.isActive
+                              ? "text-green-500 font-normal"
+                              : "text-red-500 font-normal"
                           }`}
                         >
                           {hilado.isActive ? "Activo" : "Inactivo"}
@@ -368,7 +541,11 @@ const Hilados: React.FC = () => {
                       )}
                       {showDisableColumn && (
                         <td className="border-b border-gray-300 px-4 py-5">
-                          <IconButton onClick={() => handleToggleYarnStatus(hilado.id, hilado.isActive)}>
+                          <IconButton
+                            onClick={() =>
+                              handleToggleYarnStatus(hilado.id, hilado.isActive)
+                            }
+                          >
                             <PowerSettingsNew />
                           </IconButton>
                         </td>
@@ -377,7 +554,7 @@ const Hilados: React.FC = () => {
                   ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="pt-5 pb-5 text-center text-black">
+                  <td colSpan={9} className="pt-5 pb-5 text-center text-black">
                     No hay datos disponibles
                   </td>
                 </tr>
@@ -391,294 +568,455 @@ const Hilados: React.FC = () => {
             rowsPerPage={filasPorPagina}
             page={pagina}
             onPageChange={(_, newPage) => setPagina(newPage)}
-            onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))}
+            onRowsPerPageChange={(e) =>
+              setFilasPorPagina(parseInt(e.target.value, 10))
+            }
           />
         </div>
       </div>
-      {/* Diálogo de receta */}
+
+      {/* Diálogo para VISUALIZAR receta */}
       <Dialog open={openRecipeDialog} onClose={handleCloseRecipeDialog} maxWidth="md" fullWidth>
-      <DialogContent>
-        <h3 className="text-lg font-semibold text-black mb-4">Receta del Hilado</h3>
-        <div className="max-w-full overflow-x-auto">
-          <table className="w-full table-auto border-collapse">
-            <thead>
-              <tr className="bg-blue-900 uppercase text-center text-white">
-                <th className="px-4 py-4 text-center font-normal">Categoria</th>
-                <th className="px-4 py-4 text-center font-normal">Denominación</th>
-                <th className="px-4 py-4 text-center font-normal">Procedencia</th>
-                <th className="px-4 py-4 text-center font-normal">Color</th>
-                <th className="px-4 py-4 text-center font-normal">Proporción (%)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedRecipe.length > 0 ? (
-                selectedRecipe.map((item, index) => (
-                  <tr key={index} className="text-center text-black">
-                    <td className="border-b border-gray-300 px-4 py-5">
-                      {item.fiber?.category?.value || "Sin denominación"}
-                    </td>
-                    <td className="border-b border-gray-300 px-4 py-5">
-                      {item.fiber?.denomination || "Sin categoría"}
-                    </td>
-                    <td className="border-b border-gray-300 px-4 py-5">
-                      {item.fiber?.origin || "Sin procedencia"}
-                    </td>
-                    <td className="border-b border-gray-300 px-4 py-5">
-                      {item.fiber?.color?.name || "Sin color"}
-                    </td>
-                    <td className="border-b border-gray-300 px-4 py-5">
-                      {item.proportion}%
+        <DialogContent>
+          <h3 className="text-lg font-semibold text-black mb-4">
+            Receta del Hilado
+          </h3>
+          <div className="max-w-full overflow-x-auto">
+            <table className="w-full table-auto border-collapse">
+              <thead>
+                <tr className="bg-blue-900 uppercase text-center text-white">
+                  <th className="px-4 py-4 text-center font-normal">
+                    Categoría
+                  </th>
+                  <th className="px-4 py-4 text-center font-normal">
+                    Denominación
+                  </th>
+                  <th className="px-4 py-4 text-center font-normal">
+                    Procedencia
+                  </th>
+                  <th className="px-4 py-4 text-center font-normal">
+                    Color
+                  </th>
+                  <th className="px-4 py-4 text-center font-normal">
+                    Proporción (%)
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedRecipe.length > 0 ? (
+                  selectedRecipe.map((item, index) => (
+                    <tr key={index} className="text-center text-black">
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.category?.value || "Sin categoría"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.denomination?.value || "Sin denominación"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.origin || "Sin procedencia"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.color?.name || "Sin color"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.proportion}%
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="text-center py-4 text-gray-500">
+                      No hay datos disponibles.
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="text-center py-4 text-gray-500">
-                    No hay datos disponibles.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </DialogContent>
-      <DialogActions>
-        <Button
-          onClick={handleCloseRecipeDialog}
-          variant="contained"
-          style={{ backgroundColor: "#d32f2f", color: "#fff" }}
-        >
-          Cerrar
-        </Button>
-      </DialogActions>
-    </Dialog>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseRecipeDialog}
+            variant="contained"
+            style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+          >
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Snackbar */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
+        onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert severity={snackbarSeverity} onClose={() => setSnackbarOpen(false)}>
+        <Alert
+          severity={snackbarSeverity}
+          onClose={handleCloseSnackbar}
+          sx={{ width: "100%" }}
+        >
           {snackbarMessage}
         </Alert>
       </Snackbar>
-  
-      {/* Dialog para edición */}
+
+      {/* Diálogo para EDITAR hilado */}
       <Dialog open={editDialogOpen} onClose={handleEditClose} maxWidth="md" fullWidth>
-      <DialogTitle>Editar Hilado</DialogTitle>
-      <DialogContent>
-        <TextField
-          label="Número de hilos"
-          fullWidth
-          margin="dense"
-          value={editForm.title}
-          onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-        />
-        <div className="mt-4">
-        <label htmlFor="spinningMethod" className="block text-sm font-medium text-gray-700 mb-1">
-          Acabado del hilado
-        </label>
-        <Select
-  id="spinningMethod"
-  value={editForm.finish} // Aquí se refleja el ID del método seleccionado
-  onChange={(e) => setEditForm({ ...editForm, finish: e.target.value })}
-  displayEmpty
-  fullWidth
-  margin="dense"
-  variant="outlined"
-  sx={{
-    "& .MuiOutlinedInput-root": {
-      "& fieldset": {
-        borderColor: "#444444", // Color negro por defecto
-      },
-      "&:hover fieldset": {
-        borderColor: "#444444", // Color negro al pasar el cursor
-      },
-      "&.Mui-focused fieldset": {
-        borderColor: "#444444", // Color negro al enfocar
-      },
-    },
-    "& .MuiInputLabel-root": { color: "#444444" },
-    "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
-  }}
->
-  <MenuItem value="">
-    <em>Sin acabado de hilado</em>
-  </MenuItem>
-  {spinningMethods.map((method) => (
-    <MenuItem key={method.id} value={method.id}>
-      {method.value}
-    </MenuItem>
-  ))}
-</Select>
-      </div>
-        <TextField
-          label="Descripción"
-          fullWidth
-          multiline
-          rows={3}
-          margin="dense"
-          value={editForm.description}
-          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-        />
-        {/* Tabla de receta */}
-        <h3 className="text-lg font-semibold text-black dark:text-white mb-2">Receta</h3>
-        <div className="max-w-full overflow-x-auto">
-          <table className="w-full table-auto">
-            <thead>
-              <tr className="bg-blue-900 uppercase text-center">
-                <th className="px-4 py-4 text-center font-normal text-white">Denominación</th>
-                <th className="px-4 py-4 text-center font-normal text-white">Categoría</th>
-                <th className="px-4 py-4 text-center font-normal text-white">Procedencia</th>
-                <th className="px-4 py-4 text-center font-normal text-white">Color</th>
-                <th className="px-4 py-4 text-center font-normal text-white">Proporción</th>
-                <th className="px-4 py-4 text-center font-normal text-white">Eliminar</th>
-              </tr>
-            </thead>
-            <tbody>
-              {editForm.recipe.map((r, index) => (
-                <tr key={index} className="text-center">
-                  <td className="border-b border-[#eee] px-4 py-5">
-                    {r.fiber?.denomination || "Sin denominación"}
-                  </td>
-                  <td className="border-b border-[#eee] px-4 py-5">
-                    {r.fiber?.category?.value || "Sin categoría"}
-                  </td>
-                  <td className="border-b border-[#eee] px-4 py-5">
-                    {r.fiber?.origin || "Sin procedencia"}
-                  </td>
-                  <td className="border-b border-[#eee] px-4 py-5">
-                    {r.fiber?.color?.name || "Sin color"}
-                  </td>
-                  <td className="border-b border-[#eee] px-4 py-5">
-                    <TextField
-                      variant="outlined"
-                      size="small"
-                      value={r.proportion || ""}
-                      onChange={(e) => handleProportionChange(r.fiber?.id, e.target.value)}
-                      placeholder="Proporción"
-                      type="number"
-                    />
-                  </td>
-                  <td className="border-b border-[#eee] px-4 py-5">
-                    <IconButton
-                      style={{ backgroundColor: "#ffff", color: "#d32f2f" }}
-                      onClick={() => handleDeleteSelectedFibra(r.fiber?.id)}
-                    >
-                      <Close />
-                    </IconButton>
-                  </td>
-                </tr>
+        <DialogTitle>Editar Hilado</DialogTitle>
+        <DialogContent>
+        {isPartial ? (
+      /* ─────────────────────────────────────────────────────────
+         SI ES PARCIAL → SOLO SE RENDERIZA EL CAMPO "DESCRIPCIÓN"
+         ───────────────────────────────────────────────────────── */
+      <TextField
+        label="Descripción"
+        fullWidth
+        multiline
+        rows={3}
+        margin="dense"
+        value={editForm.description}
+        onChange={(e) =>
+          setEditForm((prev) => ({ ...prev, description: e.target.value }))
+        }
+        disabled={isFieldDisabled("description")}
+      />
+    ) : (
+        <>
+          {/* YarnCount */}
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Título de Hilado</InputLabel>
+            <Select
+              label="Título de Hilado"
+              value={editForm.yarnCountId !== "" ? editForm.yarnCountId : ""}
+              onChange={(e) =>
+                setEditForm((prev) => ({
+                  ...prev,
+                  yarnCountId: e.target.value as number
+                }))
+              }
+              disabled={isFieldDisabled("yarnCountId")}
+            >
+              <MenuItem value="">-- Sin título --</MenuItem>
+              {availableYarnCounts.map((yc) => (
+                <MenuItem key={yc.id} value={yc.id}>
+                  {yc.value}
+                </MenuItem>
               ))}
-            </tbody>
-          </table>
-          <IconButton onClick={() => setShowFiberDialog(true)} style={{ color: "#1976d2" }}>
-            <Add />
-          </IconButton>
-        </div>
-      </DialogContent>
-        {/* Diálogo de fibras disponibles */}
-<Dialog open={showFiberDialog} onClose={() => setShowFiberDialog(false)} maxWidth="md" fullWidth>
-  <DialogContent>
-    <h3 className="text-lg font-semibold text-black dark:text-white mb-4">Fibras Disponibles</h3>
-    <div className="mb-4 flex justify-between items-center">
-      {/* Buscador */}
-      <div className="flex justify-between items-center">
-        <TextField
-          variant="outlined"
-          placeholder="Buscar..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          size="small"
-          style={{ width: "50%" }}
-        />
-        <Button
-          onClick={handleReloadFibras}
-          style={{ backgroundColor: "#1976d2", color: "#fff" }}
-        >
-          Recargar Fibras
-        </Button>
-      </div>
-    </div>
-    <div className="max-w-full overflow-x-auto">
-      <table className="w-full table-auto">
-        <thead>
-          <tr className="bg-blue-900 uppercase text-center">
-            <th className="px-4 py-4 text-center font-normal text-white">Denominación</th>
-            <th className="px-4 py-4 text-center font-normal text-white">Categoría</th>
-            <th className="px-4 py-4 text-center font-normal text-white">Procedencia</th>
-            <th className="px-4 py-4 text-center font-normal text-white">Color</th>
-            <th className="px-4 py-4 text-center font-normal text-white">Seleccionar</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredFibras
-            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) // Aplicar paginación
-            .map((fibra) => {
-              const isSelected = editForm.recipe.some((r) => r.fiber?.id === fibra.id);
-              return (
-                <tr
-                      key={fibra.id}
-                      className={`text-center ${
-                        isSelected ? "bg-green-100" : ""
-                      }`}
-                    >
-                  <td className="border-b border-[#eee] px-4 py-5">{fibra.denomination || "Sin denominación"}</td>
-                  <td className="border-b border-[#eee] px-4 py-5">{fibra.category?.value || "Sin categoría"}</td>
-                  <td className="border-b border-[#eee] px-4 py-5">{fibra.origin || "Sin procedencia"}</td>
-                  <td className="border-b border-[#eee] px-4 py-5">{fibra.color?.name || "Sin color"}</td>
-                  <td className="border-b border-[#eee] px-4 py-5">
-                    {!isSelected ? (
-                      <IconButton
-                        style={{ backgroundColor: "#ffff", color: "#1976d2" }}
-                        onClick={() => handleAddFiber(fibra)}
-                      >
-                        <Add />
-                      </IconButton>
-                    ) : (
-                      <span className="text-gray-500">Seleccionada</span>
-                    )}
-                  </td>
+            </Select>
+          </FormControl>
+
+          {/* SpinningMethod */}
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Acabado</InputLabel>
+            <Select
+              label="Acabado"
+              value={
+                editForm.spinningMethodId !== "" ? editForm.spinningMethodId : ""
+              }
+              onChange={(e) =>
+                setEditForm((prev) => ({
+                  ...prev,
+                  spinningMethodId: e.target.value as number
+                }))
+              }
+              disabled={isFieldDisabled("spinningMethodId")}
+            >
+              <MenuItem value="">-- Sin acabado --</MenuItem>
+              {availableSpinningMethods.map((method) => (
+                <MenuItem key={method.id} value={method.id}>
+                  {method.value}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Manufacturing Site */}
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Lugar de Fabricación</InputLabel>
+            <Select
+              label="Lugar de Fabricación"
+              value={
+                editForm.manufacturedInId !== ""
+                  ? editForm.manufacturedInId
+                  : ""
+              }
+              onChange={(e) =>
+                setEditForm((prev) => ({
+                  ...prev,
+                  manufacturedInId: e.target.value as number
+                }))
+              }
+              disabled={isFieldDisabled("manufacturedInId")}
+            >
+              <MenuItem value="">-- Sin definir --</MenuItem>
+              {availableManufacturingSites.map((site) => (
+                <MenuItem key={site.id} value={site.id}>
+                  {site.value}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Color */}
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Color</InputLabel>
+            <Select
+              label="Color"
+              value={editForm.colorId || ""}
+              onChange={(e) =>
+                setEditForm((prev) => ({
+                  ...prev,
+                  colorId: e.target.value
+                }))
+              }
+              disabled={isFieldDisabled("colorId")}
+            >
+              <MenuItem value="">-- Sin color --</MenuItem>
+              {availableColors.map((c) => (
+                <MenuItem key={c.id} value={c.id}>
+                  {c.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Distinctions (multiples) */}
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Distinciones</InputLabel>
+            <Select
+              multiple
+              label="Distinciones"
+              value={editForm.distinctionIds}
+              onChange={handleDistinctionChange}
+              disabled={isFieldDisabled("distinctionIds")}
+              renderValue={(selected) => {
+                // Muestra el texto de las distinciones
+                const selectedDist = availableDistinctions.filter((d) =>
+                  selected.includes(d.id)
+                );
+                return selectedDist.map((x) => x.value).join(", ");
+              }}
+            >
+              {availableDistinctions.map((d) => (
+                <MenuItem key={d.id} value={d.id}>
+                  <Checkbox checked={editForm.distinctionIds.includes(d.id)} />
+                  <ListItemText primary={d.value} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Descripción */}
+          <TextField
+            label="Descripción"
+            fullWidth
+            multiline
+            rows={3}
+            margin="dense"
+            value={editForm.description}
+            onChange={(e) =>
+              setEditForm((prev) => ({ ...prev, description: e.target.value }))
+            }
+            disabled={isFieldDisabled("description")}
+          />
+
+          {/* Tabla de receta */}
+          <h3 className="text-lg font-semibold text-black mb-2 mt-4">Receta</h3>
+          <div className="max-w-full overflow-x-auto">
+            <table className="w-full table-auto">
+              <thead>
+                <tr className="bg-blue-900 uppercase text-center text-white">
+                  <th className="px-4 py-4 text-center font-normal">Denominación</th>
+                  <th className="px-4 py-4 text-center font-normal">Categoría</th>
+                  <th className="px-4 py-4 text-center font-normal">Procedencia</th>
+                  <th className="px-4 py-4 text-center font-normal">Color</th>
+                  <th className="px-4 py-4 text-center font-normal">Proporción</th>
+                  <th className="px-4 py-4 text-center font-normal">Eliminar</th>
                 </tr>
-              );
-            })}
-        </tbody>
-      </table>
-    </div>
-  </DialogContent>
-  <DialogActions>
-    {/* Paginación */}
-    <TablePagination
-      component="div"
-      count={filteredFibras.length}
-      page={page}
-      onPageChange={(event, newPage) => setPage(newPage)}
-      rowsPerPage={rowsPerPage}
-      onRowsPerPageChange={(event) => setRowsPerPage(parseInt(event.target.value, 10))}
-      rowsPerPageOptions={[5, 10, 15]}
-    />
-    <Button
-      onClick={handleFiberDialogClose}
-      variant="contained"
-      style={{ backgroundColor: "#d32f2f", color: "#fff" }}
-    >
-      Cerrar
-    </Button>
-  </DialogActions>
-</Dialog>
+              </thead>
+              <tbody>
+                {editForm.recipe.map((r, index) => (
+                  <tr key={index} className="text-center">
+                    <td className="border-b border-gray-200 px-4 py-3">
+                      {r.fiber?.denomination?.value || "Sin denominación"}
+                    </td>
+                    <td className="border-b border-gray-200 px-4 py-3">
+                      {r.fiber?.category?.value || "Sin categoría"}
+                    </td>
+                    <td className="border-b border-gray-200 px-4 py-3">
+                      {r.fiber?.origin || "Sin procedencia"}
+                    </td>
+                    <td className="border-b border-gray-200 px-4 py-3">
+                      {r.fiber?.color?.name || "Sin color"}
+                    </td>
+                    <td className="border-b border-gray-200 px-4 py-3">
+                      <TextField
+                        variant="outlined"
+                        size="small"
+                        type="number"
+                        value={r.proportion || ""}
+                        onChange={(e) =>
+                          handleProportionChange(r.fiber?.id, e.target.value)
+                        }
+                        disabled={isFieldDisabled("recipe")}
+                      />
+                    </td>
+                    <td className="border-b border-gray-200 px-4 py-3">
+                      <IconButton
+                        disabled={isFieldDisabled("recipe")}
+                        style={{ color: isFieldDisabled("recipe") ? "#aaa" : "#d32f2f" }}
+                        onClick={() => handleDeleteSelectedFibra(r.fiber?.id)}
+                      >
+                        <Close />
+                      </IconButton>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Agregar fibra */}
+            <IconButton
+              onClick={() => setShowFiberDialog(true)}
+              style={{ color: "#1976d2" }}
+              disabled={isFieldDisabled("recipe")}
+            >
+              <Add />
+            </IconButton>
+          </div>
+          </>
+    )}
+        </DialogContent>
+
+        {/* Acciones del diálogo */}
         <DialogActions>
-          <Button onClick={handleEditClose} variant = "contained" style={{backgroundColor: "#d32f2f", color: "#fff"}}>
+          <Button
+            onClick={handleEditClose}
+            variant="contained"
+            style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+          >
             Cancelar
           </Button>
-          <Button onClick={handleEditSave} variant="contained" style={{backgroundColor: "#1976d2", color: "#fff"}}>
+          <Button
+            onClick={handleEditSave}
+            variant="contained"
+            style={{ backgroundColor: "#1976d2", color: "#fff" }}
+          >
             Guardar
           </Button>
         </DialogActions>
+
+        {/* Diálogo de fibras para la receta */}
+        <Dialog
+          open={showFiberDialog}
+          onClose={handleFiberDialogClose}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>Fibras Disponibles</DialogTitle>
+          <DialogContent>
+            <TextField
+              variant="outlined"
+              placeholder="Buscar fibra..."
+              value={fiberSearchTerm}
+              onChange={(e) => setFiberSearchTerm(e.target.value)}
+              size="small"
+              style={{ width: "50%" }}
+            />
+            <Button
+              onClick={handleReloadFibras}
+              style={{ backgroundColor: "#1976d2", color: "#fff", marginLeft: "8px" }}
+            >
+              Recargar Fibras
+            </Button>
+
+            <div className="max-w-full overflow-x-auto mt-4">
+              <table className="w-full table-auto">
+                <thead>
+                  <tr className="bg-blue-900 uppercase text-white text-center">
+                    <th className="px-4 py-4">Denominación</th>
+                    <th className="px-4 py-4">Categoría</th>
+                    <th className="px-4 py-4">Procedencia</th>
+                    <th className="px-4 py-4">Color</th>
+                    <th className="px-4 py-4">Seleccionar</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredFibras
+                    .slice(
+                      fiberPage * fiberRowsPerPage,
+                      fiberPage * fiberRowsPerPage + fiberRowsPerPage
+                    )
+                    .map((fibra) => {
+                      const isSelected = editForm.recipe.some(
+                        (r) => r.fiber?.id === fibra.id
+                      );
+                      return (
+                        <tr
+                          key={fibra.id}
+                          className={`text-center ${
+                            isSelected ? "bg-green-100" : ""
+                          }`}
+                        >
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {fibra.denomination?.value || "Sin denominación"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {fibra.category?.value || "Sin categoría"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {fibra.origin || "Sin procedencia"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {fibra.color?.name || "Sin color"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {!isSelected ? (
+                              <IconButton
+                                style={{ color: "#1976d2" }}
+                                onClick={() => handleAddFiber(fibra)}
+                                disabled={isFieldDisabled("recipe")}
+                              >
+                                <Add />
+                              </IconButton>
+                            ) : (
+                              <span className="text-gray-500">
+                                Seleccionada
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <TablePagination
+              component="div"
+              count={filteredFibras.length}
+              page={fiberPage}
+              onPageChange={(_, newPage) => setFiberPage(newPage)}
+              rowsPerPage={fiberRowsPerPage}
+              onRowsPerPageChange={(e) =>
+                setFiberRowsPerPage(parseInt(e.target.value, 10))
+              }
+              rowsPerPageOptions={[5, 10, 15]}
+            />
+            <Button
+              onClick={handleFiberDialogClose}
+              variant="contained"
+              style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+            >
+              Cerrar
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Dialog>
     </div>
   );
-  
 };
 
 export default Hilados;

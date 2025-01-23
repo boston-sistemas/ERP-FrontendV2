@@ -149,9 +149,7 @@ const Fibras: React.FC = () => {
 
   // Al hacer clic en Editar
   const handleEditFibra = (fibra: Fiber) => {
-    // Revisamos si updateCheck.updatable es false
     if (!fibra.updateCheck?.updatable) {
-      // Muestra el mensaje del backend, si está
       const reason = fibra.updateCheck?.message || "No se puede editar";
       setSnackbarMessage(reason);
       setSnackbarSeverity("error");
@@ -159,7 +157,6 @@ const Fibras: React.FC = () => {
       return;
     }
 
-    // Si es editable, llenamos selectedFibra
     setSelectedFibra({
       ...fibra,
       categoryId: fibra.category?.id || 0,
@@ -179,7 +176,6 @@ const Fibras: React.FC = () => {
     setOpenEditDialog(true);
   };
 
-  // Guardar cambios
   const handleSaveFibra = async () => {
     if (selectedFibra) {
       const payload = {

@@ -18,6 +18,8 @@ import {
   FormControl,
   Checkbox,
   ListItemText,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import { Add, Close } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
@@ -28,9 +30,10 @@ import {
   fetchYarnCounts,
   fetchManufacturingSites,
   fetchYarnDistinctions,
-  // Agrega tu fetchMecsaColors (o donde corresponda)
-  fetchMecsaColors,
 } from "../../services/hiladoService";
+
+import { fetchMecsaColors } from "../../../fibras/services/fibraService";
+
 import { fetchFibras } from "../../../fibras/services/fibraService";
 
 import { Fiber, Recipe, MecsaColor } from "../../../models/models";
@@ -53,6 +56,7 @@ const CrearHilado: React.FC = () => {
   // 3) Color
   const [colorId, setColorId] = useState<string>(""); // si tu color ID es string
   const [availableColors, setAvailableColors] = useState<MecsaColor[]>([]);
+  const [isColorEnabled, setIsColorEnabled] = useState(false);
 
   // 4) Receta
   const [selectedRecipes, setSelectedRecipes] = useState<Recipe[]>([]);
@@ -127,9 +131,10 @@ const CrearHilado: React.FC = () => {
     const s = searchTerm.toLowerCase();
     return (
       fibra.id.toLowerCase().includes(s) ||
-      fibra.denomination?.toLowerCase().includes(s) ||
+      // <-- CORREGIDO: usar .value para denomination
+      fibra.denomination?.value?.toLowerCase().includes(s) ||
       fibra.category?.value?.toLowerCase().includes(s) ||
-      fibra.origin?.toLowerCase().includes(s) ||
+      (fibra.origin || "").toLowerCase().includes(s) ||
       fibra.color?.name?.toLowerCase().includes(s)
     );
   });
@@ -139,7 +144,7 @@ const CrearHilado: React.FC = () => {
   // ---------------------------------------------------------------------------
   const handleAddFiber = (fibra: Fiber) => {
     if (!selectedRecipes.some((r) => r.fiber.id === fibra.id)) {
-      setSelectedRecipes((prev) => [...prev, { fiber, proportion: 0 }]);
+      setSelectedRecipes((prev) => [...prev, { fiber: fibra, proportion: 0 }]);
       setSnackbarMessage("Fibra añadida a la receta.");
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
@@ -304,23 +309,6 @@ const CrearHilado: React.FC = () => {
             ))}
           </TextField>
 
-          {/* Color (MecsaColors) */}
-          <TextField
-            label="Color"
-            select
-            fullWidth
-            margin="dense"
-            value={colorId}
-            onChange={(e) => setColorId(e.target.value)}
-          >
-            <MenuItem value="">-- Sin color --</MenuItem>
-            {availableColors.map((c) => (
-              <MenuItem key={c.id} value={c.id}>
-                {c.name}
-              </MenuItem>
-            ))}
-          </TextField>
-
           {/* Distinctions (varios) */}
           <FormControl fullWidth margin="dense">
             <InputLabel id="distinctions-label">Distinciones</InputLabel>
@@ -353,6 +341,49 @@ const CrearHilado: React.FC = () => {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
+          
+        {/* Toggle Color */}
+        <FormControlLabel
+          label="¿Hilado con color?"
+          labelPlacement="start"
+          control={
+            <Switch
+              checked={isColorEnabled}
+              onChange={() => setIsColorEnabled(!isColorEnabled)}
+              color="primary"
+            />
+          }
+          sx={{ color: "black" }}
+        />
+
+        {/* Renderizar el selector solo si isColorEnabled es true */}
+        {isColorEnabled && (
+          <TextField
+            label="Color"
+            fullWidth
+            select
+            value={colorId}
+            onChange={(e) => setColorId(e.target.value)}
+            margin="dense"
+            variant="outlined"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": { borderColor: "#444444" },
+                "&:hover fieldset": { borderColor: "#444444" },
+                "&.Mui-focused fieldset": { borderColor: "#444444" },
+              },
+              "& .MuiInputLabel-root": { color: "#444444" },
+              "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+            }}
+          >
+            <MenuItem value="">Sin color</MenuItem>
+            {availableColors.map((col) => (
+              <MenuItem key={col.id} value={col.id}>
+                {col.name}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
 
           {/* Receta (Fibra/Proporciones) */}
           <h3 className="text-lg font-semibold text-black mt-6 mb-2">
@@ -378,7 +409,7 @@ const CrearHilado: React.FC = () => {
                       {r.fiber.id}
                     </td>
                     <td className="border-b border-gray-300 px-4 py-5">
-                      {r.fiber.denomination || "--"}
+                      {r.fiber.denomination?.value || "--"}
                     </td>
                     <td className="border-b border-gray-300 px-4 py-5">
                       {r.fiber.origin || "--"}
@@ -473,7 +504,10 @@ const CrearHilado: React.FC = () => {
               </thead>
               <tbody>
                 {filteredFibras
-                  .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
+                  .slice(
+                    pagina * filasPorPagina,
+                    pagina * filasPorPagina + filasPorPagina
+                  )
                   .map((fibra) => {
                     const alreadySelected = selectedRecipes.some(
                       (r) => r.fiber.id === fibra.id
@@ -484,7 +518,7 @@ const CrearHilado: React.FC = () => {
                           {fibra.id}
                         </td>
                         <td className="border-b border-gray-300 px-4 py-5">
-                          {fibra.denomination || "--"}
+                          {fibra.denomination?.value || "--"}
                         </td>
                         <td className="border-b border-gray-300 px-4 py-5">
                           {fibra.origin || "--"}
