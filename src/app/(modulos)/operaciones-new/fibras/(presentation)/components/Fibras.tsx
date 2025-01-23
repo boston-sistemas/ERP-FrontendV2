@@ -465,7 +465,7 @@ const Fibras: React.FC = () => {
                       originText = foundCountry?.name || "Desconocido";
                     }
                     // Color
-                    const colorText = fibra.color?.name || "-";
+                    const colorText = fibra.color?.name || "Crudo";
 
                     // Revisa updateCheck.updatable
                     const canEdit = fibra.updateCheck?.updatable === true;

@@ -6,7 +6,9 @@ import {
   TextField, 
   MenuItem, 
   Snackbar, 
-  Alert 
+  Alert, 
+  Switch, 
+  FormControlLabel 
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 
@@ -51,7 +53,8 @@ const CrearFibra: React.FC = () => {
     "success"
   );
 
-  // Cargar datos iniciales
+  const [isColorEnabled, setIsColorEnabled] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -74,12 +77,18 @@ const CrearFibra: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
   
+  
+    // Validación básica
+
     // Validación básica
     const newErrors = {
       categoria: !categoria,
     };
     setErrors(newErrors);
   
+  
+    // Si no hay errores, armamos el payload y creamos la fibra
+
     // Si no hay errores, armamos el payload y creamos la fibra
     if (!Object.values(newErrors).includes(true)) {
       const payload = {
@@ -87,9 +96,9 @@ const CrearFibra: React.FC = () => {
         // Asumimos que ‘variedad’ ahora contiene la cadena
         denominationId: variedad || null,
         origin: procedencia || null,
-        colorId: color || null,
+        colorId: isColorEnabled ? color || null : null, // Verifica si el campo Color está activo
       };
-  
+
       try {
         // Crear la fibra
         await handleCreateFiber(payload);
@@ -99,6 +108,9 @@ const CrearFibra: React.FC = () => {
         setSnackbarSeverity("success");
         setSnackbarOpen(true);
   
+  
+        // Redirigir tras breve pausa
+
         // Redirigir tras breve pausa
         setTimeout(() => {
           router.push("/operaciones-new/fibras");
@@ -168,7 +180,7 @@ const CrearFibra: React.FC = () => {
 
           {/* VARIEDAD / DENOMINACIÓN */}
           <TextField
-            label="Variedad/Marca "
+            label="Variedad/Marca"
             fullWidth
             select
             value={variedad}
@@ -225,6 +237,19 @@ const CrearFibra: React.FC = () => {
             ))}
           </TextField>
 
+          {/* TOGGLE PARA ACTIVAR/DESACTIVAR COLOR */}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={isColorEnabled}
+                onChange={() => setIsColorEnabled(!isColorEnabled)}
+                color="primary"
+              />
+            }
+            label="Habilitar campo de color"
+            sx={{color: "black"}}
+          />
+
           {/* COLOR */}
           <TextField
             label="Color"
@@ -234,6 +259,7 @@ const CrearFibra: React.FC = () => {
             onChange={(e) => setColor(e.target.value)}
             margin="dense"
             variant="outlined"
+            disabled={!isColorEnabled} // Deshabilitado según el estado del toggle
             sx={{
               "& .MuiOutlinedInput-root": {
                 "& fieldset": { borderColor: "#444444" },
