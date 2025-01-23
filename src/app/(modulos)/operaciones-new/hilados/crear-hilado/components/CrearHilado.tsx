@@ -172,6 +172,21 @@ const CrearHilado: React.FC = () => {
     setDistinctions(typeof value === "string" ? value.split(",") : value);
   };
 
+  const handleReloadFibras = async () => {
+    try {
+      const fibras = await fetchFibras(false);
+      setAvailableFibras(fibras.fibers);
+      setSnackbarMessage("Fibras recargadas correctamente.");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error("Error recargando las fibras:", error);
+      setSnackbarMessage("Error al recargar las fibras. Inténtelo de nuevo.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
+
   // ---------------------------------------------------------------------------
   // Crear Hilado
   // ---------------------------------------------------------------------------
@@ -482,14 +497,22 @@ const CrearHilado: React.FC = () => {
       >
         <DialogTitle>Seleccionar Fibras</DialogTitle>
         <DialogContent>
-          <TextField
-            variant="outlined"
-            placeholder="Buscar fibra..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            size="small"
-            style={{ width: "50%" }}
-          />
+        <div className="flex justify-between items-center">
+            <TextField
+              variant="outlined"
+              placeholder="Buscar..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              size="small"
+              style={{ width: "50%" }}
+            />
+            <Button
+              onClick={handleReloadFibras}
+              style={{ backgroundColor: "#1976d2", color: "#fff" }}
+            >
+              Recargar Fibras
+            </Button>
+          </div>
           <div className="max-w-full overflow-x-auto mt-4">
             <table className="w-full table-auto">
               <thead>
