@@ -48,7 +48,7 @@ export const updateFiber = async (fiberId: string, payload: any): Promise<void> 
   try {
     await instance.patch(`/operations/v1/fibers/${fiberId}`, payload);
   } catch (error: any) {
-    const errorMessage = handleError(error);
+    const errorMessage = error.response.data.detail;
     throw new Error(errorMessage); // Lanza el error con el mensaje personalizado
   }
 };

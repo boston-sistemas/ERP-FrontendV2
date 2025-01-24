@@ -48,7 +48,7 @@ const CrearHilado: React.FC = () => {
   const [description, setDescription] = useState("");
 
   // 2) Distinctions (múltiples)
-  const [distinctions, setDistinctions] = useState<number[]>([]);
+  const [distinctionIds, setDistinctions] = useState<number[]>([]);
   const [availableDistinctions, setAvailableDistinctions] = useState<
     { id: number; value: string }[]
   >([]);
@@ -131,7 +131,6 @@ const CrearHilado: React.FC = () => {
     const s = searchTerm.toLowerCase();
     return (
       fibra.id.toLowerCase().includes(s) ||
-      // <-- CORREGIDO: usar .value para denomination
       fibra.denomination?.value?.toLowerCase().includes(s) ||
       fibra.category?.value?.toLowerCase().includes(s) ||
       (fibra.origin || "").toLowerCase().includes(s) ||
@@ -213,7 +212,7 @@ const CrearHilado: React.FC = () => {
           ? Number(manufacturedInId)
           : null,
       colorId: colorId || null, // <-- colorId si se seleccionó, o null
-      distinctions, // array de IDs
+      distinctionIds, // array de IDs
       description,
       // Receta
       recipe: selectedRecipes.map((r) => ({
@@ -223,6 +222,7 @@ const CrearHilado: React.FC = () => {
     };
 
     try {
+      console.log("Payload a enviar:", payload);
       await createYarn(payload);
       setSnackbarMessage("Hilado creado con éxito");
       setSnackbarSeverity("success");
@@ -330,7 +330,7 @@ const CrearHilado: React.FC = () => {
             <Select
               labelId="distinctions-label"
               multiple
-              value={distinctions}
+              value={distinctionIds}
               onChange={handleDistinctionsChange}
               renderValue={(selected) => {
                 return availableDistinctions
@@ -341,7 +341,7 @@ const CrearHilado: React.FC = () => {
             >
               {availableDistinctions.map((d) => (
                 <MenuItem key={d.id} value={d.id}>
-                  <Checkbox checked={distinctions.includes(d.id)} />
+                  <Checkbox checked={distinctionIds.includes(d.id)} />
                   <ListItemText primary={d.value} />
                 </MenuItem>
               ))}
@@ -419,7 +419,7 @@ const CrearHilado: React.FC = () => {
               </thead>
               <tbody>
                 {selectedRecipes.map((r) => (
-                  <tr key={r.fiber.id} className="text-center">
+                  <tr key={r.fiber.id} className="text-center text-black" >
                     <td className="border-b border-gray-300 px-4 py-5">
                       {r.fiber.id}
                     </td>
@@ -433,7 +433,7 @@ const CrearHilado: React.FC = () => {
                       {r.fiber.category?.value || "--"}
                     </td>
                     <td className="border-b border-gray-300 px-4 py-5">
-                      {r.fiber.color?.name || "--"}
+                      {r.fiber.color?.name || "Crudo"}
                     </td>
                     <td className="border-b border-gray-300 px-4 py-5">
                       <TextField

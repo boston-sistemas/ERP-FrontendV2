@@ -7,7 +7,6 @@ import {
   fetchCountries,
   createFiber,
   fetchMecsaColors,
-  // IMPORTAR la función de servicio que obtendrá las denominaciones
   fetchDenominationFibers,
 } from "../services/fibraService";
 
