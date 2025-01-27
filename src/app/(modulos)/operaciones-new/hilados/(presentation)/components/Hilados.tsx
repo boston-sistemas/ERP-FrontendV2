@@ -19,7 +19,9 @@ import {
   InputLabel,
   FormControl,
   Checkbox,
-  ListItemText
+  ListItemText,
+  useTheme, 
+  useMediaQuery,
 } from "@mui/material";
 import {
   Edit,
@@ -28,6 +30,7 @@ import {
   Search,
   Close,
   Visibility,
+  Fullscreen,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 
@@ -76,14 +79,19 @@ const Hilados: React.FC = () => {
   // ────────────────────────────────────────────────────────────────────────────
   // Receta: diálogo de visualización
   const [openRecipeDialog, setOpenRecipeDialog] = useState(false);
-  const [selectedRecipe, setSelectedRecipe] = useState<any[]>([]);
+  const [selectedHilado, setSelectedHilado] = useState<Yarn | null>(null);
 
   // Editar
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingYarn, setEditingYarn] = useState<Yarn | null>(null);
+  const [isColorEnabled, setIsColorEnabled] = useState(false);
 
   // Diálogo de Fibras
   const [showFiberDialog, setShowFiberDialog] = useState(false);
+
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMediumScreen = useMediaQuery(theme.breakpoints.down("md"));
 
   // ────────────────────────────────────────────────────────────────────────────
   // Atributos de la edición
@@ -186,12 +194,12 @@ const Hilados: React.FC = () => {
   // ────────────────────────────────────────────────────────────────────────────
   // VISUALIZAR RECETA
   // ────────────────────────────────────────────────────────────────────────────
-  const handleOpenRecipeDialog = (recipe: any[]) => {
-    setSelectedRecipe(recipe);
+  const handleOpenRecipeDialog = (yarn: Yarn) => {
+    setSelectedHilado(yarn);
     setOpenRecipeDialog(true);
   };
-  const handleCloseRecipeDialog = () => {
-    setSelectedRecipe([]);
+  const handleCloseRecipeDialog = (yarn: Yarn) => {
+    setSelectedHilado(yarn);
     setOpenRecipeDialog(false);
   };
 
@@ -477,12 +485,10 @@ const Hilados: React.FC = () => {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 uppercase text-center text-white">
-                <th className="px-4 py-4 font-normal">ID</th>
-                <th className="px-4 py-4 font-normal">DESCRIPCIÓN</th>
-                <th className="px-4 py-4 font-normal">UNIDAD</th>
                 <th className="px-4 py-4 font-normal">TÍTULO</th>
-                <th className="px-4 py-4 font-normal">RECETA</th>
+                <th className="px-4 py-4 font-normal">DESCRIPCIÓN</th>
                 <th className="px-4 py-4 font-normal">ACABADO</th>
+                <th className="px-4 py-4 font-normal">INFORMACIÓN</th>
                 <th className="px-4 py-4 font-normal">ESTADO</th>
                 {showEditColumn && <th className="px-4 py-4 font-normal">EDITAR</th>}
                 {showDisableColumn && (
@@ -500,26 +506,20 @@ const Hilados: React.FC = () => {
                   .map((hilado) => (
                     <tr key={hilado.id} className="text-center text-black">
                       <td className="border-b border-gray-300 px-4 py-5">
-                        {hilado.id}
+                        {hilado.yarnCount?.value || ""}
                       </td>
                       <td className="border-b border-gray-300 px-4 py-5">
                         {hilado.description}
                       </td>
                       <td className="border-b border-gray-300 px-4 py-5">
-                        {hilado.inventoryUnitCode}
-                      </td>
-                      <td className="border-b border-gray-300 px-4 py-5">
-                        {hilado.yarnCount?.value || ""}
+                        {hilado.spinningMethod?.value || ""}
                       </td>
                       <td className="border-b border-gray-300 px-4 py-5">
                         <IconButton
-                          onClick={() => handleOpenRecipeDialog(hilado.recipe)}
+                          onClick={() => handleOpenRecipeDialog(hilado)}
                         >
                           <Visibility />
                         </IconButton>
-                      </td>
-                      <td className="border-b border-gray-300 px-4 py-5">
-                        {hilado.spinningMethod?.value || ""}
                       </td>
                       <td className="border-b border-gray-300 px-4 py-5">
                         <span
@@ -576,11 +576,40 @@ const Hilados: React.FC = () => {
       </div>
 
       {/* Diálogo para VISUALIZAR receta */}
-      <Dialog open={openRecipeDialog} onClose={handleCloseRecipeDialog} maxWidth="md" fullWidth>
+      <Dialog
+        open={openRecipeDialog}
+        onClose={handleCloseRecipeDialog}
+        fullScreen={isSmallScreen}
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            ...( !isSmallScreen && !isMediumScreen && {
+              marginLeft: "280px", 
+              maxWidth: "calc(100% - 280px)", 
+            }),
+            maxHeight: "calc(100% - 64px)",
+            overflowY: "auto",
+          },
+        }}
+      >
         <DialogContent>
           <h3 className="text-lg font-semibold text-black mb-4">
-            Receta del Hilado
+            Información del Hilado
           </h3>
+            {selectedHilado && (
+              <div className="mb-4 text-black">
+                <p><strong>Descripción:</strong> {selectedHilado.description}</p>
+                <p><strong>Fabricado en:</strong> {selectedHilado.manufacturedIn?.value || "--"}</p>
+                <p><strong>Distinciones:</strong>{" "}
+                  {selectedHilado.distinctions && selectedHilado.distinctions.length > 0
+                    ? selectedHilado.distinctions.map((dist) => dist.value).join(", ")
+                    : "--"
+                  }
+                </p>
+                <p><strong>Barcode:</strong> {selectedHilado.barcode}</p>
+                <p><strong>Color:</strong> {selectedHilado.color?.name || "No teñido"}</p>
+              </div>
+            )}
           <div className="max-w-full overflow-x-auto">
             <table className="w-full table-auto border-collapse">
               <thead>
@@ -603,20 +632,20 @@ const Hilados: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {selectedRecipe.length > 0 ? (
-                  selectedRecipe.map((item, index) => (
+                {selectedHilado?.recipe?.length ?? 0 > 0 ? (
+                  selectedHilado?.recipe.map((item, index) => (
                     <tr key={index} className="text-center text-black">
                       <td className="border-b border-gray-300 px-4 py-5">
-                        {item.fiber?.category?.value || "Sin categoría"}
+                        {item.fiber?.category?.value || "-"}
                       </td>
                       <td className="border-b border-gray-300 px-4 py-5">
-                        {item.fiber?.denomination?.value || "Sin denominación"}
+                        {item.fiber?.denomination?.value || "-"}
                       </td>
                       <td className="border-b border-gray-300 px-4 py-5">
-                        {item.fiber?.origin || "Sin procedencia"}
+                        {item.fiber?.origin || "-"}
                       </td>
                       <td className="border-b border-gray-300 px-4 py-5">
-                        {item.fiber?.color?.name || "Sin color"}
+                        {item.fiber?.color?.name || "Crudo"}
                       </td>
                       <td className="border-b border-gray-300 px-4 py-5">
                         {item.proportion}%
@@ -662,7 +691,19 @@ const Hilados: React.FC = () => {
       </Snackbar>
 
       {/* Diálogo para EDITAR hilado */}
-      <Dialog open={editDialogOpen} onClose={handleEditClose} maxWidth="md" fullWidth>
+      <Dialog open={editDialogOpen} onClose={handleEditClose} fullScreen={isSmallScreen}
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            ...( !isSmallScreen && !isMediumScreen && {
+              marginLeft: "280px", 
+              maxWidth: "calc(100% - 280px)", 
+            }),
+            maxHeight: "calc(100% - 64px)",
+            overflowY: "auto",
+          },
+        }}
+      >
         <DialogTitle>Editar Hilado</DialogTitle>
         <DialogContent>
         {isPartial ? (
@@ -758,28 +799,44 @@ const Hilados: React.FC = () => {
             </Select>
           </FormControl>
 
+          {/* Toggle Color */}
+          <FormControlLabel
+            label="¿Hilado teñido?"
+            labelPlacement="start"
+            control={
+              <Switch
+                checked={isColorEnabled}
+                onChange={() => setIsColorEnabled(!isColorEnabled)}
+                color="primary"
+              />
+            }
+            sx={{ color: "black", mb: 2 }}
+          />
+
           {/* Color */}
-          <FormControl fullWidth margin="dense">
-            <InputLabel>Color</InputLabel>
-            <Select
-              label="Color"
-              value={editForm.colorId || ""}
-              onChange={(e) =>
-                setEditForm((prev) => ({
-                  ...prev,
-                  colorId: e.target.value
-                }))
-              }
-              disabled={isFieldDisabled("colorId")}
-            >
-              <MenuItem value="">-- Sin color --</MenuItem>
-              {availableColors.map((c) => (
-                <MenuItem key={c.id} value={c.id}>
-                  {c.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {isColorEnabled && (
+            <FormControl fullWidth margin="dense">
+              <InputLabel>Color</InputLabel>
+              <Select
+                label="Color"
+                value={editForm.colorId || "No teñido"}
+                onChange={(e) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    colorId: e.target.value
+                  }))
+                }
+                disabled={isFieldDisabled("colorId")}
+              >
+                <MenuItem value="">-- No teñido --</MenuItem>
+                {availableColors.map((c) => (
+                  <MenuItem key={c.id} value={c.id}>
+                    {c.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
           {/* Distinctions (multiples) */}
           <FormControl fullWidth margin="dense">
@@ -839,16 +896,16 @@ const Hilados: React.FC = () => {
                 {editForm.recipe.map((r, index) => (
                   <tr key={index} className="text-center">
                     <td className="border-b border-gray-200 px-4 py-3">
-                      {r.fiber?.denomination?.value || "Sin denominación"}
+                      {r.fiber?.denomination?.value || "-"}
                     </td>
                     <td className="border-b border-gray-200 px-4 py-3">
-                      {r.fiber?.category?.value || "Sin categoría"}
+                      {r.fiber?.category?.value || "-"}
                     </td>
                     <td className="border-b border-gray-200 px-4 py-3">
-                      {r.fiber?.origin || "Sin procedencia"}
+                      {r.fiber?.origin || "-"}
                     </td>
                     <td className="border-b border-gray-200 px-4 py-3">
-                      {r.fiber?.color?.name || "Sin color"}
+                      {r.fiber?.color?.name || "Crudo"}
                     </td>
                     <td className="border-b border-gray-200 px-4 py-3">
                       <TextField
@@ -911,8 +968,18 @@ const Hilados: React.FC = () => {
         <Dialog
           open={showFiberDialog}
           onClose={handleFiberDialogClose}
+          fullScreen={isSmallScreen}
           maxWidth="md"
-          fullWidth
+          PaperProps={{
+            sx: {
+              ...( !isSmallScreen && !isMediumScreen && {
+                marginLeft: "280px", 
+                maxWidth: "calc(100% - 280px)", 
+              }),
+              maxHeight: "calc(100% - 64px)",
+              overflowY: "auto",
+            },
+          }}
         >
           <DialogTitle>Fibras Disponibles</DialogTitle>
           <DialogContent>
@@ -960,16 +1027,16 @@ const Hilados: React.FC = () => {
                           }`}
                         >
                           <td className="border-b border-gray-300 px-4 py-5">
-                            {fibra.denomination?.value || "Sin denominación"}
+                            {fibra.denomination?.value || "-"}
                           </td>
                           <td className="border-b border-gray-300 px-4 py-5">
-                            {fibra.category?.value || "Sin categoría"}
+                            {fibra.category?.value || "-"}
                           </td>
                           <td className="border-b border-gray-300 px-4 py-5">
-                            {fibra.origin || "Sin procedencia"}
+                            {fibra.origin || "-"}
                           </td>
                           <td className="border-b border-gray-300 px-4 py-5">
-                            {fibra.color?.name || "Sin color"}
+                            {fibra.color?.name || "Crudo"}
                           </td>
                           <td className="border-b border-gray-300 px-4 py-5">
                             {!isSelected ? (

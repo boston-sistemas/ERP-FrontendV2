@@ -20,6 +20,8 @@ import {
   ListItemText,
   FormControlLabel,
   Switch,
+  useTheme, 
+  useMediaQuery,
 } from "@mui/material";
 import { Add, Close } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
@@ -77,6 +79,9 @@ const CrearHilado: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(5);
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMediumScreen = useMediaQuery(theme.breakpoints.down("md"));
 
   // 7) Snackbar
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -359,7 +364,7 @@ const CrearHilado: React.FC = () => {
           
         {/* Toggle Color */}
         <FormControlLabel
-          label="¿Hilado con color?"
+          label="¿Hilado teñido?"
           labelPlacement="start"
           control={
             <Switch
@@ -492,8 +497,18 @@ const CrearHilado: React.FC = () => {
       <Dialog
         open={openFibrasDialog}
         onClose={() => setOpenFibrasDialog(false)}
-        fullWidth
+        fullScreen={isSmallScreen}
         maxWidth="md"
+        PaperProps={{
+          sx: {
+            ...( !isSmallScreen && !isMediumScreen && {
+              marginLeft: "280px", 
+              maxWidth: "calc(100% - 280px)", 
+            }),
+            maxHeight: "calc(100% - 64px)",
+            overflowY: "auto",
+          },
+        }}
       >
         <DialogTitle>Seleccionar Fibras</DialogTitle>
         <DialogContent>
