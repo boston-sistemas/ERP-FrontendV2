@@ -691,16 +691,21 @@ const Hilados: React.FC = () => {
       </Snackbar>
 
       {/* Diálogo para EDITAR hilado */}
-      <Dialog open={editDialogOpen} onClose={handleEditClose} fullScreen={isSmallScreen}
-        maxWidth="md"
+      <Dialog 
+        open={editDialogOpen} 
+        onClose={handleEditClose} 
+        fullScreen={isSmallScreen}
+        maxWidth={false} 
         PaperProps={{
           sx: {
             ...( !isSmallScreen && !isMediumScreen && {
               marginLeft: "280px", 
-              maxWidth: "calc(100% - 280px)", 
+              maxWidth: "800px", 
+              width: "800px", 
             }),
             maxHeight: "calc(100% - 64px)",
             overflowY: "auto",
+            padding: "20px", 
           },
         }}
       >
@@ -884,8 +889,8 @@ const Hilados: React.FC = () => {
             <table className="w-full table-auto">
               <thead>
                 <tr className="bg-blue-900 uppercase text-center text-white">
+                  <th className="px-4 py-4 text-center font-normal">Categoria</th>
                   <th className="px-4 py-4 text-center font-normal">Denominación</th>
-                  <th className="px-4 py-4 text-center font-normal">Categoría</th>
                   <th className="px-4 py-4 text-center font-normal">Procedencia</th>
                   <th className="px-4 py-4 text-center font-normal">Color</th>
                   <th className="px-4 py-4 text-center font-normal">Proporción</th>
@@ -896,10 +901,10 @@ const Hilados: React.FC = () => {
                 {editForm.recipe.map((r, index) => (
                   <tr key={index} className="text-center">
                     <td className="border-b border-gray-200 px-4 py-3">
-                      {r.fiber?.denomination?.value || "-"}
+                      {r.fiber?.category?.value || "-"}
                     </td>
                     <td className="border-b border-gray-200 px-4 py-3">
-                      {r.fiber?.category?.value || "-"}
+                      {r.fiber?.denomination?.value || "-"}
                     </td>
                     <td className="border-b border-gray-200 px-4 py-3">
                       {r.fiber?.origin || "-"}
@@ -1002,8 +1007,8 @@ const Hilados: React.FC = () => {
               <table className="w-full table-auto">
                 <thead>
                   <tr className="bg-blue-900 uppercase text-white text-center">
+                    <th className="px-4 py-4">Categoria</th>
                     <th className="px-4 py-4">Denominación</th>
-                    <th className="px-4 py-4">Categoría</th>
                     <th className="px-4 py-4">Procedencia</th>
                     <th className="px-4 py-4">Color</th>
                     <th className="px-4 py-4">Seleccionar</th>
@@ -1027,10 +1032,10 @@ const Hilados: React.FC = () => {
                           }`}
                         >
                           <td className="border-b border-gray-300 px-4 py-5">
-                            {fibra.denomination?.value || "-"}
+                            {fibra.category?.value || "-"}
                           </td>
                           <td className="border-b border-gray-300 px-4 py-5">
-                            {fibra.category?.value || "-"}
+                            {fibra.denomination?.value || "-"}
                           </td>
                           <td className="border-b border-gray-300 px-4 py-5">
                             {fibra.origin || "-"}

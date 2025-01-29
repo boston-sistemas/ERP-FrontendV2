@@ -15,11 +15,20 @@ import {
   Switch,
   MenuItem,
   Select,
+  useMediaQuery,
+  useTheme,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from "@mui/material";
 import MuiAlert, { AlertProps } from "@mui/material/Alert";
 import { Add, Delete } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-import { fetchOrdenCompras, createYarnPurchaseEntry } from "../services/crearMovIngreso";
+import { fetchOrdenCompras, createYarnPurchaseEntry } from "../services/crearMovIngresoService";
 import { PurchaseOrder, Yarn, YarnPurchaseEntryDetail, YarnPurchaseEntry, PurchaseOrderResponse } from "../../../models/models";
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
@@ -38,10 +47,10 @@ const CrearMovIngresoHilado: React.FC = () => {
   const [nota, setNota] = useState("");
   const [ordenesCompra, setOrdenesCompra] = useState<PurchaseOrder[]>([]);
   const [pagina, setPagina] = useState(0);
-  const [filasPorPagina, setFilasPorPagina] = useState(5);
+  const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [openOrdenesDialog, setOpenOrdenesDialog] = useState(false);
   const [selectedOrden, setSelectedOrden] = useState<PurchaseOrder | null>(null);
-  const [period, setPeriod] = useState(2024); // Período por defecto
+  const [period, setPeriod] = useState(new Date().getFullYear()); // Año actual por defecto
   const [details, setDetails] = useState<
     {
       yarnId: string;
@@ -58,40 +67,22 @@ const CrearMovIngresoHilado: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMediumScreen = useMediaQuery(theme.breakpoints.between("sm", "md"));
+
   useEffect(() => {
-    // Fetch inicial con periodo 2024
-    const initialFetch = async () => {
+    const fetchData = async () => {
       try {
-        const data: PurchaseOrderResponse = await fetchOrdenCompras(2024);
-        setOrdenesCompra(data.ordenes);
+        const data = await fetchOrdenCompras(period);
+        setOrdenesCompra(data.yarnOrders || []);
       } catch (error) {
-        console.error("Error al cargar órdenes de compra para el periodo inicial:", error);
-        setSnackbarMessage("Error al cargar órdenes de compra para el periodo inicial.");
-        setSnackbarSeverity("error"); // Cambiar severidad a error
+        console.error("Error fetching purchase orders:", error);
+        setSnackbarMessage("Error al cargar órdenes de compra.");
         setOpenSnackbar(true);
       }
     };
-
-    initialFetch();
-  }, []);
-
-  useEffect(() => {
-    // Fetch dinámico basado en el periodo seleccionado
-    if (period !== 2024) {
-      const fetchOrdenes = async () => {
-        try {
-          const data: PurchaseOrderResponse = await fetchOrdenCompras(period);
-          setOrdenesCompra(data.ordenes);
-        } catch (error) {
-          console.error("Error al cargar órdenes de compra:", error);
-          setSnackbarMessage("Error al cargar órdenes de compra.");
-          setSnackbarSeverity("error"); // Cambiar severidad a error
-          setOpenSnackbar(true);
-        }
-      };
-
-      fetchOrdenes();
-    }
+    fetchData();
   }, [period]);
 
   const toggleOrdenesDialog = () => {
@@ -507,43 +498,50 @@ const CrearMovIngresoHilado: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-  {ordenesCompra
-    .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
-    .map((orden, index) => (
-      <tr
-        key={orden.purchaseOrderNumber}
-        className={`${
-          index % 2 === 0 ? "bg-gray-100" : "bg-white"
-        } hover:bg-gray-200 text-sm`}
-      >
-        <td className="border-b border-[#eee] px-4 py-5 text-center">
-          {orden.purchaseOrderNumber}
-        </td>
-        <td className="border-b border-[#eee] px-4 py-5 text-center">
-          {orden.supplierCode}
-        </td>
-        <td className="border-b border-[#eee] px-4 py-5 text-center">
-          {orden.supplierCode || "N/A"}
-        </td>
-        <td className="border-b border-[#eee] px-4 py-5 text-center">
-          {orden.issueDate}
-        </td>
-        <td className="border-b border-[#eee] px-4 py-5 text-center">
-          {orden.dueDate}
-        </td>
-        <td className="border-b border-[#eee] px-4 py-5 text-center">
-          <IconButton color="primary" onClick={() => handleSelectOrden(orden)}>
-            <Add />
-          </IconButton>
-        </td>
-      </tr>
-    ))}
-</tbody>
-
+              {ordenesCompra && ordenesCompra.length > 0 ? (
+                ordenesCompra
+                  .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
+                  .map((orden, index) => (
+                    <tr
+                      key={orden.purchaseOrderNumber}
+                      className={`${
+                        index % 2 === 0 ? "bg-gray-100" : "bg-white"
+                      } hover:bg-gray-200 text-sm`}
+                    >
+                      <td className="border-b border-[#eee] px-4 py-5 text-center">
+                        {orden.purchaseOrderNumber}
+                      </td>
+                      <td className="border-b border-[#eee] px-4 py-5 text-center">
+                        {orden.supplierCode}
+                      </td>
+                      <td className="border-b border-[#eee] px-4 py-5 text-center">
+                        {orden.supplierCode || "N/A"}
+                      </td>
+                      <td className="border-b border-[#eee] px-4 py-5 text-center">
+                        {orden.issueDate}
+                      </td>
+                      <td className="border-b border-[#eee] px-4 py-5 text-center">
+                        {orden.dueDate}
+                      </td>
+                      <td className="border-b border-[#eee] px-4 py-5 text-center">
+                        <IconButton color="primary" onClick={() => handleSelectOrden(orden)}>
+                          <Add />
+                        </IconButton>
+                      </td>
+                    </tr>
+                  ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="text-center py-4">
+                    No hay órdenes de compra disponibles.
+                  </td>
+                </tr>
+              )}
+            </tbody>
           </table>
           <TablePagination
             component="div"
-            count={ordenesCompra.length}
+            count={ordenesCompra ? ordenesCompra.length : 0}
             page={pagina}
             onPageChange={(_, newPage) => setPagina(newPage)}
             rowsPerPage={filasPorPagina}

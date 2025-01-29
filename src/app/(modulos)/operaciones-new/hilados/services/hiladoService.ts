@@ -37,6 +37,15 @@ export const fetchHilados = async (
   }
 };
 
+export const fetchYarnbyId = async (yarnId: string) => {
+  try {
+    const response = await instance.get(`/operations/v1/yarns/${yarnId}`);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || "Error al obtener el hilado.");
+  }
+};
+
 // 2) Verificar si un hilado es actualizable
 export const checkYarnUpdateStatus = async (
   yarnId: string
