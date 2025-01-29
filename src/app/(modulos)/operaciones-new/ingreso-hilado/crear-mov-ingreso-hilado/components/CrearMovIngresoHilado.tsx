@@ -284,7 +284,7 @@ const CrearMovIngresoHilado: React.FC = () => {
 
   const handleGuiaYFacturaChange = (value: string) => {
     setGuiaYFactura(value);
-    const [guia, factura] = value.split(" "); // Separa por espacio (puedes cambiar a coma u otro delimitador)
+    const [guia, factura] = value.split(" "); 
     setGuiaCorrelativa(guia || "");
     setFacturaSerie(factura || "");
   };
@@ -297,7 +297,7 @@ const CrearMovIngresoHilado: React.FC = () => {
         </h2>
         <div className="mb-4">
           <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>
-            Seleccionar Año del Periodo
+            Seleccionar Periodo
           </Typography>
           <Select
             value={period}
@@ -637,20 +637,19 @@ const CrearMovIngresoHilado: React.FC = () => {
           </h3>
           {selectedPurchaseOrder ? (
             <div className="mb-4 text-black">
-              <p><strong>Proveedor:</strong> {suppliers.find(supplier => supplier.code === selectedPurchaseOrder.supplierCode)?.name || "Desconocido"}</p>
-              <p><strong>Fecha de Emisión:</strong> {selectedPurchaseOrder.issueDate}</p>
-              <p><strong>Fecha de Vencimiento:</strong> {selectedPurchaseOrder.dueDate}</p>
-              <p><strong>Método de Pago:</strong> {selectedPurchaseOrder.paymentMethod}</p>
-              <p><strong>Estado:</strong> {selectedPurchaseOrder.statusFlag}</p>
-              <p><strong>Moneda:</strong> {selectedPurchaseOrder.currencyCode}</p>
+              <p className="mb-2"><strong>Proveedor:</strong> {suppliers.find(supplier => supplier.code === selectedPurchaseOrder.supplierCode)?.name || "Desconocido"}</p>
+              <p className="mb-2"><strong>Fecha de Emisión:</strong> {selectedPurchaseOrder.issueDate}</p>
+              <p className="mb-2"><strong>Fecha de Vencimiento:</strong> {selectedPurchaseOrder.dueDate}</p>
+              <p className="mb-2"><strong>Método de Pago:</strong> {selectedPurchaseOrder.paymentMethod}</p>
+              <p className="mb-6"><strong>Estado:</strong> {selectedPurchaseOrder.promecStatus.name}</p>
+              
               <div className="max-w-full overflow-x-auto">
                 <table className="w-full table-auto border-collapse">
                   <thead>
                     <tr className="bg-blue-900 uppercase text-center text-white">
-                      <th className="px-4 py-4 text-center font-normal">Cantidad Ordenada</th>
-                      <th className="px-4 py-4 text-center font-normal">Cantidad Suministrada</th>
-                      <th className="px-4 py-4 text-center font-normal">Unidad</th>
-                      <th className="px-4 py-4 text-center font-normal">Descripción</th>
+                      <th className="px-4 py-4 text-center font-normal">Hilado</th>
+                      <th className="px-4 py-4 text-center font-normal">Cantidad</th>
+                      <th className="px-4 py-4 text-center font-normal">Avance</th>
                       <th className="px-4 py-4 text-center font-normal">Precio</th>
                       <th className="px-4 py-4 text-center font-normal">Importe</th>
                     </tr>
@@ -658,17 +657,16 @@ const CrearMovIngresoHilado: React.FC = () => {
                   <tbody>
                     {selectedPurchaseOrder.detail.map((item, index) => (
                       <tr key={index} className="text-center text-black">
-                        <td className="border-b border-gray-300 px-4 py-5">{item.quantityOrdered}</td>
-                        <td className="border-b border-gray-300 px-4 py-5">{item.quantitySupplied}</td>
-                        <td className="border-b border-gray-300 px-4 py-5">{item.unitCode}</td>
                         <td className="border-b border-gray-300 px-4 py-5">
                           {item.yarn.description}
                           <IconButton onClick={() => handleOpenYarnDialog(item.yarn.id)}>
                             <Visibility style={{ color: "#1976d2" }} />
                           </IconButton>
                         </td>
-                        <td className="border-b border-gray-300 px-4 py-5">{item.precto}</td>
-                        <td className="border-b border-gray-300 px-4 py-5">{item.impcto}</td>
+                        <td className="border-b border-gray-300 px-4 py-5">{item.quantityOrdered} {item.unitCode}</td>
+                        <td className="border-b border-gray-300 px-4 py-5">{item.quantitySupplied} {item.unitCode}</td>
+                        <td className="border-b border-gray-300 px-4 py-5">{selectedPurchaseOrder.promecCurrency.symbol} {item.precto} </td>
+                        <td className="border-b border-gray-300 px-4 py-5">{selectedPurchaseOrder.promecCurrency.symbol} {item.impcto}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -712,18 +710,18 @@ const CrearMovIngresoHilado: React.FC = () => {
           </h3>
           {selectedYarn ? (
             <div className="mb-4 text-black">
-              <p><strong>Descripción:</strong> {selectedYarn.description}</p>
-              <p><strong>Fabricado en:</strong> {selectedYarn.manufacturedIn?.value || "--"}</p>
-              <p><strong>Distinciones:</strong>{" "}
-                {selectedYarn.distinctions && selectedYarn.distinctions.length > 0
+              <p className="mb-2"><strong>Descripción:</strong> {selectedYarn.description}</p>
+              <p className="mb-2"><strong>Título:</strong> {selectedYarn.yarnCount?.value || "--"}</p>
+              <p className="mb-2"><strong>Acabado:</strong> {selectedYarn.spinningMethod?.value || "--"}</p>
+              <p className="mb-2"><strong>Barcode:</strong> {selectedYarn.barcode}</p>
+              <p className="mb-2"><strong>Color:</strong> {selectedYarn.color?.name || "No teñido"}</p>
+              <p className="mb-2"><strong>Fabricado en:</strong> {selectedYarn.manufacturedIn?.value || "--"}</p>
+              <p className="mb-2"><strong>Distinciones:</strong>{" "}
+                {selectedYarn.distinctions.length > 0
                   ? selectedYarn.distinctions.map((dist) => dist.value).join(", ")
                   : "--"
                 }
               </p>
-              <p><strong>Barcode:</strong> {selectedYarn.barcode}</p>
-              <p><strong>Color:</strong> {selectedYarn.color?.name || "No teñido"}</p>
-              <p><strong>Título:</strong> {selectedYarn.title || "--"}</p>
-              <p><strong>Acabado:</strong> {selectedYarn.finish || "--"}</p>
             </div>
           ) : (
             <p>Cargando información del hilado...</p>

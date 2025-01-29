@@ -117,6 +117,7 @@ export interface YarnPurchaseEntryResponse {
 }
 
 export interface PurchaseOrderDetail {
+  promecCurrency: any;
   quantityOrdered: number;
   quantitySupplied: number;
   unitCode: string;
