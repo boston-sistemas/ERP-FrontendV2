@@ -30,4 +30,7 @@ export const createYarnPurchaseEntry = async (payload: any): Promise<{ entryNumb
   }
 };
   
-
+export const fetchPurchaseOrderById = async (id: string): Promise<PurchaseOrderResponse> => {
+  const response = await instance.get<PurchaseOrderResponse>(`/operations/v1/orden-compra/yarns/${id}`);
+  return response.data;
+};

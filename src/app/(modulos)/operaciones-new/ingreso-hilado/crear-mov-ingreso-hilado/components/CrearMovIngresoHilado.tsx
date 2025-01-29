@@ -26,9 +26,11 @@ import {
   TableRow,
 } from "@mui/material";
 import MuiAlert, { AlertProps } from "@mui/material/Alert";
-import { Add, Delete } from "@mui/icons-material";
+import { Add, Delete, Visibility } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-import { fetchOrdenCompras, createYarnPurchaseEntry } from "../services/crearMovIngresoService";
+import { fetchOrdenCompras, createYarnPurchaseEntry, fetchPurchaseOrderById } from "../services/crearMovIngresoService";
+import { fetchSuppliersHil } from "../../services/movIngresoHiladoService";
+import { fetchYarnbyId } from "../../../hilados/services/hiladoService";
 import { PurchaseOrder, Yarn, YarnPurchaseEntryDetail, YarnPurchaseEntry, PurchaseOrderResponse } from "../../../models/models";
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
@@ -67,6 +69,14 @@ const CrearMovIngresoHilado: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
+  const [openPurchaseOrderDialog, setOpenPurchaseOrderDialog] = useState(false);
+  const [selectedPurchaseOrder, setSelectedPurchaseOrder] = useState<PurchaseOrder | null>(null);
+
+  const [openYarnDialog, setOpenYarnDialog] = useState(false);
+  const [selectedYarn, setSelectedYarn] = useState<Yarn | null>(null);
+
+  const [suppliers, setSuppliers] = useState([]);
+
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const isMediumScreen = useMediaQuery(theme.breakpoints.between("sm", "md"));
@@ -76,9 +86,11 @@ const CrearMovIngresoHilado: React.FC = () => {
       try {
         const data = await fetchOrdenCompras(period);
         setOrdenesCompra(data.yarnOrders || []);
+        const suppliersData = await fetchSuppliersHil();
+        setSuppliers(suppliersData.suppliers || []);
       } catch (error) {
-        console.error("Error fetching purchase orders:", error);
-        setSnackbarMessage("Error al cargar órdenes de compra.");
+        console.error("Error fetching data:", error);
+        setSnackbarMessage("Error al cargar datos.");
         setOpenSnackbar(true);
       }
     };
@@ -106,6 +118,38 @@ const CrearMovIngresoHilado: React.FC = () => {
     setSnackbarMessage(`Orden de Compra ${orden.purchaseOrderNumber} seleccionada.`);
     setOpenSnackbar(true);
     toggleOrdenesDialog();
+  };
+
+  const handleViewOrderDetails = async (purchaseOrderNumber: string) => {
+    try {
+      const data = await fetchPurchaseOrderById(purchaseOrderNumber);
+      setSelectedPurchaseOrder(data);
+      setOpenPurchaseOrderDialog(true);
+    } catch (error) {
+      console.error("Error fetching order details:", error);
+      setSnackbarMessage("Error al obtener detalles de la orden.");
+      setOpenSnackbar(true);
+    }
+  };
+
+  const handleClosePurchaseOrderDialog = () => {
+    setOpenPurchaseOrderDialog(false);
+    setSelectedPurchaseOrder(null);
+  };
+
+  const handleOpenYarnDialog = async (yarnId: string) => {
+    try {
+      const data = await fetchYarnbyId(yarnId);
+      setSelectedYarn(data);
+      setOpenYarnDialog(true);
+    } catch (error) {
+      console.error("Error fetching yarn data:", error);
+    }
+  };
+
+  const handleCloseYarnDialog = () => {
+    setOpenYarnDialog(false);
+    setSelectedYarn(null);
   };
 
   const handleDetailChange = (index: number, field: string, value: any) => {
@@ -283,17 +327,22 @@ const CrearMovIngresoHilado: React.FC = () => {
             Seleccionar Orden de Compra
           </Typography>
           {selectedOrden && (
-            <Typography
-              variant="body2"
-              className="mb-2 font-semibold"
-              style={{ color: "#000" }}
-            >
-              Orden seleccionada: {selectedOrden.purchaseOrderNumber}
-            </Typography>
+            <div className="flex items-center gap-2">
+              <Typography
+                variant="body2"
+                className="mb-2 font-semibold"
+                style={{ color: "#000" }}
+              >
+                Orden seleccionada: {selectedOrden.purchaseOrderNumber}
+              </Typography>
+              <IconButton onClick={() => handleViewOrderDetails(selectedOrden.purchaseOrderNumber)} style={{ marginBottom: "8px" }}>
+                <Visibility style={{ color: "#1976d2" }} />
+              </IconButton>
+            </div>
           )}
-          <IconButton onClick={toggleOrdenesDialog}>
-            <Add style={{ color: "#1976d2" }} />
-          </IconButton>
+          <Button variant="outlined" onClick={toggleOrdenesDialog}>
+            Seleccionar O/C
+          </Button>
         </div>
 
         <form>
@@ -361,7 +410,7 @@ const CrearMovIngresoHilado: React.FC = () => {
                 />
               </div>
               <div className="flex items-center justify-between mt-4">
-                <Typography variant="subtitle1" className="font-semibold">
+                <Typography variant="subtitle1" className="font-semibold text-black">
                   Pesaje
                 </Typography>
                 <Switch
@@ -484,13 +533,22 @@ const CrearMovIngresoHilado: React.FC = () => {
         </form>
       </div>
 
-      <Dialog open={openOrdenesDialog} onClose={toggleOrdenesDialog} maxWidth="md" fullWidth>
+      <Dialog open={openOrdenesDialog} onClose={toggleOrdenesDialog} maxWidth="md"
+      PaperProps={{
+        sx: {
+          ...( !isSmallScreen && !isMediumScreen && {
+            marginLeft: "280px", 
+            maxWidth: "calc(100% - 280px)", 
+          }),
+        },
+      }}
+        >
         <DialogTitle>Seleccionar Orden de Compra</DialogTitle>
         <DialogContent>
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 text-white uppercase text-sm">
-                {["N° O/C", "Proveedor", "Nombre o Razón Social", "Fecha Emisión", "Fecha Vencimiento", "Agregar"].map((col, index) => (
+                {["N° O/C", "Proveedor", "Información", "Fecha Emisión", "Fecha Vencimiento", "Agregar"].map((col, index) => (
                   <th key={index} className="border-b border-[#eee] px-4 py-5 text-center font-normal">
                     {col}
                   </th>
@@ -508,14 +566,16 @@ const CrearMovIngresoHilado: React.FC = () => {
                         index % 2 === 0 ? "bg-gray-100" : "bg-white"
                       } hover:bg-gray-200 text-sm`}
                     >
-                      <td className="border-b border-[#eee] px-4 py-5 text-center">
+                      <td className="border-b border-[#eee] px-4 py-5 text-center text-black">
                         {orden.purchaseOrderNumber}
                       </td>
                       <td className="border-b border-[#eee] px-4 py-5 text-center">
-                        {orden.supplierCode}
+                        {suppliers.find(supplier => supplier.code === orden.supplierCode)?.name || "Desconocido"}
                       </td>
                       <td className="border-b border-[#eee] px-4 py-5 text-center">
-                        {orden.supplierCode || "N/A"}
+                        <IconButton onClick={(e) => { e.stopPropagation(); handleViewOrderDetails(orden.purchaseOrderNumber); }} style={{ marginBottom: "8px" }}>
+                          <Visibility style={{ color: "#1976d2" }} />
+                        </IconButton>
                       </td>
                       <td className="border-b border-[#eee] px-4 py-5 text-center">
                         {orden.issueDate}
@@ -524,9 +584,9 @@ const CrearMovIngresoHilado: React.FC = () => {
                         {orden.dueDate}
                       </td>
                       <td className="border-b border-[#eee] px-4 py-5 text-center">
-                        <IconButton color="primary" onClick={() => handleSelectOrden(orden)}>
-                          <Add />
-                        </IconButton>
+                        <Button variant="outlined" onClick={() => handleSelectOrden(orden)}>
+                          Seleccionar
+                        </Button>
                       </td>
                     </tr>
                   ))
@@ -549,7 +609,175 @@ const CrearMovIngresoHilado: React.FC = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={toggleOrdenesDialog} style={{ backgroundColor: "#1976d2", color: "#fff" }}>
+          <Button onClick={toggleOrdenesDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openPurchaseOrderDialog}
+        onClose={handleClosePurchaseOrderDialog}
+        fullScreen={isSmallScreen}
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            ...( !isSmallScreen && !isMediumScreen && {
+              marginLeft: "280px", 
+              maxWidth: "calc(100% - 280px)", 
+            }),
+            maxHeight: "calc(100% - 64px)",
+            overflowY: "auto",
+          },
+        }}
+      >
+        <DialogContent>
+          <h3 className="text-lg font-semibold text-black mb-4">
+            Información de la Orden de Compra
+          </h3>
+          {selectedPurchaseOrder ? (
+            <div className="mb-4 text-black">
+              <p><strong>Proveedor:</strong> {suppliers.find(supplier => supplier.code === selectedPurchaseOrder.supplierCode)?.name || "Desconocido"}</p>
+              <p><strong>Fecha de Emisión:</strong> {selectedPurchaseOrder.issueDate}</p>
+              <p><strong>Fecha de Vencimiento:</strong> {selectedPurchaseOrder.dueDate}</p>
+              <p><strong>Método de Pago:</strong> {selectedPurchaseOrder.paymentMethod}</p>
+              <p><strong>Estado:</strong> {selectedPurchaseOrder.statusFlag}</p>
+              <p><strong>Moneda:</strong> {selectedPurchaseOrder.currencyCode}</p>
+              <div className="max-w-full overflow-x-auto">
+                <table className="w-full table-auto border-collapse">
+                  <thead>
+                    <tr className="bg-blue-900 uppercase text-center text-white">
+                      <th className="px-4 py-4 text-center font-normal">Cantidad Ordenada</th>
+                      <th className="px-4 py-4 text-center font-normal">Cantidad Suministrada</th>
+                      <th className="px-4 py-4 text-center font-normal">Unidad</th>
+                      <th className="px-4 py-4 text-center font-normal">Descripción</th>
+                      <th className="px-4 py-4 text-center font-normal">Precio</th>
+                      <th className="px-4 py-4 text-center font-normal">Importe</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedPurchaseOrder.detail.map((item, index) => (
+                      <tr key={index} className="text-center text-black">
+                        <td className="border-b border-gray-300 px-4 py-5">{item.quantityOrdered}</td>
+                        <td className="border-b border-gray-300 px-4 py-5">{item.quantitySupplied}</td>
+                        <td className="border-b border-gray-300 px-4 py-5">{item.unitCode}</td>
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          {item.yarn.description}
+                          <IconButton onClick={() => handleOpenYarnDialog(item.yarn.id)}>
+                            <Visibility style={{ color: "#1976d2" }} />
+                          </IconButton>
+                        </td>
+                        <td className="border-b border-gray-300 px-4 py-5">{item.precto}</td>
+                        <td className="border-b border-gray-300 px-4 py-5">{item.impcto}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <p>Cargando información...</p>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleClosePurchaseOrderDialog}
+            variant="contained"
+            style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+          >
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openYarnDialog}
+        onClose={handleCloseYarnDialog}
+        fullScreen={isSmallScreen}
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            ...( !isSmallScreen && !isMediumScreen && {
+              marginLeft: "280px", 
+              maxWidth: "calc(100% - 280px)", 
+            }),
+            maxHeight: "calc(100% - 64px)",
+            overflowY: "auto",
+          },
+        }}
+      >
+        <DialogContent>
+          <h3 className="text-lg font-semibold text-black mb-4">
+            Información del Hilado
+          </h3>
+          {selectedYarn ? (
+            <div className="mb-4 text-black">
+              <p><strong>Descripción:</strong> {selectedYarn.description}</p>
+              <p><strong>Fabricado en:</strong> {selectedYarn.manufacturedIn?.value || "--"}</p>
+              <p><strong>Distinciones:</strong>{" "}
+                {selectedYarn.distinctions && selectedYarn.distinctions.length > 0
+                  ? selectedYarn.distinctions.map((dist) => dist.value).join(", ")
+                  : "--"
+                }
+              </p>
+              <p><strong>Barcode:</strong> {selectedYarn.barcode}</p>
+              <p><strong>Color:</strong> {selectedYarn.color?.name || "No teñido"}</p>
+              <p><strong>Título:</strong> {selectedYarn.title || "--"}</p>
+              <p><strong>Acabado:</strong> {selectedYarn.finish || "--"}</p>
+            </div>
+          ) : (
+            <p>Cargando información del hilado...</p>
+          )}
+          <h3 className="text-lg font-semibold text-black mb-2 mt-4">Receta</h3>
+          <div className="max-w-full overflow-x-auto">
+            <table className="w-full table-auto border-collapse">
+              <thead>
+                <tr className="bg-blue-900 uppercase text-center text-white">
+                  <th className="px-4 py-4 text-center font-normal">Categoría</th>
+                  <th className="px-4 py-4 text-center font-normal">Denominación</th>
+                  <th className="px-4 py-4 text-center font-normal">Procedencia</th>
+                  <th className="px-4 py-4 text-center font-normal">Color</th>
+                  <th className="px-4 py-4 text-center font-normal">Proporción (%)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedYarn?.recipe?.length > 0 ? (
+                  selectedYarn.recipe.map((item, index) => (
+                    <tr key={index} className="text-center text-black">
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.category?.value || "-"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.denomination?.value || "-"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.origin || "-"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.color?.name || "Crudo"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.proportion}%
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="text-center py-4 text-gray-500">
+                      No hay datos disponibles.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseYarnDialog}
+            variant="contained"
+            style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+          >
             Cerrar
           </Button>
         </DialogActions>

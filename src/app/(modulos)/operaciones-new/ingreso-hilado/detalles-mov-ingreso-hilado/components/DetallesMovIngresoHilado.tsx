@@ -223,7 +223,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
               <strong>O/C N°:</strong> {detalle.purchaseOrderNumber}
             </Typography>
             <Typography style={{ color: "black" }}>
-              <strong>Guia/Factura:</strong> {detalle.supplierPoCorrelative} {detalle.supplierPoSeries || "N/A"}
+              <strong>Guia - Factura:</strong> {detalle.supplierPoCorrelative} - {detalle.supplierPoSeries || "N/A"}
             </Typography>
           </div>
           <div>

@@ -180,7 +180,7 @@ const MovIngresoHilado: React.FC = () => {
                   color="primary"
                 />
               }
-              label="Mostrar inactivos"
+              label="Mostrar anulados"
             />
             <Typography variant="body2" className="font-semibold">
               Período:
@@ -358,7 +358,6 @@ const MovIngresoHilado: React.FC = () => {
             </h3>
             {selectedPurchaseOrder ? (
               <div className="mb-4 text-black">
-                <p><strong>Empresa:</strong> {selectedPurchaseOrder.companyCode}</p>
                 <p><strong>Proveedor:</strong> {suppliers.find(supplier => supplier.code === selectedPurchaseOrder.supplierCode)?.name || "Desconocido"}</p>
                 <p><strong>Fecha de Emisión:</strong> {selectedPurchaseOrder.issueDate}</p>
                 <p><strong>Fecha de Vencimiento:</strong> {selectedPurchaseOrder.dueDate}</p>
