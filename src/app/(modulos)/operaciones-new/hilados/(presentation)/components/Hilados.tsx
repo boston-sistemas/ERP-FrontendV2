@@ -598,6 +598,7 @@ const Hilados: React.FC = () => {
           </h3>
             {selectedHilado && (
               <div className="mb-4 text-black">
+                <p className="mb-2"><strong>ID:</strong> {selectedHilado.id}</p>
                 <p className="mb-2"><strong>Descripción:</strong> {selectedHilado.description}</p>
                 <p className="mb-2"><strong>Título:</strong> {selectedHilado.yarnCount?.value || "--"}</p>
                 <p className="mb-2"><strong>Acabado:</strong> {selectedHilado.spinningMethod?.value || "--"}</p>
