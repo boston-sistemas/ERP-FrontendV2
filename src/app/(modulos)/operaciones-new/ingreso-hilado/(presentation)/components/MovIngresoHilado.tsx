@@ -358,6 +358,7 @@ const MovIngresoHilado: React.FC = () => {
             </h3>
             {selectedPurchaseOrder ? (
               <div className="mb-4 text-black">
+                <p className="mb-2"><strong>Nro O/C:</strong> {selectedPurchaseOrder.purchaseOrderNumber}</p>
                 <p className="mb-2"><strong>Proveedor:</strong> {suppliers.find(supplier => supplier.code === selectedPurchaseOrder.supplierCode)?.name || "Desconocido"}</p>
                 <p className="mb-2"><strong>Fecha de Emisión:</strong> {selectedPurchaseOrder.issueDate}</p>
                 <p className="mb-2"><strong>Fecha de Vencimiento:</strong> {selectedPurchaseOrder.dueDate}</p>

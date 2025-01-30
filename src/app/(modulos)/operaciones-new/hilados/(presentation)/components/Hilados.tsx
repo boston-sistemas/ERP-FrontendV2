@@ -86,7 +86,6 @@ const Hilados: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingYarn, setEditingYarn] = useState<Yarn | null>(null);
   const [isColorEnabled, setIsColorEnabled] = useState(false);
-  const [colorId, setColorId] = useState<string | null>(null);
 
   // Diálogo de Fibras
   const [showFiberDialog, setShowFiberDialog] = useState(false);
@@ -238,9 +237,7 @@ const Hilados: React.FC = () => {
         recipe: yarn.recipe ? [...yarn.recipe] : [],
       });
 
-      setIsColorEnabled(yarn.color?.id !== null);
-      setColorId(yarn.color?.id || null);
-
+      setIsColorEnabled(!!yarn.color);
       setEditDialogOpen(true);
     } catch (err: any) {
       console.error("Error al chequear status de hilado:", err);
@@ -257,8 +254,6 @@ const Hilados: React.FC = () => {
     setEditingYarn(null);
     setIsPartial(false);
     setAllowedFields([]);
-    setIsColorEnabled(false);
-    setColorId(null);
   };
 
   const handleEditSave = async () => {
@@ -278,7 +273,7 @@ const Hilados: React.FC = () => {
           editForm.spinningMethodId !== ""
             ? Number(editForm.spinningMethodId)
             : null,
-        colorId: isColorEnabled ? colorId : null,
+        colorId: editForm.colorId || null,
         manufacturedInId:
           editForm.manufacturedInId !== ""
             ? Number(editForm.manufacturedInId)
@@ -424,15 +419,6 @@ const Hilados: React.FC = () => {
   };
 
   const handleCloseSnackbar = () => setSnackbarOpen(false);
-
-  const handleColorToggle = () => {
-    setIsColorEnabled((prev) => {
-      if (prev) {
-        setColorId(null); // Reset colorId to null when disabling
-      }
-      return !prev;
-    });
-  };
 
   // ────────────────────────────────────────────────────────────────────────────
   // RENDER
@@ -614,7 +600,6 @@ const Hilados: React.FC = () => {
           </h3>
             {selectedHilado && (
               <div className="mb-4 text-black">
-                <p className="mb-2"><strong>ID:</strong> {selectedHilado.id}</p>
                 <p className="mb-2"><strong>Descripción:</strong> {selectedHilado.description}</p>
                 <p className="mb-2"><strong>Título:</strong> {selectedHilado.yarnCount?.value || "--"}</p>
                 <p className="mb-2"><strong>Acabado:</strong> {selectedHilado.spinningMethod?.value || "--"}</p>
@@ -730,12 +715,15 @@ const Hilados: React.FC = () => {
       >
         <DialogTitle>Editar Hilado</DialogTitle>
         <DialogContent>
-          {editingYarn && (
+          {editForm && (
             <>
-              {/* YarnCount */}
+              {/* Título del Hilado */}
               <Autocomplete
                 options={availableYarnCounts}
                 getOptionLabel={(option) => option.value}
+                value={availableYarnCounts.find(
+                  (option) => option.id === editForm.yarnCountId
+                )}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -759,15 +747,15 @@ const Hilados: React.FC = () => {
                     yarnCountId: newValue ? newValue.id : "",
                   }));
                 }}
-                value={availableYarnCounts.find(
-                  (option) => option.id === editForm.yarnCountId
-                )}
               />
 
-              {/* SpinningMethod */}
+              {/* Acabado */}
               <Autocomplete
                 options={availableSpinningMethods}
                 getOptionLabel={(option) => option.value}
+                value={availableSpinningMethods.find(
+                  (option) => option.id === editForm.spinningMethodId
+                )}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -791,15 +779,15 @@ const Hilados: React.FC = () => {
                     spinningMethodId: newValue ? newValue.id : "",
                   }));
                 }}
-                value={availableSpinningMethods.find(
-                  (option) => option.id === editForm.spinningMethodId
-                )}
               />
 
-              {/* ManufacturedIn */}
+              {/* Lugar de Fabricación */}
               <Autocomplete
                 options={availableManufacturingSites}
                 getOptionLabel={(option) => option.value}
+                value={availableManufacturingSites.find(
+                  (option) => option.id === editForm.manufacturedInId
+                )}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -823,9 +811,6 @@ const Hilados: React.FC = () => {
                     manufacturedInId: newValue ? newValue.id : "",
                   }));
                 }}
-                value={availableManufacturingSites.find(
-                  (option) => option.id === editForm.manufacturedInId
-                )}
               />
 
               {/* Toggle Color */}
@@ -842,11 +827,14 @@ const Hilados: React.FC = () => {
                 sx={{ color: "black" }}
               />
 
-              {/* COLOR */}
+              {/* Color */}
               {isColorEnabled && (
                 <Autocomplete
                   options={availableColors}
                   getOptionLabel={(option) => option.name}
+                  value={availableColors.find(
+                    (option) => option.id === editForm.colorId
+                  )}
                   renderInput={(params) => (
                     <TextField
                       {...params}
@@ -870,185 +858,252 @@ const Hilados: React.FC = () => {
                       colorId: newValue ? newValue.id : "",
                     }));
                   }}
-                  value={availableColors.find(
-                    (option) => option.id === editForm.colorId
-                  )}
                 />
               )}
 
-              {/* Descripción */}
-              <TextField
-                label="Descripción"
-                fullWidth
-                margin="dense"
-                value={editForm.description}
-                onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-              />
-
-              {/* Distinctions */}
+              {/* Distinctions (multiples) */}
               <FormControl fullWidth margin="dense">
-                <InputLabel id="distinctions-label">Distinciones</InputLabel>
+                <InputLabel>Distinciones</InputLabel>
                 <Select
-                  labelId="distinctions-label"
                   multiple
+                  label="Distinciones"
                   value={editForm.distinctionIds}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({
-                      ...prev,
-                      distinctionIds: e.target.value as number[],
-                    }))
-                  }
-                  renderValue={(selected) =>
-                    availableDistinctions
-                      .filter((d) => selected.includes(d.id))
-                      .map((x) => x.value)
-                      .join(", ")
-                  }
+                  onChange={handleDistinctionChange}
+                  disabled={isFieldDisabled("distinctionIds")}
+                  renderValue={(selected) => {
+                    // Muestra el texto de las distinciones
+                    const selectedDist = availableDistinctions.filter((d) =>
+                      selected.includes(d.id)
+                    );
+                    return selectedDist.map((x) => x.value).join(", ");
+                  }}
                 >
                   {availableDistinctions.map((d) => (
                     <MenuItem key={d.id} value={d.id}>
-                      <Checkbox
-                        checked={editForm.distinctionIds.includes(d.id)}
-                      />
+                      <Checkbox checked={editForm.distinctionIds.includes(d.id)} />
                       <ListItemText primary={d.value} />
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
+
+              {/* Descripción */}
+              <TextField
+                label="Descripción"
+                fullWidth
+                multiline
+                rows={3}
+                margin="dense"
+                value={editForm.description}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, description: e.target.value }))
+                }
+                disabled={isFieldDisabled("description")}
+              />
+
+              {/* Tabla de receta */}
+              <h3 className="text-lg font-semibold text-black mb-2 mt-4">Receta</h3>
+              <div className="max-w-full overflow-x-auto">
+                <table className="w-full table-auto">
+                  <thead>
+                    <tr className="bg-blue-900 uppercase text-center text-white">
+                      <th className="px-4 py-4 text-center font-normal">Categoria</th>
+                      <th className="px-4 py-4 text-center font-normal">Denominación</th>
+                      <th className="px-4 py-4 text-center font-normal">Procedencia</th>
+                      <th className="px-4 py-4 text-center font-normal">Color</th>
+                      <th className="px-4 py-4 text-center font-normal">Proporción</th>
+                      <th className="px-4 py-4 text-center font-normal">Eliminar</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {editForm.recipe.map((r, index) => (
+                      <tr key={index} className="text-center">
+                        <td className="border-b border-gray-200 px-4 py-3">
+                          {r.fiber?.category?.value || "-"}
+                        </td>
+                        <td className="border-b border-gray-200 px-4 py-3">
+                          {r.fiber?.denomination?.value || "-"}
+                        </td>
+                        <td className="border-b border-gray-200 px-4 py-3">
+                          {r.fiber?.origin || "-"}
+                        </td>
+                        <td className="border-b border-gray-200 px-4 py-3">
+                          {r.fiber?.color?.name || "Crudo"}
+                        </td>
+                        <td className="border-b border-gray-200 px-4 py-3">
+                          <TextField
+                            variant="outlined"
+                            size="small"
+                            type="number"
+                            value={r.proportion || ""}
+                            onChange={(e) =>
+                              handleProportionChange(r.fiber?.id, e.target.value)
+                            }
+                            disabled={isFieldDisabled("recipe")}
+                          />
+                        </td>
+                        <td className="border-b border-gray-200 px-4 py-3">
+                          <IconButton
+                            disabled={isFieldDisabled("recipe")}
+                            style={{ color: isFieldDisabled("recipe") ? "#aaa" : "#d32f2f" }}
+                            onClick={() => handleDeleteSelectedFibra(r.fiber?.id)}
+                          >
+                            <Close />
+                          </IconButton>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Agregar fibra */}
+                <IconButton
+                  onClick={() => setShowFiberDialog(true)}
+                  style={{ color: "#1976d2" }}
+                  disabled={isFieldDisabled("recipe")}
+                >
+                  <Add />
+                </IconButton>
+              </div>
             </>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleEditClose} variant="contained" style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
-            Cancelar
-          </Button>
-          <Button onClick={handleEditSave} variant="contained" style={{ backgroundColor: "#1976d2", color: "#fff" }}>
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
 
-      {/* Diálogo de fibras para la receta */}
-      <Dialog
-        open={showFiberDialog}
-        onClose={handleFiberDialogClose}
-        fullScreen={isSmallScreen}
-        maxWidth="md"
-        PaperProps={{
-          sx: {
-            ...( !isSmallScreen && !isMediumScreen && {
-              marginLeft: "280px", 
-              maxWidth: "calc(100% - 280px)", 
-            }),
-            maxHeight: "calc(100% - 64px)",
-            overflowY: "auto",
-          },
-        }}
-      >
-        <DialogTitle>Fibras Disponibles</DialogTitle>
-        <DialogContent>
-          <TextField
-            variant="outlined"
-            placeholder="Buscar fibra..."
-            value={fiberSearchTerm}
-            onChange={(e) => setFiberSearchTerm(e.target.value)}
-            size="small"
-            style={{ width: "50%" }}
-          />
-          <Button
-            onClick={handleReloadFibras}
-            style={{ backgroundColor: "#1976d2", color: "#fff", marginLeft: "8px" }}
-          >
-            Recargar Fibras
-          </Button>
-
-          <div className="max-w-full overflow-x-auto mt-4">
-            <table className="w-full table-auto">
-              <thead>
-                <tr className="bg-blue-900 uppercase text-white text-center">
-                  <th className="px-4 py-4">Categoria</th>
-                  <th className="px-4 py-4">Denominación</th>
-                  <th className="px-4 py-4">Procedencia</th>
-                  <th className="px-4 py-4">Color</th>
-                  <th className="px-4 py-4">Seleccionar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredFibras
-                  .slice(
-                    fiberPage * fiberRowsPerPage,
-                    fiberPage * fiberRowsPerPage + fiberRowsPerPage
-                  )
-                  .map((fibra) => {
-                    const isSelected = editForm.recipe.some(
-                      (r) => r.fiber?.id === fibra.id
-                    );
-                    return (
-                      <tr
-                        key={fibra.id}
-                        className={`text-center ${
-                          isSelected ? "bg-green-100" : ""
-                        }`}
-                      >
-                        <td className="border-b border-gray-300 px-4 py-5">
-                          {fibra.category?.value || "-"}
-                        </td>
-                        <td className="border-b border-gray-300 px-4 py-5">
-                          {fibra.denomination?.value || "-"}
-                        </td>
-                        <td className="border-b border-gray-300 px-4 py-5">
-                          {fibra.origin || "-"}
-                        </td>
-                        <td className="border-b border-gray-300 px-4 py-5">
-                          {fibra.color?.name || "Crudo"}
-                        </td>
-                        <td className="border-b border-gray-300 px-4 py-5">
-                          {!isSelected ? (
-                            <IconButton
-                              style={{ color: "#1976d2" }}
-                              onClick={() => handleAddFiber(fibra)}
-                              disabled={isFieldDisabled("recipe")}
-                            >
-                              <Add />
-                            </IconButton>
-                          ) : (
-                            <span className="text-gray-500">
-                              Seleccionada
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
-          </div>
-        </DialogContent>
+        {/* Acciones del diálogo */}
         <DialogActions>
-          <TablePagination
-            component="div"
-            count={filteredFibras.length}
-            page={fiberPage}
-            onPageChange={(_, newPage) => setFiberPage(newPage)}
-            rowsPerPage={fiberRowsPerPage}
-            onRowsPerPageChange={(e) =>
-              setFiberRowsPerPage(parseInt(e.target.value, 10))
-            }
-            rowsPerPageOptions={[5, 10, 15]}
-          />
           <Button
-            onClick={handleFiberDialogClose}
+            onClick={handleEditClose}
             variant="contained"
             style={{ backgroundColor: "#d32f2f", color: "#fff" }}
           >
-            Cerrar
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleEditSave}
+            variant="contained"
+            style={{ backgroundColor: "#1976d2", color: "#fff" }}
+          >
+            Guardar
           </Button>
         </DialogActions>
+
+        {/* Diálogo de fibras para la receta */}
+        <Dialog
+          open={showFiberDialog}
+          onClose={handleFiberDialogClose}
+          fullScreen={isSmallScreen}
+          maxWidth="md"
+          PaperProps={{
+            sx: {
+              ...( !isSmallScreen && !isMediumScreen && {
+                marginLeft: "280px", 
+                maxWidth: "calc(100% - 280px)", 
+              }),
+              maxHeight: "calc(100% - 64px)",
+              overflowY: "auto",
+            },
+          }}
+        >
+          <DialogTitle>Fibras Disponibles</DialogTitle>
+          <DialogContent>
+            <TextField
+              variant="outlined"
+              placeholder="Buscar fibra..."
+              value={fiberSearchTerm}
+              onChange={(e) => setFiberSearchTerm(e.target.value)}
+              size="small"
+              style={{ width: "50%" }}
+            />
+            <Button
+              onClick={handleReloadFibras}
+              style={{ backgroundColor: "#1976d2", color: "#fff", marginLeft: "8px" }}
+            >
+              Recargar Fibras
+            </Button>
+
+            <div className="max-w-full overflow-x-auto mt-4">
+              <table className="w-full table-auto">
+                <thead>
+                  <tr className="bg-blue-900 uppercase text-white text-center">
+                    <th className="px-4 py-4">Categoria</th>
+                    <th className="px-4 py-4">Denominación</th>
+                    <th className="px-4 py-4">Procedencia</th>
+                    <th className="px-4 py-4">Color</th>
+                    <th className="px-4 py-4">Seleccionar</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredFibras
+                    .slice(
+                      fiberPage * fiberRowsPerPage,
+                      fiberPage * fiberRowsPerPage + fiberRowsPerPage
+                    )
+                    .map((fibra) => {
+                      const isSelected = editForm.recipe.some(
+                        (r) => r.fiber?.id === fibra.id
+                      );
+                      return (
+                        <tr
+                          key={fibra.id}
+                          className={`text-center ${
+                            isSelected ? "bg-green-100" : ""
+                          }`}
+                        >
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {fibra.category?.value || "-"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {fibra.denomination?.value || "-"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {fibra.origin || "-"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {fibra.color?.name || "Crudo"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {!isSelected ? (
+                              <IconButton
+                                style={{ color: "#1976d2" }}
+                                onClick={() => handleAddFiber(fibra)}
+                                disabled={isFieldDisabled("recipe")}
+                              >
+                                <Add />
+                              </IconButton>
+                            ) : (
+                              <span className="text-gray-500">
+                                Seleccionada
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <TablePagination
+              component="div"
+              count={filteredFibras.length}
+              page={fiberPage}
+              onPageChange={(_, newPage) => setFiberPage(newPage)}
+              rowsPerPage={fiberRowsPerPage}
+              onRowsPerPageChange={(e) =>
+                setFiberRowsPerPage(parseInt(e.target.value, 10))
+              }
+              rowsPerPageOptions={[5, 10, 15]}
+            />
+            <Button
+              onClick={handleFiberDialogClose}
+              variant="contained"
+              style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+            >
+              Cerrar
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Dialog>
     </div>
   );

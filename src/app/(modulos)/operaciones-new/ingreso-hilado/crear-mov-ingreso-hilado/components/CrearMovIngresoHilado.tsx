@@ -534,7 +534,7 @@ const CrearMovIngresoHilado: React.FC = () => {
         <DialogContent>
           <div className="mb-4">
             <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>
-              Seleccionar Periodo
+              Seleccionar Periodo de la O/C
             </Typography>
             <Select
               value={selectedYear}
@@ -649,7 +649,8 @@ const CrearMovIngresoHilado: React.FC = () => {
               <p className="mb-2"><strong>Fecha de Emisión:</strong> {selectedPurchaseOrder.issueDate}</p>
               <p className="mb-2"><strong>Fecha de Vencimiento:</strong> {selectedPurchaseOrder.dueDate}</p>
               <p className="mb-2"><strong>Método de Pago:</strong> {selectedPurchaseOrder.paymentMethod}</p>
-              <p className="mb-6"><strong>Estado:</strong> {selectedPurchaseOrder.promecStatus.name}</p>
+              <p className="mb-2"><strong>Estado:</strong> {selectedPurchaseOrder.promecStatus.name}</p>
+              <p className="mb-6"><strong>Moneda:</strong> {selectedPurchaseOrder.promecCurrency.name}</p>
               
               <div className="max-w-full overflow-x-auto">
                 <table className="w-full table-auto border-collapse">
