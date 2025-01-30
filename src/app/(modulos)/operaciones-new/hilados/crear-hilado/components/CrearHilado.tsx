@@ -22,6 +22,7 @@ import {
   Switch,
   useTheme, 
   useMediaQuery,
+  Autocomplete,
 } from "@mui/material";
 import { Add, Close } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
@@ -284,59 +285,82 @@ const CrearHilado: React.FC = () => {
 
         <form onSubmit={handleCreate}>
           {/* YarnCount selector */}
-          <TextField
-            label="Título de Hilado "
-            select
-            fullWidth
-            value={yarnCountId}
-            onChange={(e) => setYarnCountId(e.target.value as number | "")}
-            margin="dense"
-          >
-            <MenuItem value="">-- Seleccione un Título --</MenuItem>
-            {availableYarnCounts.map((yc) => (
-              <MenuItem key={yc.id} value={yc.id}>
-                {yc.value}
-              </MenuItem>
-            ))}
-          </TextField>
+          <Autocomplete
+            options={availableYarnCounts}
+            getOptionLabel={(option) => option.value}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Título de Hilado"
+                margin="dense"
+                variant="outlined"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": { borderColor: "#444444" },
+                    "&:hover fieldset": { borderColor: "#444444" },
+                    "&.Mui-focused fieldset": { borderColor: "#444444" },
+                  },
+                  "& .MuiInputLabel-root": { color: "#444444" },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                }}
+              />
+            )}
+            onChange={(event, newValue) => {
+              setYarnCountId(newValue ? newValue.id : "");
+            }}
+          />
 
           {/* SpinningMethod */}
-          <TextField
-            label="Acabado "
-            select
-            fullWidth
-            value={spinningMethodId}
-            onChange={(e) =>
-              setSpinningMethodId(e.target.value as number | "")
-            }
-            margin="dense"
-          >
-            <MenuItem value="">-- Sin acabado --</MenuItem>
-            {availableSpinningMethods.map((sm) => (
-              <MenuItem key={sm.id} value={sm.id}>
-                {sm.value}
-              </MenuItem>
-            ))}
-          </TextField>
+          <Autocomplete
+            options={availableSpinningMethods}
+            getOptionLabel={(option) => option.value}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Acabado"
+                margin="dense"
+                variant="outlined"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": { borderColor: "#444444" },
+                    "&:hover fieldset": { borderColor: "#444444" },
+                    "&.Mui-focused fieldset": { borderColor: "#444444" },
+                  },
+                  "& .MuiInputLabel-root": { color: "#444444" },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                }}
+              />
+            )}
+            onChange={(event, newValue) => {
+              setSpinningMethodId(newValue ? newValue.id : "");
+            }}
+          />
 
           {/* ManufacturedIn */}
-          <TextField
-            label="Lugar de Fabricación"
-            select
-            fullWidth
-            value={manufacturedInId}
-            onChange={(e) =>
-              setManufacturedInId(e.target.value as number | "")
-            }
-            margin="dense"
-          >
-            <MenuItem value="">-- Sin definir --</MenuItem>
-            {availableManufacturingSites.map((ms) => (
-              <MenuItem key={ms.id} value={ms.id}>
-                {ms.value}
-              </MenuItem>
-            ))}
-          </TextField>
+          <Autocomplete
+            options={availableManufacturingSites}
+            getOptionLabel={(option) => option.value}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Lugar de Fabricación"
+                margin="dense"
+                variant="outlined"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": { borderColor: "#444444" },
+                    "&:hover fieldset": { borderColor: "#444444" },
+                    "&.Mui-focused fieldset": { borderColor: "#444444" },
+                  },
+                  "& .MuiInputLabel-root": { color: "#444444" },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                }}
+              />
+            )}
+            onChange={(event, newValue) => {
+              setManufacturedInId(newValue ? newValue.id : "");
+            }}
+          />
 
           {/* Distinctions (varios) */}
           <FormControl fullWidth margin="dense">
@@ -387,31 +411,30 @@ const CrearHilado: React.FC = () => {
 
         {/* Renderizar el selector solo si isColorEnabled es true */}
         {isColorEnabled && (
-          <TextField
-            label="Color"
-            fullWidth
-            select
-            value={colorId || ""}
-            onChange={(e) => setColorId(e.target.value)}
-            margin="dense"
-            variant="outlined"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": { borderColor: "#444444" },
-                "&:hover fieldset": { borderColor: "#444444" },
-                "&.Mui-focused fieldset": { borderColor: "#444444" },
-              },
-              "& .MuiInputLabel-root": { color: "#444444" },
-              "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+          <Autocomplete
+            options={availableColors}
+            getOptionLabel={(option) => option.name}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Color"
+                margin="dense"
+                variant="outlined"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": { borderColor: "#444444" },
+                    "&:hover fieldset": { borderColor: "#444444" },
+                    "&.Mui-focused fieldset": { borderColor: "#444444" },
+                  },
+                  "& .MuiInputLabel-root": { color: "#444444" },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                }}
+              />
+            )}
+            onChange={(event, newValue) => {
+              setColorId(newValue ? newValue.id : null);
             }}
-          >
-            <MenuItem value="">Sin color</MenuItem>
-            {availableColors.map((col) => (
-              <MenuItem key={col.id} value={col.id}>
-                {col.name}
-              </MenuItem>
-            ))}
-          </TextField>
+          />
         )}
 
           {/* Receta (Fibra/Proporciones) */}

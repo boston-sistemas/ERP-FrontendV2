@@ -8,7 +8,8 @@ import {
   Snackbar, 
   Alert, 
   Switch, 
-  FormControlLabel 
+  FormControlLabel,
+  Autocomplete
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 
@@ -93,7 +94,7 @@ const CrearFibra: React.FC = () => {
     if (!Object.values(newErrors).includes(true)) {
       const payload = {
         categoryId: categoria,
-        // Asumimos que ‘variedad’ ahora contiene la cadena
+        // Asumimos que 'variedad' ahora contiene la cadena
         denominationId: variedad || null,
         origin: procedencia || null,
         colorId: isColorEnabled ? color || null : null, // Verifica si el campo Color está activo
@@ -147,95 +148,88 @@ const CrearFibra: React.FC = () => {
 
         <form onSubmit={handleSubmit}>
           {/* CATEGORÍA */}
-          <TextField
-            label="Categoría *"
-            fullWidth
-            select
-            value={categoria}
-            onChange={(e) => {
-              setCategoria(e.target.value);
+          <Autocomplete
+            options={categories}
+            getOptionLabel={(option) => option.value}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Categoría *"
+                margin="dense"
+                variant="outlined"
+                error={errors.categoria}
+                helperText={errors.categoria ? "Campo requerido" : ""}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": { borderColor: "#444444" },
+                    "&:hover fieldset": { borderColor: "#444444" },
+                    "&.Mui-focused fieldset": { borderColor: "#444444" },
+                  },
+                  "& .MuiInputLabel-root": { color: "#444444" },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                }}
+              />
+            )}
+            onChange={(event, newValue) => {
+              setCategoria(newValue ? newValue.id : "");
               setErrors((prev) => ({ ...prev, categoria: false }));
             }}
-            error={errors.categoria}
-            helperText={errors.categoria ? "Campo requerido" : ""}
-            margin="dense"
-            variant="outlined"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": { borderColor: "#444444" },
-                "&:hover fieldset": { borderColor: "#444444" },
-                "&.Mui-focused fieldset": { borderColor: "#444444" },
-              },
-              "& .MuiInputLabel-root": { color: "#444444" },
-              "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
-            }}
-          >
-            <MenuItem value="">Sin categoría</MenuItem>
-            {categories.map((category) => (
-              <MenuItem key={category.id} value={category.id}>
-                {category.value}
-              </MenuItem>
-            ))}
-          </TextField>
+          />
 
           {/* VARIEDAD / DENOMINACIÓN */}
-          <TextField
-            label="Variedad/Marca"
-            fullWidth
-            select
-            value={variedad}
-            onChange={(e) => {
-              setVariedad(e.target.value);
+          <Autocomplete
+            options={denominations}
+            getOptionLabel={(option) => option.value}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Variedad/Marca"
+                margin="dense"
+                variant="outlined"
+                error={errors.variedad}
+                helperText={errors.variedad ? "Campo requerido" : ""}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": { borderColor: "#444444" },
+                    "&:hover fieldset": { borderColor: "#444444" },
+                    "&.Mui-focused fieldset": { borderColor: "#444444" },
+                  },
+                  "& .MuiInputLabel-root": { color: "#444444" },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                }}
+              />
+            )}
+            onChange={(event, newValue) => {
+              setVariedad(newValue ? newValue.id : "");
               setErrors((prev) => ({ ...prev, variedad: false }));
             }}
-            error={errors.variedad}
-            helperText={errors.variedad ? "Campo requerido" : ""}
-            margin="dense"
-            variant="outlined"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": { borderColor: "#444444" },
-                "&:hover fieldset": { borderColor: "#444444" },
-                "&.Mui-focused fieldset": { borderColor: "#444444" },
-              },
-              "& .MuiInputLabel-root": { color: "#444444" },
-              "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
-            }}
-          >
-            <MenuItem value="">Sin variedad</MenuItem>
-            {denominations.map((den) => (
-              <MenuItem key={den.id} value={den.id}>
-                {den.value}
-              </MenuItem>
-            ))}
-          </TextField>
+          />
 
           {/* PROCEDENCIA */}
-          <TextField
-            label="Procedencia"
-            fullWidth
-            select
-            value={procedencia}
-            onChange={(e) => setProcedencia(e.target.value)}
-            margin="dense"
-            variant="outlined"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": { borderColor: "#444444" },
-                "&:hover fieldset": { borderColor: "#444444" },
-                "&.Mui-focused fieldset": { borderColor: "#444444" },
-              },
-              "& .MuiInputLabel-root": { color: "#444444" },
-              "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+          <Autocomplete
+            options={countries}
+            getOptionLabel={(option) => option.name}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Procedencia"
+                margin="dense"
+                variant="outlined"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": { borderColor: "#444444" },
+                    "&:hover fieldset": { borderColor: "#444444" },
+                    "&.Mui-focused fieldset": { borderColor: "#444444" },
+                  },
+                  "& .MuiInputLabel-root": { color: "#444444" },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                }}
+              />
+            )}
+            onChange={(event, newValue) => {
+              setProcedencia(newValue ? newValue.id : "");
             }}
-          >
-            <MenuItem value="">Sin procedencia</MenuItem>
-            {countries.map((country) => (
-              <MenuItem key={country.id} value={country.id}>
-                {country.name}
-              </MenuItem>
-            ))}
-          </TextField>
+          />
 
           {/* TOGGLE PARA ACTIVAR/DESACTIVAR COLOR */}
           <FormControlLabel
@@ -253,31 +247,30 @@ const CrearFibra: React.FC = () => {
 
           {/* COLOR */}
           {isColorEnabled && (
-            <TextField
-              label="Color"
-              fullWidth
-              select
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              margin="dense"
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": { borderColor: "#444444" },
-                  "&:hover fieldset": { borderColor: "#444444" },
-                  "&.Mui-focused fieldset": { borderColor: "#444444" },
-                },
-                "& .MuiInputLabel-root": { color: "#444444" },
-                "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+            <Autocomplete
+              options={colors}
+              getOptionLabel={(option) => option.name}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Color"
+                  margin="dense"
+                  variant="outlined"
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "& fieldset": { borderColor: "#444444" },
+                      "&:hover fieldset": { borderColor: "#444444" },
+                      "&.Mui-focused fieldset": { borderColor: "#444444" },
+                    },
+                    "& .MuiInputLabel-root": { color: "#444444" },
+                    "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                  }}
+                />
+              )}
+              onChange={(event, newValue) => {
+                setColor(newValue ? newValue.id : "");
               }}
-            >
-              <MenuItem value="">Sin color</MenuItem>
-              {colors.map((col) => (
-                <MenuItem key={col.id} value={col.id}>
-                  {col.name}
-                </MenuItem>
-              ))}
-            </TextField>
+            />
           )}
 
           {/* BOTONES */}

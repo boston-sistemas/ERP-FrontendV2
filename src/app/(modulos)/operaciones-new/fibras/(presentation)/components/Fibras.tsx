@@ -17,6 +17,7 @@ import {
   FormControlLabel,
   Switch,
   Tooltip,
+  Autocomplete,
 } from "@mui/material";
 import {
   Edit,
@@ -53,6 +54,7 @@ const Fibras: React.FC = () => {
   const [categories, setCategories] = useState<{ id: number; value: string }[]>(
     []
   );
+  const [isColorEnabled, setIsColorEnabled] = useState(false);
   const [countries, setCountries] = useState<{ id: string; name: string }[]>([]);
   const [colors, setColors] = useState<MecsaColor[]>([]);
   const [denominations, setDenominations] = useState<FiberDenomination[]>([]);
@@ -86,6 +88,8 @@ const Fibras: React.FC = () => {
   );
   const [showEditColumn, setShowEditColumn] = useState(true);
   const [showDisableColumn, setShowDisableColumn] = useState(true);
+
+  const [color, setColor] = useState<string>("");
 
   // ---------------------------------------------------------------------------
   // 1) Cargar datos
@@ -164,15 +168,16 @@ const Fibras: React.FC = () => {
       denominationId: fibra.denomination?.id ?? null,
       origin: fibra.origin || "",
       category: fibra.category || { id: 0, value: "" },
-      color:
-        fibra.color || {
-          id: "",
-          name: "",
-          sku: "",
-          hexadecimal: "",
-          isActive: true,
-        },
+      color: fibra.color || {
+        id: "",
+        name: "",
+        sku: "",
+        hexadecimal: "",
+        isActive: true,
+      },
     });
+    setIsColorEnabled(!!fibra.color);
+    setColor(fibra.color?.id || "");
     setOpenEditDialog(true);
   };
 
@@ -182,7 +187,7 @@ const Fibras: React.FC = () => {
         categoryId: selectedFibra.categoryId || null,
         denominationId: selectedFibra.denominationId || null,
         origin: selectedFibra.origin || null,
-        colorId: selectedFibra.colorId || null,
+        colorId: isColorEnabled ? color : null,
       };
 
       try {
@@ -564,98 +569,160 @@ const Fibras: React.FC = () => {
         <DialogContent>
           {selectedFibra && (
             <>
-              <TextField
-                margin="dense"
-                label="Categoría"
-                fullWidth
-                variant="outlined"
-                select
-                value={selectedFibra.categoryId || ""}
-                onChange={(e) =>
-                  setSelectedFibra({
-                    ...selectedFibra,
-                    categoryId: parseInt(e.target.value, 10),
-                  })
-                }
-              >
-                <MenuItem value="">Sin categoria</MenuItem>
-                {categories.map((cat) => (
-                  <MenuItem key={cat.id} value={cat.id}>
-                    {cat.value}
-                  </MenuItem>
-                ))}
-              </TextField>
-
-              <TextField
-                margin="dense"
-                label="Variedad"
-                fullWidth
-                variant="outlined"
-                select
-                value={selectedFibra.denominationId || ""}
-                onChange={(e) =>
+              {/* CATEGORÍA */}
+              <Autocomplete
+                options={categories}
+                getOptionLabel={(option) => option.value}
+                value={categories.find(
+                  (option) => option.id === selectedFibra.categoryId
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Categoría"
+                    margin="dense"
+                    variant="outlined"
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": { borderColor: "#444444" },
+                        "&:hover fieldset": { borderColor: "#444444" },
+                        "&.Mui-focused fieldset": { borderColor: "#444444" },
+                      },
+                      "& .MuiInputLabel-root": { color: "#444444" },
+                      "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                    }}
+                  />
+                )}
+                onChange={(event, newValue) => {
                   setSelectedFibra((prev) => ({
-                    ...prev!,
-                    denominationId: Number(e.target.value),
-                  }))
-                }
-              >
-                <MenuItem value="">Sin variedad</MenuItem>
-                {denominations.map((den) => (
-                  <MenuItem key={den.id} value={den.id}>
-                    {den.value}
-                  </MenuItem>
-                ))}
-              </TextField>
+                    ...prev,
+                    categoryId: newValue ? newValue.id : 0,
+                  }));
+                }}
+              />
 
-              <TextField
-                margin="dense"
-                label="Procedencia"
-                fullWidth
-                variant="outlined"
-                select
-                value={selectedFibra.origin || ""}
-                onChange={(e) =>
-                  setSelectedFibra({ ...selectedFibra, origin: e.target.value })
-                }
-              >
-                <MenuItem value="">Sin procedencia</MenuItem>
-                {countries.map((country) => (
-                  <MenuItem key={country.id} value={country.id}>
-                    {country.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-
-              <TextField
-                margin="dense"
-                label="Color"
-                fullWidth
-                variant="outlined"
-                select
-                value={selectedFibra.colorId || ""}
-                onChange={(e) =>
+              {/* VARIEDAD / DENOMINACIÓN */}
+              <Autocomplete
+                options={denominations}
+                getOptionLabel={(option) => option.value}
+                value={denominations.find(
+                  (option) => option.id === selectedFibra.denominationId
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Variedad/Marca"
+                    margin="dense"
+                    variant="outlined"
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": { borderColor: "#444444" },
+                        "&:hover fieldset": { borderColor: "#444444" },
+                        "&.Mui-focused fieldset": { borderColor: "#444444" },
+                      },
+                      "& .MuiInputLabel-root": { color: "#444444" },
+                      "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                    }}
+                  />
+                )}
+                onChange={(event, newValue) => {
                   setSelectedFibra((prev) => ({
-                    ...prev!,
-                    colorId: e.target.value,
-                  }))
+                    ...prev,
+                    denominationId: newValue ? newValue.id : null,
+                  }));
+                }}
+              />
+
+              {/* PROCEDENCIA */}
+              <Autocomplete
+                options={countries}
+                getOptionLabel={(option) => option.name}
+                value={countries.find(
+                  (option) => option.id === selectedFibra.origin
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Procedencia"
+                    margin="dense"
+                    variant="outlined"
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": { borderColor: "#444444" },
+                        "&:hover fieldset": { borderColor: "#444444" },
+                        "&.Mui-focused fieldset": { borderColor: "#444444" },
+                      },
+                      "& .MuiInputLabel-root": { color: "#444444" },
+                      "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                    }}
+                  />
+                )}
+                onChange={(event, newValue) => {
+                  setSelectedFibra((prev) => ({
+                    ...prev,
+                    origin: newValue ? newValue.id : "",
+                  }));
+                }}
+              />
+
+              <FormControlLabel
+                label="¿Fibra con color?"
+                labelPlacement="start"
+                control={
+                  <Switch
+                    checked={isColorEnabled}
+                    onChange={() => setIsColorEnabled(!isColorEnabled)}
+                    color="primary"
+                  />
                 }
-              >
-                <MenuItem value="">Sin color</MenuItem>
-                {colors.map((c) => (
-                  <MenuItem key={c.id} value={c.id}>
-                    {c.name}
-                  </MenuItem>
-                ))}
-              </TextField>
+                sx={{ color: "black" }}
+              />
+
+              {/* COLOR */}
+              {isColorEnabled && (
+                <Autocomplete
+                  options={colors}
+                  getOptionLabel={(option) => option.name}
+                  value={colors.find(
+                    (option) => option.id === selectedFibra.colorId
+                  )}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Color"
+                      margin="dense"
+                      variant="outlined"
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          "& fieldset": { borderColor: "#444444" },
+                          "&:hover fieldset": { borderColor: "#444444" },
+                          "&.Mui-focused fieldset": { borderColor: "#444444" },
+                        },
+                        "& .MuiInputLabel-root": { color: "#444444" },
+                        "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                      }}
+                    />
+                  )}
+                  onChange={(event, newValue) => {
+                    setSelectedFibra((prev) => ({
+                      ...prev,
+                      colorId: newValue ? newValue.id : "",
+                    }));
+                  }}
+                />
+              )}
             </>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseEditDialog} color="primary">
+          <Button onClick={handleCloseEditDialog} 
+            variant="contained"
+            style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
             Cancelar
           </Button>
-          <Button onClick={handleSaveFibra} color="primary">
+          <Button onClick={handleSaveFibra}
+            variant="contained"
+            style={{ backgroundColor: "#1976d2", color: "#fff" }}>
             Guardar
           </Button>
         </DialogActions>

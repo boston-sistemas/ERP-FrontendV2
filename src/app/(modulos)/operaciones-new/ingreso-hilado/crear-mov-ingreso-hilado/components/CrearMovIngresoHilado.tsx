@@ -52,7 +52,7 @@ const CrearMovIngresoHilado: React.FC = () => {
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [openOrdenesDialog, setOpenOrdenesDialog] = useState(false);
   const [selectedOrden, setSelectedOrden] = useState<PurchaseOrder | null>(null);
-  const [period, setPeriod] = useState(new Date().getFullYear()); // Año actual por defecto
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [details, setDetails] = useState<
     {
       yarnId: string;
@@ -84,7 +84,7 @@ const CrearMovIngresoHilado: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await fetchOrdenCompras(period);
+        const data = await fetchOrdenCompras(selectedYear);
         setOrdenesCompra(data.yarnOrders || []);
         const suppliersData = await fetchSuppliersHil();
         setSuppliers(suppliersData.suppliers || []);
@@ -95,7 +95,7 @@ const CrearMovIngresoHilado: React.FC = () => {
       }
     };
     fetchData();
-  }, [period]);
+  }, [selectedYear]);
 
   const toggleOrdenesDialog = () => {
     setOpenOrdenesDialog(!openOrdenesDialog);
@@ -225,7 +225,7 @@ const CrearMovIngresoHilado: React.FC = () => {
       }
     
       const payload: YarnPurchaseEntry = {
-        period,
+        period: selectedYear,
         supplierPoCorrelative: guiaCorrelativa,
         supplierPoSeries: facturaSerie,
         fecgf: new Date().toISOString().split("T")[0],
@@ -289,35 +289,17 @@ const CrearMovIngresoHilado: React.FC = () => {
     setFacturaSerie(factura || "");
   };
 
+  const handleYearChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    setSelectedYear(event.target.value as number);
+    // Fetch or filter orders based on the selected year
+  };
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
       <div className="bg-white dark:bg-gray-800 border border-gray-300 rounded-lg shadow-lg p-8 w-full max-w-lg">
         <h2 className="text-xl font-bold mb-6 text-center" style={{ color: "#000" }}>
           Crear Mov. de Ingreso de Hilado
         </h2>
-        <div className="mb-4">
-          <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>
-            Seleccionar Periodo
-          </Typography>
-          <Select
-            value={period}
-            onChange={(e) => setPeriod(Number(e.target.value))}
-            fullWidth
-            variant="outlined"
-            displayEmpty
-            style={{ backgroundColor: "#fff" }}
-          >
-            <MenuItem value="" disabled>
-              Seleccionar año
-            </MenuItem>
-            {[2023, 2024, 2025].map((year) => (
-              <MenuItem key={year} value={year}>
-                {year}
-              </MenuItem>
-            ))}
-          </Select>
-        </div>
-
         <div className="mb-4">
           <Typography
             variant="subtitle1"
@@ -333,7 +315,7 @@ const CrearMovIngresoHilado: React.FC = () => {
                 className="mb-2 font-semibold"
                 style={{ color: "#000" }}
               >
-                Orden seleccionada: {selectedOrden.purchaseOrderNumber}
+                Número de la O/C: {selectedOrden.purchaseOrderNumber}
               </Typography>
               <IconButton onClick={() => handleViewOrderDetails(selectedOrden.purchaseOrderNumber)} style={{ marginBottom: "8px" }}>
                 <Visibility style={{ color: "#1976d2" }} />
@@ -364,17 +346,22 @@ const CrearMovIngresoHilado: React.FC = () => {
               size="small"
             />
           </div>
-
+          
           {/* Hilados dinámicos */}
           {details.map((detail, index) => (
             <div key={index} className="mb-6">
+              <div className="flex items-center justify-between">
               <Typography
                 variant="subtitle1"
                 className="font-semibold mb-2"
                 style={{ color: "#000" }}
               >
                 Hilado: {detail.yarnId}
+                <IconButton onClick={() => handleOpenYarnDialog(detail.yarnId)}>
+                  <Visibility style={{ color: "#1976d2" }} />
+                </IconButton>
               </Typography>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <TextField
                   label="N° Bultos"
@@ -545,6 +532,27 @@ const CrearMovIngresoHilado: React.FC = () => {
         >
         <DialogTitle>Seleccionar Orden de Compra</DialogTitle>
         <DialogContent>
+          <div className="mb-4">
+            <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>
+              Seleccionar Periodo
+            </Typography>
+            <Select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              variant="outlined"
+              displayEmpty
+              style={{ backgroundColor: "#fff" }}
+            >
+              <MenuItem value="" disabled>
+                Seleccionar año
+              </MenuItem>
+              {[2023, 2024, 2025].map((year) => (
+                <MenuItem key={year} value={year}>
+                  {year}
+                </MenuItem>
+              ))}
+            </Select>
+          </div>
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 text-white uppercase text-sm">
@@ -710,6 +718,7 @@ const CrearMovIngresoHilado: React.FC = () => {
           </h3>
           {selectedYarn ? (
             <div className="mb-4 text-black">
+              <p className="mb-2"><strong>ID:</strong> {selectedYarn.id}</p>
               <p className="mb-2"><strong>Descripción:</strong> {selectedYarn.description}</p>
               <p className="mb-2"><strong>Título:</strong> {selectedYarn.yarnCount?.value || "--"}</p>
               <p className="mb-2"><strong>Acabado:</strong> {selectedYarn.spinningMethod?.value || "--"}</p>
