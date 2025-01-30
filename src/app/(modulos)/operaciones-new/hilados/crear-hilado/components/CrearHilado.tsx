@@ -56,9 +56,9 @@ const CrearHilado: React.FC = () => {
   >([]);
 
   // 3) Color
-  const [colorId, setColorId] = useState<string>(""); // si tu color ID es string
-  const [availableColors, setAvailableColors] = useState<MecsaColor[]>([]);
   const [isColorEnabled, setIsColorEnabled] = useState(false);
+  const [colorId, setColorId] = useState<string | null>(null);
+  const [availableColors, setAvailableColors] = useState<MecsaColor[]>([]);
 
   // 4) Receta
   const [selectedRecipes, setSelectedRecipes] = useState<Recipe[]>([]);
@@ -237,7 +237,7 @@ const CrearHilado: React.FC = () => {
       setYarnCountId("");
       setSpinningMethodId("");
       setManufacturedInId("");
-      setColorId("");
+      setColorId(null);
       setDistinctions([]);
       setDescription("");
       setSelectedRecipes([]);
@@ -262,6 +262,15 @@ const CrearHilado: React.FC = () => {
     setOpenFibrasDialog(!openFibrasDialog);
   };
   const handleCloseSnackbar = () => setSnackbarOpen(false);
+
+  const handleColorToggle = () => {
+    setIsColorEnabled((prev) => {
+      if (prev) {
+        setColorId(null); // Reset colorId to null when disabling
+      }
+      return !prev;
+    });
+  };
 
   // ---------------------------------------------------------------------------
   // Render
@@ -369,7 +378,7 @@ const CrearHilado: React.FC = () => {
           control={
             <Switch
               checked={isColorEnabled}
-              onChange={() => setIsColorEnabled(!isColorEnabled)}
+              onChange={handleColorToggle}
               color="primary"
             />
           }
@@ -382,7 +391,7 @@ const CrearHilado: React.FC = () => {
             label="Color"
             fullWidth
             select
-            value={colorId}
+            value={colorId || ""}
             onChange={(e) => setColorId(e.target.value)}
             margin="dense"
             variant="outlined"
@@ -414,9 +423,9 @@ const CrearHilado: React.FC = () => {
               <thead>
                 <tr className="bg-blue-900 uppercase text-white text-center">
                   <th className="px-4 py-4">ID Fibra</th>
+                  <th className="px-4 py-4">Categoría</th>
                   <th className="px-4 py-4">Denominación</th>
                   <th className="px-4 py-4">Origen</th>
-                  <th className="px-4 py-4">Categoría</th>
                   <th className="px-4 py-4">Color</th>
                   <th className="px-4 py-4">Proporción %</th>
                   <th className="px-4 py-4">Eliminar</th>
@@ -429,13 +438,13 @@ const CrearHilado: React.FC = () => {
                       {r.fiber.id}
                     </td>
                     <td className="border-b border-gray-300 px-4 py-5">
+                      {r.fiber.category?.value || "--"}
+                    </td>
+                    <td className="border-b border-gray-300 px-4 py-5">
                       {r.fiber.denomination?.value || "--"}
                     </td>
                     <td className="border-b border-gray-300 px-4 py-5">
                       {r.fiber.origin || "--"}
-                    </td>
-                    <td className="border-b border-gray-300 px-4 py-5">
-                      {r.fiber.category?.value || "--"}
                     </td>
                     <td className="border-b border-gray-300 px-4 py-5">
                       {r.fiber.color?.name || "Crudo"}
@@ -533,9 +542,9 @@ const CrearHilado: React.FC = () => {
               <thead>
                 <tr className="bg-blue-900 uppercase text-white text-center">
                   <th className="px-4 py-4">ID</th>
+                  <th className="px-4 py-4">Categoria</th>
                   <th className="px-4 py-4">Denominación</th>
                   <th className="px-4 py-4">Origen</th>
-                  <th className="px-4 py-4">Categoría</th>
                   <th className="px-4 py-4">Color</th>
                   <th className="px-4 py-4">Acción</th>
                 </tr>
@@ -556,13 +565,13 @@ const CrearHilado: React.FC = () => {
                           {fibra.id}
                         </td>
                         <td className="border-b border-gray-300 px-4 py-5">
-                          {fibra.denomination?.value || "--"}
+                          {fibra.category?.value || "--"}
                         </td>
                         <td className="border-b border-gray-300 px-4 py-5">
                           {fibra.origin || "--"}
                         </td>
                         <td className="border-b border-gray-300 px-4 py-5">
-                          {fibra.category?.value || "--"}
+                          {fibra.denomination?.value || "--"}
                         </td>
                         <td className="border-b border-gray-300 px-4 py-5">
                           {fibra.color?.name || "--"}
