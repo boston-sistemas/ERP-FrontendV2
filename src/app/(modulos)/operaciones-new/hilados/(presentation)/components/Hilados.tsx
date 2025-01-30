@@ -525,7 +525,7 @@ const Hilados: React.FC = () => {
                       </td>
                       <td className="border-b border-gray-300 px-4 py-5">
                         <span
-                          className={`text-sm ${
+                          className={` ${
                             hilado.isActive
                               ? "text-green-500 font-normal"
                               : "text-red-500 font-normal"
@@ -600,10 +600,11 @@ const Hilados: React.FC = () => {
           </h3>
             {selectedHilado && (
               <div className="mb-4 text-black">
+                <p className="mb-2"><strong>ID:</strong> {selectedHilado.id || "--"}</p>
                 <p className="mb-2"><strong>Descripción:</strong> {selectedHilado.description}</p>
                 <p className="mb-2"><strong>Título:</strong> {selectedHilado.yarnCount?.value || "--"}</p>
                 <p className="mb-2"><strong>Acabado:</strong> {selectedHilado.spinningMethod?.value || "--"}</p>
-                <p className="mb-2"><strong>Barcode:</strong> {selectedHilado.barcode}</p>
+                <p className="mb-2"><strong>Codigo de barras:</strong> {selectedHilado.barcode}</p>
                 <p className="mb-2"><strong>Color:</strong> {selectedHilado.color?.name || "No teñido"}</p>
                 <p className="mb-2"><strong>Fabricado en:</strong> {selectedHilado.manufacturedIn?.value || "--"}</p>
                 <p className="mb-2"><strong>Distinciones:</strong>{" "}

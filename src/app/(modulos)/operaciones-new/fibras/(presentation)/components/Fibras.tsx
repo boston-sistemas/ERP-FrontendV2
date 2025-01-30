@@ -490,7 +490,7 @@ const Fibras: React.FC = () => {
                         </td>
                         <td className="border-b border-gray-300 px-4 py-5">
                           <span
-                            className={`text-sm ${
+                            className={` ${
                               fibra.isActive ? "text-green-500" : "text-red-500"
                             }`}
                           >
