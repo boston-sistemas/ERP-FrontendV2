@@ -598,16 +598,18 @@ const Hilados: React.FC = () => {
           </h3>
             {selectedHilado && (
               <div className="mb-4 text-black">
-                <p><strong>Descripción:</strong> {selectedHilado.description}</p>
-                <p><strong>Fabricado en:</strong> {selectedHilado.manufacturedIn?.value || "--"}</p>
-                <p><strong>Distinciones:</strong>{" "}
+                <p className="mb-2"><strong>Descripción:</strong> {selectedHilado.description}</p>
+                <p className="mb-2"><strong>Título:</strong> {selectedHilado.yarnCount?.value || "--"}</p>
+                <p className="mb-2"><strong>Acabado:</strong> {selectedHilado.spinningMethod?.value || "--"}</p>
+                <p className="mb-2"><strong>Barcode:</strong> {selectedHilado.barcode}</p>
+                <p className="mb-2"><strong>Color:</strong> {selectedHilado.color?.name || "No teñido"}</p>
+                <p className="mb-2"><strong>Fabricado en:</strong> {selectedHilado.manufacturedIn?.value || "--"}</p>
+                <p className="mb-2"><strong>Distinciones:</strong>{" "}
                   {selectedHilado.distinctions && selectedHilado.distinctions.length > 0
                     ? selectedHilado.distinctions.map((dist) => dist.value).join(", ")
                     : "--"
                   }
                 </p>
-                <p><strong>Barcode:</strong> {selectedHilado.barcode}</p>
-                <p><strong>Color:</strong> {selectedHilado.color?.name || "No teñido"}</p>
               </div>
             )}
           <div className="max-w-full overflow-x-auto">
