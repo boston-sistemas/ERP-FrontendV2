@@ -604,7 +604,7 @@ const Hilados: React.FC = () => {
                 <p className="mb-2"><strong>Descripción:</strong> {selectedHilado.description}</p>
                 <p className="mb-2"><strong>Título:</strong> {selectedHilado.yarnCount?.value || "--"}</p>
                 <p className="mb-2"><strong>Acabado:</strong> {selectedHilado.spinningMethod?.value || "--"}</p>
-                <p className="mb-2"><strong>Codigo de barras:</strong> {selectedHilado.barcode}</p>
+                <p className="mb-2"><strong>Código de barras:</strong> {selectedHilado.barcode}</p>
                 <p className="mb-2"><strong>Color:</strong> {selectedHilado.color?.name || "No teñido"}</p>
                 <p className="mb-2"><strong>Fabricado en:</strong> {selectedHilado.manufacturedIn?.value || "--"}</p>
                 <p className="mb-2"><strong>Distinciones:</strong>{" "}
@@ -714,181 +714,188 @@ const Hilados: React.FC = () => {
           },
         }}
       >
-        <DialogTitle>Editar Hilado</DialogTitle>
+        <DialogTitle>
+          {isPartial ? "Editar Descripción del Hilado" : "Editar Hilado"}
+        </DialogTitle>
         <DialogContent>
           {editForm && (
             <>
-              {/* Título del Hilado */}
-              <Autocomplete
-                options={availableYarnCounts}
-                getOptionLabel={(option) => option.value}
-                value={availableYarnCounts.find(
-                  (option) => option.id === editForm.yarnCountId
-                )}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Título de Hilado"
-                    margin="dense"
-                    variant="outlined"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        "& fieldset": { borderColor: "#444444" },
-                        "&:hover fieldset": { borderColor: "#444444" },
-                        "&.Mui-focused fieldset": { borderColor: "#444444" },
-                      },
-                      "& .MuiInputLabel-root": { color: "#444444" },
-                      "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+              {/* Solo mostrar los campos si NO es edición parcial */}
+              {!isPartial && (
+                <>
+                  {/* Título del Hilado */}
+                  <Autocomplete
+                    options={availableYarnCounts}
+                    getOptionLabel={(option) => option.value}
+                    value={availableYarnCounts.find(
+                      (option) => option.id === editForm.yarnCountId
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Título de Hilado"
+                        margin="dense"
+                        variant="outlined"
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            "& fieldset": { borderColor: "#444444" },
+                            "&:hover fieldset": { borderColor: "#444444" },
+                            "&.Mui-focused fieldset": { borderColor: "#444444" },
+                          },
+                          "& .MuiInputLabel-root": { color: "#444444" },
+                          "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                        }}
+                      />
+                    )}
+                    onChange={(event, newValue) => {
+                      setEditForm((prev) => ({
+                        ...prev,
+                        yarnCountId: newValue ? newValue.id : "",
+                      }));
                     }}
                   />
-                )}
-                onChange={(event, newValue) => {
-                  setEditForm((prev) => ({
-                    ...prev,
-                    yarnCountId: newValue ? newValue.id : "",
-                  }));
-                }}
-              />
 
-              {/* Acabado */}
-              <Autocomplete
-                options={availableSpinningMethods}
-                getOptionLabel={(option) => option.value}
-                value={availableSpinningMethods.find(
-                  (option) => option.id === editForm.spinningMethodId
-                )}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Acabado"
-                    margin="dense"
-                    variant="outlined"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        "& fieldset": { borderColor: "#444444" },
-                        "&:hover fieldset": { borderColor: "#444444" },
-                        "&.Mui-focused fieldset": { borderColor: "#444444" },
-                      },
-                      "& .MuiInputLabel-root": { color: "#444444" },
-                      "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                  {/* Acabado */}
+                  <Autocomplete
+                    options={availableSpinningMethods}
+                    getOptionLabel={(option) => option.value}
+                    value={availableSpinningMethods.find(
+                      (option) => option.id === editForm.spinningMethodId
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Acabado"
+                        margin="dense"
+                        variant="outlined"
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            "& fieldset": { borderColor: "#444444" },
+                            "&:hover fieldset": { borderColor: "#444444" },
+                            "&.Mui-focused fieldset": { borderColor: "#444444" },
+                          },
+                          "& .MuiInputLabel-root": { color: "#444444" },
+                          "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                        }}
+                      />
+                    )}
+                    onChange={(event, newValue) => {
+                      setEditForm((prev) => ({
+                        ...prev,
+                        spinningMethodId: newValue ? newValue.id : "",
+                      }));
                     }}
                   />
-                )}
-                onChange={(event, newValue) => {
-                  setEditForm((prev) => ({
-                    ...prev,
-                    spinningMethodId: newValue ? newValue.id : "",
-                  }));
-                }}
-              />
 
-              {/* Lugar de Fabricación */}
-              <Autocomplete
-                options={availableManufacturingSites}
-                getOptionLabel={(option) => option.value}
-                value={availableManufacturingSites.find(
-                  (option) => option.id === editForm.manufacturedInId
-                )}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Lugar de Fabricación"
-                    margin="dense"
-                    variant="outlined"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        "& fieldset": { borderColor: "#444444" },
-                        "&:hover fieldset": { borderColor: "#444444" },
-                        "&.Mui-focused fieldset": { borderColor: "#444444" },
-                      },
-                      "& .MuiInputLabel-root": { color: "#444444" },
-                      "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                  {/* Lugar de Fabricación */}
+                  <Autocomplete
+                    options={availableManufacturingSites}
+                    getOptionLabel={(option) => option.value}
+                    value={availableManufacturingSites.find(
+                      (option) => option.id === editForm.manufacturedInId
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Lugar de Fabricación"
+                        margin="dense"
+                        variant="outlined"
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            "& fieldset": { borderColor: "#444444" },
+                            "&:hover fieldset": { borderColor: "#444444" },
+                            "&.Mui-focused fieldset": { borderColor: "#444444" },
+                          },
+                          "& .MuiInputLabel-root": { color: "#444444" },
+                          "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                        }}
+                      />
+                    )}
+                    onChange={(event, newValue) => {
+                      setEditForm((prev) => ({
+                        ...prev,
+                        manufacturedInId: newValue ? newValue.id : "",
+                      }));
                     }}
                   />
-                )}
-                onChange={(event, newValue) => {
-                  setEditForm((prev) => ({
-                    ...prev,
-                    manufacturedInId: newValue ? newValue.id : "",
-                  }));
-                }}
-              />
 
-              {/* Toggle Color */}
-              <FormControlLabel
-                label="¿Hilado con color?"
-                labelPlacement="start"
-                control={
-                  <Switch
-                    checked={isColorEnabled}
-                    onChange={() => setIsColorEnabled(!isColorEnabled)}
-                    color="primary"
+                  {/* Toggle Color */}
+                  <FormControlLabel
+                    label="¿Hilado con color?"
+                    labelPlacement="start"
+                    control={
+                      <Switch
+                        checked={isColorEnabled}
+                        onChange={() => setIsColorEnabled(!isColorEnabled)}
+                        color="primary"
+                      />
+                    }
+                    sx={{ color: "black" }}
                   />
-                }
-                sx={{ color: "black" }}
-              />
 
-              {/* Color */}
-              {isColorEnabled && (
-                <Autocomplete
-                  options={availableColors}
-                  getOptionLabel={(option) => option.name}
-                  value={availableColors.find(
-                    (option) => option.id === editForm.colorId
-                  )}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Color"
-                      margin="dense"
-                      variant="outlined"
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          "& fieldset": { borderColor: "#444444" },
-                          "&:hover fieldset": { borderColor: "#444444" },
-                          "&.Mui-focused fieldset": { borderColor: "#444444" },
-                        },
-                        "& .MuiInputLabel-root": { color: "#444444" },
-                        "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                  {/* Color (si está habilitado) */}
+                  {isColorEnabled && (
+                    <Autocomplete
+                      options={availableColors}
+                      getOptionLabel={(option) => option.name}
+                      value={availableColors.find(
+                        (option) => option.id === editForm.colorId
+                      )}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Color"
+                          margin="dense"
+                          variant="outlined"
+                          sx={{
+                            "& .MuiOutlinedInput-root": {
+                              "& fieldset": { borderColor: "#444444" },
+                              "&:hover fieldset": { borderColor: "#444444" },
+                              "&.Mui-focused fieldset": { borderColor: "#444444" },
+                            },
+                            "& .MuiInputLabel-root": { color: "#444444" },
+                            "& .MuiInputLabel-root.Mui-focused": { color: "#444444" },
+                          }}
+                        />
+                      )}
+                      onChange={(event, newValue) => {
+                        setEditForm((prev) => ({
+                          ...prev,
+                          colorId: newValue ? newValue.id : "",
+                        }));
                       }}
                     />
                   )}
-                  onChange={(event, newValue) => {
-                    setEditForm((prev) => ({
-                      ...prev,
-                      colorId: newValue ? newValue.id : "",
-                    }));
-                  }}
-                />
+
+                  {/* Distinciones */}
+                  <FormControl fullWidth margin="dense">
+                    <InputLabel>Distinciones</InputLabel>
+                    <Select
+                      multiple
+                      label="Distinciones"
+                      value={editForm.distinctionIds}
+                      onChange={handleDistinctionChange}
+                      disabled={isFieldDisabled("distinctionIds")}
+                      renderValue={(selected) => {
+                        // Muestra el texto de las distinciones
+                        const selectedDist = availableDistinctions.filter((d) =>
+                          selected.includes(d.id)
+                        );
+                        return selectedDist.map((x) => x.value).join(", ");
+                      }}
+                    >
+                      {availableDistinctions.map((d) => (
+                        <MenuItem key={d.id} value={d.id}>
+                          <Checkbox checked={editForm.distinctionIds.includes(d.id)} />
+                          <ListItemText primary={d.value} />
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </>
               )}
 
-              {/* Distinctions (multiples) */}
-              <FormControl fullWidth margin="dense">
-                <InputLabel>Distinciones</InputLabel>
-                <Select
-                  multiple
-                  label="Distinciones"
-                  value={editForm.distinctionIds}
-                  onChange={handleDistinctionChange}
-                  disabled={isFieldDisabled("distinctionIds")}
-                  renderValue={(selected) => {
-                    // Muestra el texto de las distinciones
-                    const selectedDist = availableDistinctions.filter((d) =>
-                      selected.includes(d.id)
-                    );
-                    return selectedDist.map((x) => x.value).join(", ");
-                  }}
-                >
-                  {availableDistinctions.map((d) => (
-                    <MenuItem key={d.id} value={d.id}>
-                      <Checkbox checked={editForm.distinctionIds.includes(d.id)} />
-                      <ListItemText primary={d.value} />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              {/* Descripción */}
+              {/* Descripción (siempre visible) */}
               <TextField
                 label="Descripción"
                 fullWidth
@@ -899,78 +906,80 @@ const Hilados: React.FC = () => {
                 onChange={(e) =>
                   setEditForm((prev) => ({ ...prev, description: e.target.value }))
                 }
-                disabled={isFieldDisabled("description")}
               />
 
-              {/* Tabla de receta */}
-              <h3 className="text-lg font-semibold text-black mb-2 mt-4">Receta</h3>
-              <div className="max-w-full overflow-x-auto">
-                <table className="w-full table-auto">
-                  <thead>
-                    <tr className="bg-blue-900 uppercase text-center text-white">
-                      <th className="px-4 py-4 text-center font-normal">Categoria</th>
-                      <th className="px-4 py-4 text-center font-normal">Denominación</th>
-                      <th className="px-4 py-4 text-center font-normal">Procedencia</th>
-                      <th className="px-4 py-4 text-center font-normal">Color</th>
-                      <th className="px-4 py-4 text-center font-normal">Proporción</th>
-                      <th className="px-4 py-4 text-center font-normal">Eliminar</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {editForm.recipe.map((r, index) => (
-                      <tr key={index} className="text-center">
-                        <td className="border-b border-gray-200 px-4 py-3">
-                          {r.fiber?.category?.value || "-"}
-                        </td>
-                        <td className="border-b border-gray-200 px-4 py-3">
-                          {r.fiber?.denomination?.value || "-"}
-                        </td>
-                        <td className="border-b border-gray-200 px-4 py-3">
-                          {r.fiber?.origin || "-"}
-                        </td>
-                        <td className="border-b border-gray-200 px-4 py-3">
-                          {r.fiber?.color?.name || "Crudo"}
-                        </td>
-                        <td className="border-b border-gray-200 px-4 py-3">
-                          <TextField
-                            variant="outlined"
-                            size="small"
-                            type="number"
-                            value={r.proportion || ""}
-                            onChange={(e) =>
-                              handleProportionChange(r.fiber?.id, e.target.value)
-                            }
-                            disabled={isFieldDisabled("recipe")}
-                          />
-                        </td>
-                        <td className="border-b border-gray-200 px-4 py-3">
-                          <IconButton
-                            disabled={isFieldDisabled("recipe")}
-                            style={{ color: isFieldDisabled("recipe") ? "#aaa" : "#d32f2f" }}
-                            onClick={() => handleDeleteSelectedFibra(r.fiber?.id)}
-                          >
-                            <Close />
-                          </IconButton>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              {/* Tabla de receta (solo si no es parcial) */}
+              {!isPartial && (
+                <>
+                  <h3 className="text-lg font-semibold text-black mb-2 mt-4">Receta</h3>
+                  <div className="max-w-full overflow-x-auto">
+                    <table className="w-full table-auto">
+                      <thead>
+                        <tr className="bg-blue-900 uppercase text-center text-white">
+                          <th className="px-4 py-4 text-center font-normal">Categoria</th>
+                          <th className="px-4 py-4 text-center font-normal">Denominación</th>
+                          <th className="px-4 py-4 text-center font-normal">Procedencia</th>
+                          <th className="px-4 py-4 text-center font-normal">Color</th>
+                          <th className="px-4 py-4 text-center font-normal">Proporción</th>
+                          <th className="px-4 py-4 text-center font-normal">Eliminar</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {editForm.recipe.map((r, index) => (
+                          <tr key={index} className="text-center">
+                            <td className="border-b border-gray-200 px-4 py-3">
+                              {r.fiber?.category?.value || "-"}
+                            </td>
+                            <td className="border-b border-gray-200 px-4 py-3">
+                              {r.fiber?.denomination?.value || "-"}
+                            </td>
+                            <td className="border-b border-gray-200 px-4 py-3">
+                              {r.fiber?.origin || "-"}
+                            </td>
+                            <td className="border-b border-gray-200 px-4 py-3">
+                              {r.fiber?.color?.name || "Crudo"}
+                            </td>
+                            <td className="border-b border-gray-200 px-4 py-3">
+                              <TextField
+                                variant="outlined"
+                                size="small"
+                                type="number"
+                                value={r.proportion || ""}
+                                onChange={(e) =>
+                                  handleProportionChange(r.fiber?.id, e.target.value)
+                                }
+                                disabled={isFieldDisabled("recipe")}
+                              />
+                            </td>
+                            <td className="border-b border-gray-200 px-4 py-3">
+                              <IconButton
+                                disabled={isFieldDisabled("recipe")}
+                                style={{ color: isFieldDisabled("recipe") ? "#aaa" : "#d32f2f" }}
+                                onClick={() => handleDeleteSelectedFibra(r.fiber?.id)}
+                              >
+                                <Close />
+                              </IconButton>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
 
-                {/* Agregar fibra */}
-                <IconButton
-                  onClick={() => setShowFiberDialog(true)}
-                  style={{ color: "#1976d2" }}
-                  disabled={isFieldDisabled("recipe")}
-                >
-                  <Add />
-                </IconButton>
-              </div>
+                    {/* Agregar fibra */}
+                    <IconButton
+                      onClick={() => setShowFiberDialog(true)}
+                      style={{ color: "#1976d2" }}
+                      disabled={isFieldDisabled("recipe")}
+                    >
+                      <Add />
+                    </IconButton>
+                  </div>
+                </>
+              )}
             </>
           )}
         </DialogContent>
 
-        {/* Acciones del diálogo */}
         <DialogActions>
           <Button
             onClick={handleEditClose}
