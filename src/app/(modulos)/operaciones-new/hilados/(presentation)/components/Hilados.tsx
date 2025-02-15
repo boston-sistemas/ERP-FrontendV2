@@ -72,8 +72,8 @@ const Hilados: React.FC = () => {
   const [includeInactive, setIncludeInactive] = useState(false);
 
   // Mostrar/ocultar columnas
-  const [showEditColumn, setShowEditColumn] = useState(true);
-  const [showDisableColumn, setShowDisableColumn] = useState(true);
+  const [showEditColumn, setShowEditColumn] = useState(false);
+  const [showDisableColumn, setShowDisableColumn] = useState(false);
 
   // ────────────────────────────────────────────────────────────────────────────
   // Dialogos (visualizar receta, editar hilado, escoger fibras)

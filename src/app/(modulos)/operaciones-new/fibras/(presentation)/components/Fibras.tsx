@@ -86,8 +86,8 @@ const Fibras: React.FC = () => {
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(
     null
   );
-  const [showEditColumn, setShowEditColumn] = useState(true);
-  const [showDisableColumn, setShowDisableColumn] = useState(true);
+  const [showEditColumn, setShowEditColumn] = useState(false);
+  const [showDisableColumn, setShowDisableColumn] = useState(false);
 
   const [color, setColor] = useState<string>("");
 
