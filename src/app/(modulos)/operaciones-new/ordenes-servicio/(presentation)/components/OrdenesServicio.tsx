@@ -68,11 +68,14 @@ const OrdenesServicio: React.FC = () => {
     ],
   });
 
+  // Estado para el período
+  const [period, setPeriod] = useState<number>(new Date().getFullYear());
+
   // Cargar OS
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      const resp = await fetchServiceOrders(filasPorPagina, pagina * filasPorPagina, includeInactive);
+      const resp = await fetchServiceOrders(filasPorPagina, pagina * filasPorPagina, includeInactive, period);
       setOrdenesServicio(resp.serviceOrders || []);
     } catch (e) {
       console.error("Error al cargar órdenes:", e);
@@ -81,10 +84,9 @@ const OrdenesServicio: React.FC = () => {
     }
   };
 
-  // Al montar y cuando cambian paginación o includeInactive
   useEffect(() => {
     fetchOrders();
-  }, [pagina, filasPorPagina, includeInactive]);
+  }, [pagina, filasPorPagina, includeInactive, period]);
 
   // Cargar suppliers
   useEffect(() => {
@@ -99,9 +101,7 @@ const OrdenesServicio: React.FC = () => {
     loadSuppliers();
   }, []);
 
-  // (NUEVO) Cargar tejidos
   const handleOpenFabricDialog = async (index: number) => {
-    // Guardar el "index" donde pondremos el tejido
     setSelectedDetailIndex(index);
     try {
       const data = await fetchTejidos(); // GET /operations/v1/fabrics
@@ -115,10 +115,8 @@ const OrdenesServicio: React.FC = () => {
     setIsFabricDialogOpen(false);
   };
 
-  // (NUEVO) Al seleccionar un tejido de la tabla
   const [selectedDetailIndex, setSelectedDetailIndex] = useState<number>(0);
   const handleSelectFabric = (fabricId: string) => {
-    // p.ej., actualizamos newOrder.detail[selectedDetailIndex].fabricId = fabricId
     const updated = [...newOrder.detail];
     updated[selectedDetailIndex].fabricId = fabricId;
     setNewOrder((prev) => ({ ...prev, detail: updated }));
@@ -208,6 +206,22 @@ const OrdenesServicio: React.FC = () => {
               }
               label="Incluir Inactivas"
             />
+            {/* Selector de Período */}
+            <FormControl variant="outlined" sx={{ minWidth: 120 }}>
+              <InputLabel id="period-select-label">Período</InputLabel>
+              <Select
+                labelId="period-select-label"
+                value={period}
+                onChange={(e) => setPeriod(Number(e.target.value))}
+                label="Período"
+              >
+                {Array.from({ length: new Date().getFullYear() - 2022 }, (_, i) => 2023 + i).map((year) => (
+                  <MenuItem key={year} value={year}>
+                    {year}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </div>
 
           <Button

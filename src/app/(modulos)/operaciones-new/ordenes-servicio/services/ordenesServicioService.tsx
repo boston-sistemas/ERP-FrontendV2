@@ -4,10 +4,11 @@ import { ServiceOrder, ServiceOrderDetail, ServiceOrderResponse, Supplier } from
 export const fetchServiceOrders = async (
     limit: number,
     offset: number,
-    includeInactive: boolean
+    includeInactive: boolean,
+    period: number
   ): Promise<ServiceOrderResponse> => {
     const response = await instance.get<ServiceOrderResponse>(
-      `/operations/v1/service-orders/?limit=${limit}&offset=${offset}&include_inactive=${includeInactive}`
+      `/operations/v1/service-orders/?limit=${limit}&offset=${offset}&include_inactive=${includeInactive}&period=${period}`
     );
     return response.data;
   };
@@ -67,16 +68,7 @@ export const checkIfServiceOrderIsUpdatable = async (orderId: string) => {
   return response.data;
 }
 
-// services/ordenesServicioService.ts (o donde definas)
 export const fetchServiceOrderStatus = async () => {
-  // Suponiendo que el backend responde con:
-  // {
-  //   "serviceOrderStatus": [
-  //       { "id": 1028, "value": "NO INICIADO" },
-  //       { "id": 1029, "value": "EN PROCESO" },
-  //       ...
-  //   ]
-  // }
   const response = await instance.get<{
     serviceOrderStatus: Array<{ id: number; value: string }>;
   }>("/security/v1/parameters/public/service-order-status");
