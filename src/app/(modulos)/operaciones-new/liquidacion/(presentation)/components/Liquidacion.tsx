@@ -68,6 +68,12 @@ const Liquidacion: React.FC = () => {
   // Estado para el diálogo de información de ingreso
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
 
+  // Estado para el diálogo de "Cerrado con merma irregular"
+  const [irregularMermaDialogOpen, setIrregularMermaDialogOpen] = useState(false);
+
+  // Estado para el diálogo de detalles del hilado
+  const [yarnDetailDialogOpen, setYarnDetailDialogOpen] = useState(false);
+
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const isMediumScreen = useMediaQuery(theme.breakpoints.down("md"));
@@ -110,6 +116,52 @@ const Liquidacion: React.FC = () => {
     { tejido: "JLL140", ancho: 90, fecha: "09/01/25", hilo: 100, pesoGuia: 812.40, ingresoMecsa: 812.40, consumoHilo: 812.40 },
     { tejido: "RLK240", ancho: 80, fecha: "09/01/25", hilo: 99, pesoGuia: 203.40, ingresoMecsa: 201.37, consumoHilo: 201.37 },
   ];
+
+  // Datos del hilado para el diálogo
+  const yarnDetails = {
+    "Proveedor Tejeduria": "TRICOT FINE S.A",
+    "Proveedor Hilado": "SAN IGNACIO",
+    "Hilado": "HILADO 30/1 DE ALGODON PEINADO AMERICANO",
+    "Titulo": "30/1",
+    "Fibra": "ALGODON",
+    "Procedencia": "AMERICANO",
+    "Acabado": "PEINADO",
+    "Lote hilo": "GSI-P047",
+    "Guia Mecsa": 40053534,
+    "Tejido": "RLK240",
+    "Nombre": "Rib Licrado 30/1 Algodon Americano Peinado + 20dn de ancho 80",
+    "Ancho": 80,
+    "Galga": 20,
+    "Diametro": 30,
+    "LM": 2.8,
+    "Kilogramos": 3000.00,
+    "Consumo": 2975.57,
+    "Restante": 24.43,
+    "Merma": "0.81%",
+    "Estado": "CERRADO",
+    "Saldo Recogido": true,
+    "Liquidado": true,
+    "Orden de Compra": 10013708,
+  };
+
+  // Datos para las tablas
+  const envioDevolucionData = [
+    {
+      ordenServ: "RSA0174",
+      tipo: "S",
+      noDocumento: "T1040001657",
+      fechaDoc: "10/02/2025",
+      ordenServ2: "H301PCOITC",
+      nroBolsas: 27,
+      nroConos: 648,
+      pesoNeto: 1224.72,
+      pesoBruto: 1293.84,
+    },
+  ];
+
+  const ajusteVentasData: any[] = [];
+
+  const consumoMermaData: any[] = [];
 
   // ────────────────────────────────────────────────────────────────────────────
   // Datos Hardcodeados para Prueba
@@ -225,6 +277,26 @@ const Liquidacion: React.FC = () => {
 
   const handleInfoDialogClose = () => {
     setInfoDialogOpen(false);
+  };
+
+  // Función para manejar la apertura del diálogo
+  const handleIrregularMermaDialogOpen = () => {
+    setIrregularMermaDialogOpen(true);
+  };
+
+  // Función para manejar el cierre del diálogo
+  const handleIrregularMermaDialogClose = () => {
+    setIrregularMermaDialogOpen(false);
+  };
+
+  // Función para manejar la apertura del diálogo de detalles del hilado
+  const handleYarnDetailDialogOpen = () => {
+    setYarnDetailDialogOpen(true);
+  };
+
+  // Función para manejar el cierre del diálogo de detalles del hilado
+  const handleYarnDetailDialogClose = () => {
+    setYarnDetailDialogOpen(false);
   };
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -407,7 +479,7 @@ const Liquidacion: React.FC = () => {
                       </td>
                       <td className="border-b border-gray-300 px-4 py-5">
                         {liquidacion["Hilado"]}
-                        <IconButton>
+                        <IconButton onClick={handleYarnDetailDialogOpen}>
                           <Visibility />
                         </IconButton>
                       </td>
@@ -430,24 +502,13 @@ const Liquidacion: React.FC = () => {
                         </IconButton>
                       </td>
                       <td className="border-b border-gray-300 px-4 py-5">
-                        {liquidacion["Estado"] === "P" && (
-                          <Button
-                            variant="contained"
-                            style={{ backgroundColor: "#1976d2", color: "#fff" }}
-                            onClick={() => handleGenerarConsumo(liquidacion["Orden/Serv"])}
-                          >
-                            Generar consumo
-                          </Button>
-                        )}
-                        {liquidacion["Estado"] === "X" && (
-                          <Button
-                            variant="contained"
-                            style={{ backgroundColor: "#1976d2", color: "#fff" }}
-                            onClick={() => handleCerrarOrden(liquidacion["Orden/Serv"])}
-                          >
-                            Cerrar orden
-                          </Button>
-                        )}
+                        <Button
+                          variant="contained"
+                          style={{ backgroundColor: "#1976d2", color: "#fff" }}
+                          onClick={handleIrregularMermaDialogOpen}
+                        >
+                          Cerrado con merma irregular
+                        </Button>
                       </td>
                     </tr>
                   ))
@@ -722,6 +783,268 @@ const Liquidacion: React.FC = () => {
         <DialogActions>
           <Button
             onClick={handleInfoDialogClose}
+            variant="contained"
+            style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+          >
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Diálogo de Detalles del Hilado */}
+      <Dialog
+        open={yarnDetailDialogOpen}
+        onClose={handleYarnDetailDialogClose}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>Detalles del Hilado</DialogTitle>
+        <DialogContent>
+          <div className="space-y-6">
+            <div className="p-4 border rounded-md shadow-sm bg-gray-50">
+              <h3 className="font-semibold text-lg mb-2">Información del Hilado</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <p><strong>Proveedor Tejeduria:</strong> {yarnDetails["Proveedor Tejeduria"]}</p>
+                <p><strong>Proveedor Hilado:</strong> {yarnDetails["Proveedor Hilado"]}</p>
+                <p><strong>Hilado:</strong> {yarnDetails["Hilado"]}</p>
+                <p><strong>Título:</strong> {yarnDetails["Titulo"]}</p>
+                <p><strong>Fibra:</strong> {yarnDetails["Fibra"]}</p>
+                <p><strong>Procedencia:</strong> {yarnDetails["Procedencia"]}</p>
+                <p><strong>Acabado:</strong> {yarnDetails["Acabado"]}</p>
+                <p><strong>Lote hilo:</strong> {yarnDetails["Lote hilo"]}</p>
+                <p><strong>Guia Mecsa:</strong> {yarnDetails["Guia Mecsa"]}</p>
+              </div>
+            </div>
+            <div className="p-4 border rounded-md shadow-sm bg-gray-50">
+              <h3 className="font-semibold text-lg mb-2">Tejido Asociado</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <p><strong>Tejido:</strong> {yarnDetails["Tejido"]}</p>
+                <p><strong>Nombre:</strong> {yarnDetails["Nombre"]}</p>
+                <p><strong>Ancho:</strong> {yarnDetails["Ancho"]}</p>
+                <p><strong>Galga:</strong> {yarnDetails["Galga"]}</p>
+                <p><strong>Diametro:</strong> {yarnDetails["Diametro"]}</p>
+                <p><strong>LM:</strong> {yarnDetails["LM"]}</p>
+              </div>
+            </div>
+            <div className="p-4 border rounded-md shadow-sm bg-gray-50">
+              <h3 className="font-semibold text-lg mb-2">Avance</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <p><strong>Kilogramos:</strong> {yarnDetails["Kilogramos"]}</p>
+                <p><strong>Consumo:</strong> {yarnDetails["Consumo"]}</p>
+                <p><strong>Restante:</strong> {yarnDetails["Restante"]}</p>
+                <p><strong>Merma:</strong> {yarnDetails["Merma"]}</p>
+                <p><strong>Estado:</strong> {yarnDetails["Estado"]}</p>
+                <p><strong>Saldo Recogido:</strong> {yarnDetails["Saldo Recogido"] ? "Sí" : "No"}</p>
+                <p><strong>Liquidado:</strong> {yarnDetails["Liquidado"] ? "Sí" : "No"}</p>
+                <p><strong>Orden de Compra:</strong> {yarnDetails["Orden de Compra"]}</p>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleYarnDetailDialogClose}
+            variant="contained"
+            style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+          >
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Diálogo para "Cerrado con merma irregular" */}
+      <Dialog
+        open={irregularMermaDialogOpen}
+        onClose={handleIrregularMermaDialogClose}
+        fullScreen={isSmallScreen}
+        maxWidth="lg"
+        PaperProps={{
+          sx: {
+            ...( !isSmallScreen && !isMediumScreen && {
+              marginLeft: "280px", 
+              maxWidth: "calc(100% - 280px)", 
+            }),
+            maxHeight: "calc(100% - 64px)",
+            overflowY: "auto",
+          },
+        }}
+      >
+        <DialogTitle>Cerrado con Merma Irregular</DialogTitle>
+        <DialogContent>
+          <div className="space-y-6">
+            {/* Cuadros de Tejido y Hilado */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="p-4 border rounded-md shadow-sm bg-gray-50">
+                <h3 className="font-semibold text-lg mb-2">Tejido</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p><strong>Envío H:</strong> 1224.72</p>
+                    <p><strong>Ingreso T:</strong> 0.00</p>
+                    <p><strong>Saldo:</strong> 1224.72</p>
+                    <p><strong>Merma %:</strong> 100.00</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 border rounded-md shadow-sm bg-gray-50">
+                <h3 className="font-semibold text-lg mb-2">Hilado</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p><strong>Envío:</strong> 1224.72</p>
+                    <p><strong>Consumo H:</strong> 0.00</p>
+                    <p><strong>Saldo:</strong> 1224.72</p>
+                    <p><strong>Merma %:</strong> 100.00</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Input y Botones */}
+            <div className="flex items-center gap-4 mb-4">
+              <TextField
+                label="Merma Aprobada (%)"
+                type="number"
+                variant="outlined"
+                size="small"
+              />
+              <Button
+                variant="contained"
+                style={{ backgroundColor: "#1976d2", color: "#fff" }}
+              >
+                Calcula Merma
+              </Button>
+              <Button
+                variant="contained"
+                style={{ backgroundColor: "#1976d2", color: "#fff" }}
+              >
+                Generar Consumo
+              </Button>
+            </div>
+
+            {/* Tabla de Envío/Devolución de Hilado */}
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Envío/Devolución de Hilado</h3>
+              <table className="w-full table-auto mb-4">
+                <thead>
+                  <tr className="bg-blue-900 text-center text-white">
+                    <th className="px-4 py-2">O/Serv</th>
+                    <th className="px-4 py-2">Tipo</th>
+                    <th className="px-4 py-2">No.Documento</th>
+                    <th className="px-4 py-2">Fecha Doc.</th>
+                    <th className="px-4 py-2">O/Serv</th>
+                    <th className="px-4 py-2">NroBolsas</th>
+                    <th className="px-4 py-2">NroConos</th>
+                    <th className="px-4 py-2">PesoNeto</th>
+                    <th className="px-4 py-2">PesoBruto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {envioDevolucionData.map((item, index) => (
+                    <tr key={index} className="text-center">
+                      <td className="border px-4 py-2">{item.ordenServ}</td>
+                      <td className="border px-4 py-2">{item.tipo}</td>
+                      <td className="border px-4 py-2">{item.noDocumento}</td>
+                      <td className="border px-4 py-2">{item.fechaDoc}</td>
+                      <td className="border px-4 py-2">{item.ordenServ2}</td>
+                      <td className="border px-4 py-2">{item.nroBolsas}</td>
+                      <td className="border px-4 py-2">{item.nroConos}</td>
+                      <td className="border px-4 py-2">{item.pesoNeto}</td>
+                      <td className="border px-4 py-2">{item.pesoBruto}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Tabla de Ajuste/Ventas de Hilados */}
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Ajuste/Ventas de Hilados</h3>
+              <table className="w-full table-auto mb-4">
+                <thead>
+                  <tr className="bg-blue-900 text-center text-white">
+                    <th className="px-4 py-2">O/Serv</th>
+                    <th className="px-4 py-2">Tipo</th>
+                    <th className="px-4 py-2">No.Documento</th>
+                    <th className="px-4 py-2">Fecha Doc.</th>
+                    <th className="px-4 py-2">O/Serv</th>
+                    <th className="px-4 py-2">NroBolsas</th>
+                    <th className="px-4 py-2">NroConos</th>
+                    <th className="px-4 py-2">PesoNeto</th>
+                    <th className="px-4 py-2">PesoBruto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ajusteVentasData.length > 0 ? (
+                    ajusteVentasData.map((item, index) => (
+                      <tr key={index} className="text-center">
+                        <td className="border px-4 py-2">{item.ordenServ}</td>
+                        <td className="border px-4 py-2">{item.tipo}</td>
+                        <td className="border px-4 py-2">{item.noDocumento}</td>
+                        <td className="border px-4 py-2">{item.fechaDoc}</td>
+                        <td className="border px-4 py-2">{item.ordenServ2}</td>
+                        <td className="border px-4 py-2">{item.nroBolsas}</td>
+                        <td className="border px-4 py-2">{item.nroConos}</td>
+                        <td className="border px-4 py-2">{item.pesoNeto}</td>
+                        <td className="border px-4 py-2">{item.pesoBruto}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={9} className="text-center py-4 text-gray-500">
+                        No hay datos disponibles.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Tabla de Consumo - Merma de Hilado (por Tejido) */}
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Consumo - Merma de Hilado (por Tejido)</h3>
+              <table className="w-full table-auto mb-4">
+                <thead>
+                  <tr className="bg-blue-900 text-center text-white">
+                    <th className="px-4 py-2">O/Serv</th>
+                    <th className="px-4 py-2">Tipo</th>
+                    <th className="px-4 py-2">No.Documento</th>
+                    <th className="px-4 py-2">Fecha Doc.</th>
+                    <th className="px-4 py-2">O/Serv</th>
+                    <th className="px-4 py-2">NroBolsas</th>
+                    <th className="px-4 py-2">NroConos</th>
+                    <th className="px-4 py-2">PesoNeto</th>
+                    <th className="px-4 py-2">PesoBruto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {consumoMermaData.length > 0 ? (
+                    consumoMermaData.map((item, index) => (
+                      <tr key={index} className="text-center">
+                        <td className="border px-4 py-2">{item.ordenServ}</td>
+                        <td className="border px-4 py-2">{item.tipo}</td>
+                        <td className="border px-4 py-2">{item.noDocumento}</td>
+                        <td className="border px-4 py-2">{item.fechaDoc}</td>
+                        <td className="border px-4 py-2">{item.ordenServ2}</td>
+                        <td className="border px-4 py-2">{item.nroBolsas}</td>
+                        <td className="border px-4 py-2">{item.nroConos}</td>
+                        <td className="border px-4 py-2">{item.pesoNeto}</td>
+                        <td className="border px-4 py-2">{item.pesoBruto}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={9} className="text-center py-4 text-gray-500">
+                        No hay datos disponibles.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleIrregularMermaDialogClose}
             variant="contained"
             style={{ backgroundColor: "#d32f2f", color: "#fff" }}
           >
