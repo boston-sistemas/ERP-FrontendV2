@@ -57,7 +57,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
   const handleGenerateSalida = () => {
     if (detalle) {
       const payload = {
-        entryNumber: detalle.entryNumber,
+        entryNumber: detalle.detail.map((item)=>item.itemNumber),
         groups: detalle.detail.map((item) => ({
           groupNumber: item.itemNumber, // Usar groupNumber o cualquier identificador único
           coneCount: item.guideConeCount,
@@ -66,11 +66,10 @@ const DetallesMovIngresoHilado: React.FC = () => {
           netWeight: item.guideNetWeight,
         })),
       };
-      
       localStorage.setItem("entryNumber", JSON.stringify(payload));
-      router.push(
-        `/operaciones-new/salida-hilado/crear-mov-salida-hilado`);
     }
+    router.push(
+      `/operaciones-new/salida-hilado/crear-mov-salida-hilado`);
   };
     
 
