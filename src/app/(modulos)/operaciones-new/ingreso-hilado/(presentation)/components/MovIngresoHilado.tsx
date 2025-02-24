@@ -78,7 +78,7 @@ const MovIngresoHilado: React.FC = () => {
         setHilados(response.yarnPurchaseEntries);
         setSuppliers(dataSuppliers.suppliers);
       } catch (error) {
-        console.error("Error al cargar los datos:", error);
+        console.error("Error al cargar los datos:", error); //error
         alert("Hubo un error al cargar los datos. Por favor, inténtelo de nuevo.");
       } finally {
         setIsLoading(false);
