@@ -49,7 +49,7 @@ const CrearMovSalidaHilado: React.FC = () => {
   const [selectedSupplier, setSelectedSupplier] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<string>("");
-  const [period, setPeriod] = useState<number>(2024);
+  const [period, setPeriod] = useState<number>(2025);
   const [snackbarMessage, setSnackbarMessage] = useState<string>("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
   const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -62,6 +62,22 @@ const CrearMovSalidaHilado: React.FC = () => {
   
   const handleSnackbarClose = () => {
     setOpenSnackbar(false);
+  };
+
+  const loadIngresosAndOrders = async () => {
+    setIsLoading(true);
+    try {
+      const [ingresosResponse, ordenesServicioResponse] = await Promise.all([
+        fetchYarnPurchaseEntries(period, 50, 0, false), // Usa el período actualizado
+        fetchServiceOrders(50, 0, false,period),
+      ]);
+      setIngresos(ingresosResponse.yarnPurchaseEntries || []);
+      setOrdenesServicio(ordenesServicioResponse.serviceOrders || []);
+    } catch (error) {
+      showSnackbar("Error al cargar datos. Inténtelo de nuevo.", "error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -81,23 +97,7 @@ const CrearMovSalidaHilado: React.FC = () => {
   
     loadIngresosAndOrders();
     loadSupplierData();
-  }, []);  
-
-  const loadIngresosAndOrders = async () => {
-    setIsLoading(true);
-    try {
-      const [ingresosResponse, ordenesServicioResponse] = await Promise.all([
-        fetchYarnPurchaseEntries(period, 50, 0, false), // Usa el período actualizado
-        fetchServiceOrders(50, 0, false),
-      ]);
-      setIngresos(ingresosResponse.yarnPurchaseEntries || []);
-      setOrdenesServicio(ordenesServicioResponse.serviceOrders || []);
-    } catch (error) {
-      showSnackbar("Error al cargar datos. Inténtelo de nuevo.", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, []);
   
   const loadIngresoDetails = async (entryNumber: string) => {
     try {
