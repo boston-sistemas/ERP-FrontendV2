@@ -25,7 +25,7 @@ import {
 import { Edit, ExpandMore, ExpandLess, Save, Cancel, Add, Delete, Block } from "@mui/icons-material";
 import { useRouter, useParams } from "next/navigation";
 import { fetchYarnPurchaseEntryDetails, updateYarnPurchaseEntry, anulateYarnPurchaseEntry,
-  checkIfYarnPurchaseEntryIsUpdatable, } from "../../services/movIngresoHiladoService";
+  checkIfYarnPurchaseEntryIsUpdatable, fetchYarnPurchaseEntries } from "../../services/movIngresoHiladoService";
 import { YarnPurchaseEntry } from "../../../models/models";
 
 const DetallesMovIngresoHilado: React.FC = () => {
@@ -57,7 +57,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
   const handleGenerateSalida = () => {
     if (detalle) {
       const payload = {
-        entryNumber: detalle.detail.map((item)=>item.itemNumber),
+        entryNumber: entryNumber,
         groups: detalle.detail.map((item) => ({
           groupNumber: item.itemNumber, // Usar groupNumber o cualquier identificador único
           coneCount: item.guideConeCount,

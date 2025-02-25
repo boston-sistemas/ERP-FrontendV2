@@ -87,7 +87,6 @@ const CrearMovSalidaHilado: React.FC = () => {
   
   useEffect(() => {
     const savedEntryNumber = localStorage.getItem("entryNumber");
-  
     if (savedEntryNumber) {
       const parsedPayload = JSON.parse(savedEntryNumber);
       loadIngresoDetails(parsedPayload.entryNumber); // Carga los detalles del ingreso
