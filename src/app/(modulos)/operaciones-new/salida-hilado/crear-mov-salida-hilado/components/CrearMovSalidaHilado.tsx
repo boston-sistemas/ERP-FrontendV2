@@ -247,6 +247,7 @@ const CrearMovSalidaHilado: React.FC = () => {
   const handleOpenServiceDialog = () => setIsServiceDialogOpen(true);
   const handleCloseServiceDialog = () => setIsServiceDialogOpen(false);
 
+  //console.log(dataOS);
   return (
     <><div>
     <h1 className="text-2xl font-semibold mb-4">Crear Movimiento de Salida de Hilado</h1>
@@ -356,7 +357,7 @@ const CrearMovSalidaHilado: React.FC = () => {
           </div>
         </div>
 
-        {/* Tabla de detalles de ingreso */}
+        {/* Tabla de detalles de ingreso --------------------------------------------------------------------*/}
         {dataIngreso && (
           <div className="max-w-full overflow-x-auto">
             <h2 className="text-lg font-semibold mb-2">Detalles del Movimiento de Ingreso</h2>
@@ -459,7 +460,7 @@ const CrearMovSalidaHilado: React.FC = () => {
           </div>
         )}
 
-        {/* Tabla de detalles de orden de servicio */}
+        {/* Tabla de detalles de orden de servicio ******************************************************/}
         {dataOS && (
           <div className="max-w-full overflow-x-auto">
             <h2 className="text-lg font-semibold mb-2">Detalles de la Orden de Servicio</h2>
