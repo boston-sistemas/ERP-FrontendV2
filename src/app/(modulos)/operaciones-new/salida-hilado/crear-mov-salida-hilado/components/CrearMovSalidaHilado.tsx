@@ -33,9 +33,9 @@ import {
   fetchSuppliers,
 } from "../../../ordenes-servicio/services/ordenesServicioService";
 import { createYarnDispatch } from "../../services/movSalidaHiladoService";
-import { ServiceOrder, Supplier, YarnDispatch } from "../../../models/models";
+import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEntryResponse } from "../../../models/models";
 
-const CrearMovSalidaHilado: React.FC = () => {
+  const CrearMovSalidaHilado: React.FC = () => {
   const [dataIngreso, setDataIngreso] = useState<any>(null); // Detalles del ingreso
   const [dataOS, setDataOS] = useState<any>(null); // Detalles de la orden de servicio
   const [ingresos, setIngresos] = useState<any[]>([]);
@@ -53,6 +53,7 @@ const CrearMovSalidaHilado: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState<string>("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [selectEntrys, setSelectEntry] = useState<YarnPurchaseEntryResponse[]>([]);
   
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbarMessage(message);
@@ -85,6 +86,8 @@ const CrearMovSalidaHilado: React.FC = () => {
     loadIngresosAndOrders();
   }, [period]); // Dependencia del estado `period`  
   
+  console.log(ingresos);
+
   useEffect(() => {
     const savedEntryNumber = localStorage.getItem("entryNumber");
     if (savedEntryNumber) {
@@ -105,7 +108,7 @@ const CrearMovSalidaHilado: React.FC = () => {
         ...response,
         detail: response.detail || [], // Asegura que siempre haya un array de detalles
       });
-      setIsIngresoDialogOpen(false); // Cierra el diálogo después de seleccionar
+      setIsIngresoDialogOpen(true); // Cierra el diálogo después de seleccionar
     } catch (error) {
       showSnackbar("Error al cargar detalles del ingreso.", "error");
     }
@@ -240,6 +243,10 @@ const CrearMovSalidaHilado: React.FC = () => {
       alert("Hubo un error al intentar guardar el movimiento de salida.");
     }
   };
+
+  const handleAddEntry = (entry : YarnPurchaseEntry) => {
+    if (!selectEntrys.some((r) => r.yarnPurchaseEntries.entrynumber))
+  };
   
   const handleOpenIngresoDialog = () => setIsIngresoDialogOpen(true);
   const handleCloseIngresoDialog = () => setIsIngresoDialogOpen(false);
@@ -357,7 +364,7 @@ const CrearMovSalidaHilado: React.FC = () => {
           </div>
         </div>
 
-        {/* Tabla de detalles de ingreso --------------------------------------------------------------------*/}
+        {/* Tabla de detalles de ingreso */}
         {dataIngreso && (
           <div className="max-w-full overflow-x-auto">
             <h2 className="text-lg font-semibold mb-2">Detalles del Movimiento de Ingreso</h2>
@@ -460,7 +467,7 @@ const CrearMovSalidaHilado: React.FC = () => {
           </div>
         )}
 
-        {/* Tabla de detalles de orden de servicio ******************************************************/}
+        {/* Tabla de detalles de orden de servicio */}
         {dataOS && (
           <div className="max-w-full overflow-x-auto">
             <h2 className="text-lg font-semibold mb-2">Detalles de la Orden de Servicio</h2>
@@ -515,7 +522,12 @@ const CrearMovSalidaHilado: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {ingresos.slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina).map((ingreso) => (
+                  {ingresos.slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina).map((ingreso) =>{
+                    const alreadySelected = selectedRecipes.some(
+                      (r) => r.fiber.id === fibra.id
+                    );
+                  }
+                  /*(
                     <TableRow key={ingreso.entryNumber} className="text-center">
                       <TableCell className="border-b border-gray-300 px-4 py-5">{ingreso.entryNumber}</TableCell>
                       <TableCell className="border-b border-gray-300 px-4 py-5">{ingreso.supplierCode}</TableCell>
@@ -526,7 +538,7 @@ const CrearMovSalidaHilado: React.FC = () => {
                         </IconButton>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )*/)}
                 </tbody>
               </table>
               <TablePagination

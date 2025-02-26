@@ -1,4 +1,4 @@
-﻿"use client";
+﻿  "use client";
 
 import React, { useState, useEffect } from "react";
 import {
@@ -272,6 +272,8 @@ const CrearHilado: React.FC = () => {
       return !prev;
     });
   };
+
+  console.log(filteredFibras);
 
   // ---------------------------------------------------------------------------
   // Render
