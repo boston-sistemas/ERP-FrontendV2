@@ -129,9 +129,10 @@ const MovIngresoHilado: React.FC = () => {
     setOpenPurchaseOrderDialog(false);
   };
 
-  const handleOpenYarnDialog = async (yarnId) => {
+  const handleOpenYarnDialog = async (yarnId: string) => { // yarnID Investigar que es, por el momento se queda como string
     try {
       const data = await fetchYarnbyId(yarnId);
+      console.log(data);
       setSelectedYarn(data);
       setOpenYarnDialog(true);
     } catch (error) {
@@ -240,7 +241,7 @@ const MovIngresoHilado: React.FC = () => {
             </div>
           </Menu>
 
-          {/* Tabla de Movimientos */}
+          {/* Tabla de Movimientos ----------------------------------------------------------------*/}
           <div className="max-w-full overflow-x-auto">
             <table className="w-full table-auto ">
               <thead>

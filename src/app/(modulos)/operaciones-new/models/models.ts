@@ -101,7 +101,7 @@ export interface YarnPurchaseEntryDetail {
   isWeighted: boolean;
 }
 
-export interface YarnPurchaseEntry {
+export interface YarnPurchaseEntry { //DESACTUALIZADO--modificar este modelo para que se parezca al modelo del backend
   period: number;
   supplierPoCorrelative: string;
   supplierPoSeries: string;
