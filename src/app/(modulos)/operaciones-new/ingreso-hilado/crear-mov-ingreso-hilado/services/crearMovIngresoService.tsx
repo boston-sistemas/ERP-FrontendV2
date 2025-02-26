@@ -3,11 +3,11 @@ import { PurchaseOrderResponse, YarnPurchaseEntry, YarnPurchaseEntryResponse } f
 
 export const fetchOrdenCompras = async (period: number): Promise<PurchaseOrderResponse> => {
   try {
-    console.log("fetchOrdenCompras() invocado con period:", period);
+    //console.log("fetchOrdenCompras() invocado con period:", period);
     const response = await instance.get<PurchaseOrderResponse>(
       `/operations/v1/orden-compra/yarns?period=${period}&includeDetail=true`
     );
-    console.log("Órdenes recibidas:", response.data);
+    //console.log("Órdenes recibidas:", response.data);
     return response.data;
   } catch (error: any) {
     console.error("Error fetching purchase orders:", error?.response?.data || error.message);
