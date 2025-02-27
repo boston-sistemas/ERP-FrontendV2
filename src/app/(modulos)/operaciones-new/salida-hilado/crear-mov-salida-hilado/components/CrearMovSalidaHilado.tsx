@@ -53,7 +53,7 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
   const [snackbarMessage, setSnackbarMessage] = useState<string>("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
   const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [selectEntrys, setSelectEntry] = useState<YarnPurchaseEntryResponse[]>([]);
+  const [selectedEntries, setselectedEntries] = useState<YarnPurchaseEntry[]>([]);
   
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbarMessage(message);
@@ -86,7 +86,6 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
     loadIngresosAndOrders();
   }, [period]); // Dependencia del estado `period`  
   
-  console.log(ingresos);
 
   useEffect(() => {
     const savedEntryNumber = localStorage.getItem("entryNumber");
@@ -101,17 +100,30 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
     loadSupplierData();
   }, []);
   
-  const loadIngresoDetails = async (entryNumber: string) => {
+  // Seleccionar varias opciones de ingreso
+
+  const handleAddEntry = (ingreso: YarnPurchaseEntry) => {
+    if (!selectedEntries.some((r) => r.entryNumber === ingreso.entryNumber)) {
+      setselectedEntries((prev) => [...prev, ingreso]);
+      showSnackbar("Entrada añadida.", "success");
+    }
+  };
+
+  const loadIngresoDetails = async (ingreso: string) => {
     try {
-      const response = await fetchYarnPurchaseEntryDetails(entryNumber, period); // Usa el período actualizado
+      const response = await fetchYarnPurchaseEntryDetails(ingreso.entryNumber, period); // Usa el período actualizado
       setDataIngreso({
         ...response,
         detail: response.detail || [], // Asegura que siempre haya un array de detalles
       });
-      setIsIngresoDialogOpen(true); // Cierra el diálogo después de seleccionar
+      if (!selectedEntries.some((r) => r.entryNumber === ingreso.entryNumber)) {
+        setselectedEntries((prev) => [...prev, ingreso]);
+        showSnackbar("Entrada añadida.", "success");
+      }
     } catch (error) {
       showSnackbar("Error al cargar detalles del ingreso.", "error");
     }
+    console.log(selectedEntries);
   };    
 
   const loadSupplierData = async () => {
@@ -144,7 +156,7 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
       updatedData.detail[itemIndex].detailHeavy[groupIndex][field] = value;
       return updatedData;
     });
-  }; 
+  };
 
   const handleSelectServiceOrder = async (orderId: string) => {
     try {
@@ -243,10 +255,6 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
       alert("Hubo un error al intentar guardar el movimiento de salida.");
     }
   };
-
-  const handleAddEntry = (entry : YarnPurchaseEntry) => {
-    if (!selectEntrys.some((r) => r.yarnPurchaseEntries.entrynumber))
-  };
   
   const handleOpenIngresoDialog = () => setIsIngresoDialogOpen(true);
   const handleCloseIngresoDialog = () => setIsIngresoDialogOpen(false);
@@ -254,7 +262,6 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
   const handleOpenServiceDialog = () => setIsServiceDialogOpen(true);
   const handleCloseServiceDialog = () => setIsServiceDialogOpen(false);
 
-  //console.log(dataOS);
   return (
     <><div>
     <h1 className="text-2xl font-semibold mb-4">Crear Movimiento de Salida de Hilado</h1>
@@ -522,23 +529,35 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
                   </tr>
                 </thead>
                 <tbody>
-                  {ingresos.slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina).map((ingreso) =>{
-                    const alreadySelected = selectedRecipes.some(
-                      (r) => r.fiber.id === fibra.id
-                    );
-                  }
-                  /*(
-                    <TableRow key={ingreso.entryNumber} className="text-center">
-                      <TableCell className="border-b border-gray-300 px-4 py-5">{ingreso.entryNumber}</TableCell>
-                      <TableCell className="border-b border-gray-300 px-4 py-5">{ingreso.supplierCode}</TableCell>
-                      <TableCell className="border-b border-gray-300 px-4 py-5">{ingreso.creationDate}</TableCell>
-                      <TableCell className="border-b border-gray-300 px-4 py-5">
-                        <IconButton color="primary" onClick={() => loadIngresoDetails(ingreso.entryNumber)}>
-                          <Add />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  )*/)}
+                  {ingresos
+                    .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
+                    .map((ingreso) => {
+                      const alreadySelected = selectedEntries.some(
+                        (r) => r.entryNumber === ingreso.entryNumber
+                      );
+                      return (
+                        <tr key={ingreso.entryNumber} className="text-center">
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {ingreso.entryNumber}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {ingreso.supplierCode || "--"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {ingreso.creationDate || "--"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {alreadySelected ? (
+                              <span className="text-gray-500">Seleccionado</span>
+                            ) : (
+                              <IconButton color="primary" onClick={() => loadIngresoDetails(ingreso)}>
+                                <Add />
+                              </IconButton>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
               <TablePagination
