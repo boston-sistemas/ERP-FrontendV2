@@ -21,6 +21,7 @@ import {
   SelectChangeEvent,
   Alert,
   Snackbar,
+  Typography,
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import {
@@ -324,28 +325,7 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
       </div>
     </div>
   </div> 
-  <FormControl fullWidth style={{ maxWidth: "300px" }}>
-  <InputLabel id="period-label">Período</InputLabel>
-    <Select
-    labelId="period-label"
-    value={period}
-    onChange={(e) => {
-      const selectedPeriod = Number(e.target.value);
-      if ([2023, 2024, 2025].includes(selectedPeriod)) {
-        setPeriod(selectedPeriod); // Solo actualiza si el período es válido
-      } else {
-        showSnackbar("Período no válido.", "error");
-      }
-    }}
-    >
-      {[2023, 2024, 2025].map((year) => (
-        <MenuItem key={year} value={year}>
-          {year}
-        </MenuItem>
-      ))}
-    </Select>
-  </FormControl> 
-    <div>
+  <div>
         {/* Movimiento de ingreso */}
         <div className="flex items-center justify-between mb-4">
           <p className="text-lg">
@@ -518,6 +498,29 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
           >
           <DialogTitle>Seleccionar Movimiento de Ingreso</DialogTitle>
           <DialogContent>
+            <div className="mb-4">
+              <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>
+              Seleccionar periodo
+              </Typography>
+              <Select
+                labelId="period-label"
+                value={period}
+                onChange={(e) => {
+                  const selectedPeriod = Number(e.target.value);
+                  if ([2023, 2024, 2025].includes(selectedPeriod)) {
+                    setPeriod(selectedPeriod); // Solo actualiza si el período es válido
+                  } else {
+                    showSnackbar("Período no válido.", "error");
+                  }
+                }}
+                >
+                  {[2023, 2024, 2025].map((year) => (
+                    <MenuItem key={year} value={year}>
+                      {year}
+                    </MenuItem>
+                  ))}
+              </Select>
+            </div>
             <div className="max-w-full overflow-x-auto">
               <table className="w-full table-auto">
                 <thead>
@@ -604,7 +607,10 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
                 </thead>
                 <tbody>
                   {ordenesServicio.slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina).map((orden) => (
-                    <TableRow key={orden.id} className="text-center">
+                    <td>
+                      
+                    </td>
+                    /*<TableRow key={orden.id} className="text-center">
                       <TableCell className="border-b border-gray-300 px-4 py-5">{orden.id}</TableCell>
                       <TableCell className="border-b border-gray-300 px-4 py-5">{orden.supplierId}</TableCell>
                       <TableCell className="border-b border-gray-300 px-4 py-5">{orden.issueDate}</TableCell>
@@ -613,7 +619,7 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
                           <Add />
                         </IconButton>
                       </TableCell>
-                    </TableRow>
+                    </TableRow>*/
                   ))}
                 </tbody>
               </table>
