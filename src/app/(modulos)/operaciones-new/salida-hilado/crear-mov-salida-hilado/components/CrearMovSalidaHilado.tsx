@@ -607,19 +607,16 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
                 </thead>
                 <tbody>
                   {ordenesServicio.slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina).map((orden) => (
-                    <td>
-                      
-                    </td>
-                    /*<TableRow key={orden.id} className="text-center">
-                      <TableCell className="border-b border-gray-300 px-4 py-5">{orden.id}</TableCell>
-                      <TableCell className="border-b border-gray-300 px-4 py-5">{orden.supplierId}</TableCell>
-                      <TableCell className="border-b border-gray-300 px-4 py-5">{orden.issueDate}</TableCell>
-                      <TableCell className="border-b border-gray-300 px-4 py-5">
+                    <tr key={orden.id} className="text-center">
+                      <td className="border-b border-gray-300 px-4 py-5">{orden.id}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">{orden.supplierId}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">{orden.issueDate}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">
                         <IconButton color="primary" onClick={() => handleSelectServiceOrder(orden.id)}>
                           <Add />
                         </IconButton>
-                      </TableCell>
-                    </TableRow>*/
+                      </td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
