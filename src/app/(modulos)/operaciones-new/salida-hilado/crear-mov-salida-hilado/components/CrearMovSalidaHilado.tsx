@@ -92,7 +92,7 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
     const savedEntryNumber = localStorage.getItem("entryNumber");
     if (savedEntryNumber) {
       const parsedPayload = JSON.parse(savedEntryNumber);
-      loadIngresoDetails(parsedPayload.entryNumber); // Carga los detalles del ingreso
+      loadIngresoDetails(parsedPayload); // Carga los detalles del ingreso
       setSelectedGroups(parsedPayload.groups || []); // Preselecciona los grupos
       localStorage.removeItem("entryNumber"); // Limpia el localStorage después de cargar
     }
@@ -124,7 +124,6 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
     } catch (error) {
       showSnackbar("Error al cargar detalles del ingreso.", "error");
     }
-    console.log(selectedEntries);
   };    
 
   const loadSupplierData = async () => {
@@ -354,8 +353,20 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
         {/* Tabla de detalles de ingreso */}
         {dataIngreso && (
           <div className="max-w-full overflow-x-auto">
-            <h2 className="text-lg font-semibold mb-2">Detalles del Movimiento de Ingreso</h2>
+            <h2 className="text-lg font-semibold mb-3">Detalles del Movimiento de Ingreso</h2>
             {dataIngreso.detail.map((item: any, index: number) => (
+              <React.Fragment key={index}>
+                <h2 className="text-lg font-semibold mb-2">
+                  Hilado {index + 1}: {item.yarnId}
+                </h2>
+                {item.detailHeavy.map((group: any, groupIndex: number) => (
+                  <h3 className="text-lg font-semibold mb-2">Peso bruto: <strong>{group.grossWeight}</strong> <br /> 
+                  Peso neto: <strong>{group.netWeight}</strong></h3>
+                ))}
+              </React.Fragment>
+            ))}
+
+            {/* {dataIngreso.detail.map((item: any, index: number) => (
               <React.Fragment key={index}>
                 <h2 className="text-lg font-semibold mb-2">
                   Hilado {index + 1}: {item.yarnId}
@@ -364,7 +375,6 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
                   <thead>
                     <tr className="bg-blue-900 uppercase text-center text-white">
                       <th className="px-4 py-4 font-normal">Grupo</th>
-                      {/*<th className="px-4 py-4 font-normal">Peso Guía</th>*/}
                       <th className="px-4 py-4 font-normal">Conos</th>
                       <th className="px-4 py-4 font-normal">Bultos</th>
                       <th className="px-4 py-4 font-normal">Peso Bruto</th>
@@ -450,7 +460,7 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
                   </tbody>
                 </table>
               </React.Fragment>
-            ))}
+            ))} */}
           </div>
         )}
 
