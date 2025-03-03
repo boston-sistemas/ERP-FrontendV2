@@ -1,5 +1,5 @@
 ﻿import instance from "@/infrastructure/config/AxiosConfig";
-import { YarnPurchaseEntryResponse, YarnPurchaseEntry } from "../../models/models";
+import { YarnPurchaseEntryResponse, YarnPurchaseEntry, Fabric } from "../../models/models";
 
 export const fetchYarnPurchaseEntries = async (
   period: number,
@@ -69,5 +69,14 @@ export const fetchYarnPurchaseEntryDetails = async (
 
   export const fetchFabricTypes = async () => {
     const response = await instance.get(`security/v1/parameters/public/fabric-types`);
+    return response.data;
+  }
+
+  export const fetchFabricSearchId = async (
+    id: number
+  ): Promise<Fabric> => {
+    const response = await instance.get<Fabric>(
+      `/operations/v1/fabrics/${id}`
+    );
     return response.data;
   }

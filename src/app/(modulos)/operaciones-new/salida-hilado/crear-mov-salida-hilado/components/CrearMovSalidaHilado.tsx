@@ -23,11 +23,13 @@ import {
   Snackbar,
   Typography,
 } from "@mui/material";
-import { Add } from "@mui/icons-material";
+import { Add, Details } from "@mui/icons-material";
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   fetchYarnPurchaseEntries,
   fetchYarnPurchaseEntryDetails,
   fetchFabricTypes,
+  fetchFabricSearchId,
 } from "../../../ingreso-hilado/services/movIngresoHiladoService";
 import {
   fetchServiceOrders,
@@ -35,12 +37,18 @@ import {
   fetchSuppliers,
 } from "../../../ordenes-servicio/services/ordenesServicioService";
 import { createYarnDispatch } from "../../services/movSalidaHiladoService";
-import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEntryResponse, FabricType } from "../../../models/models";
+import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEntryResponse, Fabric, FabricType } from "../../../models/models";
+
+  const ERROR_COLOR = "#d32f2f";
 
   const CrearMovSalidaHilado: React.FC = () => {
   const [dataIngreso, setDataIngreso] = useState<any>(null); // Detalles del ingreso
   const [dataOS, setDataOS] = useState<any>(null); // Detalles de la orden de servicio
+  const [FabricInfo, setFabricInfo] = useState<any>(null); // Detalles de fibras
   const [ingresos, setIngresos] = useState<any[]>([]);
+  const [openFabricDialog, setOpenFabricDialog] = useState(false); // Estado del diálogo de información de tejido
+  const [isSmallScreen, setIsSmallScreen] = useState(false); // Estado de tamaño de pantalla
+  const [isMediumScreen, setIsMediumScreen] = useState(false);  // Estado de tamaño de pantalla
   const [ordenesServicio, setOrdenesServicio] = useState<ServiceOrder[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<any[]>([]);
   const [isIngresoDialogOpen, setIsIngresoDialogOpen] = useState<boolean>(false);
@@ -50,6 +58,7 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [typeFabric, setTypeFabric] = useState<FabricType[]>([]);
   const [selectTypeFabric, setSelectedTypeFabric] = useState<string>("");
+  const [selectInfoFabric, setSelectedInfoFabric] = useState<Fabric | null>(null); // Información del tejido seleccionado
   const [selectedSupplier, setSelectedSupplier] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<string>("");
@@ -175,6 +184,15 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
     });
   };
 
+  const loadFabricInfo = async (details: any) => { // Carga la información del tejido
+    try {
+      const fabricInfos = await fetchFabricSearchId(details[0].fabricId);
+      setFabricInfo(fabricInfos);
+    } catch (error) {
+      console.error("Error al cargar la información del tejido:", error);
+    };
+  };
+
   const handleSelectServiceOrder = async (orderId: string) => {
     try {
       const serviceOrderDetails = await fetchServiceOrderById(orderId);
@@ -182,12 +200,31 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
         ...serviceOrderDetails,
         detail: serviceOrderDetails.detail || [], // Asegura que haya un array de detalles
       });
+      console.log("Detalles de la orden de servicio:", serviceOrderDetails);
+      loadFabricInfo(serviceOrderDetails.detail); // Carga la información del tejido
+      sleepES5(75); // Espera 75ms antes de cargar la información
       setIsServiceDialogOpen(false); // Cierra el diálogo después de seleccionar
     } catch (error) {
       console.error("Error al cargar la orden de servicio:", error);
       alert("No se pudo cargar la orden de servicio seleccionada. Por favor, inténtelo de nuevo.");
     }
   };
+
+   const handleOpenFabricDialog = async (yarnId: number) => {
+    setOpenFabricDialog(true);
+    setSelectedInfoFabric(null);
+      try {
+        const data = await fetchFabricSearchId(yarnId);
+        console.log(data);
+        setSelectedInfoFabric(data);
+      } catch (error) {
+        console.error("Error al cargar los datos del hilo:", error);
+      }
+    };
+
+    const handleCloseFabricDialog = () => {
+      setOpenFabricDialog(false);
+    };
 
   const toggleGroupSelection = (newGroup: any) => {
     setSelectedGroups(prev => {
@@ -279,6 +316,12 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
   const handleOpenServiceDialog = () => setIsServiceDialogOpen(true);
   const handleCloseServiceDialog = () => setIsServiceDialogOpen(false);
 
+
+  var sleepES5 = function(ms: number){  // Función sleep
+    var esperarHasta = new Date().getTime() + ms;
+    while(new Date().getTime() < esperarHasta) continue;
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-semibold mb-4">Crear Movimiento de Salida de Hilado</h1>
@@ -322,7 +365,7 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
                   MenuProps={{
                     PaperProps: {
                       style: {
-                        transform: "translateX(30%)",
+                        transform: "translateX(24%)",
                       },
                     },
                   }}
@@ -368,21 +411,26 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
 
         {/* Tabla de detalles de ingreso */}
         {dataIngreso && (
-          <div className="max-w-full overflow-x-auto">
+          <div className="max-w-full overflow-x-auto mb-6">
             <h2 className="text-lg font-semibold mb-3">Detalles del Movimiento de Ingreso</h2>
             {dataIngreso.detail.map((item: any, index: number) => (
               <React.Fragment key={index}>
-                <h2 className="text-lg font-semibold mb-2">
+                <h2 className="text-lg font-semibold mb-4">
                   Hilado {index + 1}: {item.yarnId}
                 </h2>
                 {item.detailHeavy.map((group: any, groupIndex: number) => (
-                  <h3 className="text-lg font-semibold mb-2">Peso bruto: <strong>{group.grossWeight}</strong> <br /> 
-                  Peso neto: <strong>{group.netWeight}</strong></h3>
+                  <div key={groupIndex} className="border-b border-gray-300 py-4 mb-4">
+                    <h3 className="text-lg font-semibold mb-2">
+                      Peso bruto: <strong>{group.grossWeight}</strong>  &emsp;&emsp;&emsp;&emsp;&emsp;
+                      Peso neto: <strong>{group.netWeight}</strong>
+                    </h3>
+                  </div>
                 ))}
               </React.Fragment>
-            ))}</div>
+            ))}
+          </div>
         )}
-        <div>
+        {dataIngreso && (<>
             <p className="text-lg mb-2">Seleccionar tipo de tejido:</p>
             <div className="flex items-center space-x-4 mb-4">
               {/* Selección de tipo de tejido */}
@@ -395,7 +443,7 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
                   MenuProps={{
                     PaperProps: {
                       style: {
-                        transform: "translateX(30%)",
+                        transform: "translateX(0%)", // Ajusta la posición del menú desplegable
                       },
                     },
                   }}
@@ -410,103 +458,9 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
                   ))}
                 </Select>
               </FormControl>
-        </div>
-
-            {/* {dataIngreso.detail.map((item: any, index: number) => (
-              <React.Fragment key={index}>
-                <h2 className="text-lg font-semibold mb-2">
-                  Hilado {index + 1}: {item.yarnId}
-                </h2>
-                <table className="w-full table-auto mb-4">
-                  <thead>
-                    <tr className="bg-blue-900 uppercase text-center text-white">
-                      <th className="px-4 py-4 font-normal">Grupo</th>
-                      <th className="px-4 py-4 font-normal">Conos</th>
-                      <th className="px-4 py-4 font-normal">Bultos</th>
-                      <th className="px-4 py-4 font-normal">Peso Bruto</th>
-                      <th className="px-4 py-4 font-normal">Peso Neto</th>
-                      <th className="px-4 py-4 font-normal">Seleccionar</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {item.detailHeavy.map((group: any, groupIndex: number) => (
-                      <TableRow key={groupIndex} className="text-center">
-                        <TableCell className="border-b border-gray-300 px-4 py-5">
-                          {group.groupNumber}
-                        </TableCell>
-                        <TableCell className="border-b border-gray-300 px-4 py-5">
-                          <TextField
-                            type="number"
-                            value={group.coneCount}
-                            onChange={(e) => handleGroupInputChange(
-                              index,
-                              groupIndex,
-                              "coneCount",
-                              parseInt(e.target.value) || 0
-                            )}
-                            fullWidth />
-                        </TableCell>
-                        <TableCell className="border-b border-gray-300 px-4 py-5">
-                          <TextField
-                            type="number"
-                            value={group.packageCount}
-                            onChange={(e) => handleGroupInputChange(
-                              index,
-                              groupIndex,
-                              "packageCount",
-                              parseInt(e.target.value) || 0
-                            )}
-                            fullWidth />
-                        </TableCell>
-                        <TableCell className="border-b border-gray-300 px-4 py-5">
-                          <TextField
-                            type="number"
-                            value={group.grossWeight}
-                            onChange={(e) => handleGroupInputChange(
-                              index,
-                              groupIndex,
-                              "grossWeight",
-                              parseFloat(e.target.value) || 0
-                            )}
-                            fullWidth />
-                        </TableCell>
-                        <TableCell className="border-b border-gray-300 px-4 py-5">
-                          <TextField
-                            type="number"
-                            value={group.netWeight}
-                            onChange={(e) => handleGroupInputChange(
-                              index,
-                              groupIndex,
-                              "netWeight",
-                              parseFloat(e.target.value) || 0
-                            )}
-                            fullWidth />
-                        </TableCell>
-                        <TableCell className="border-b border-gray-300 px-4 py-5">
-                        <Checkbox
-                        checked={selectedGroups.some(
-                          (g) =>
-                            g.entryGroupNumber === group.groupNumber &&
-                            g.entryItemNumber === item.itemNumber
-                        )}
-                        onChange={() =>
-                          toggleGroupSelection({
-                            ...group,
-                            itemNumber: item.itemNumber,
-                            entryNumber: dataIngreso.entryNumber,
-                            entryGroupNumber: group.groupNumber,
-                            entryItemNumber: item.itemNumber,
-                            entryPeriod: dataIngreso.period,
-                          })
-                        }
-                      />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </tbody>
-                </table>
-              </React.Fragment>
-            ))} */}
+            </div>
+          </>
+        )}
 
         {/* Tabla de detalles de orden de servicio */}
         {dataOS && (
@@ -518,24 +472,77 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
                   <thead>
                     <tr className="bg-blue-900 uppercase text-center text-white">
                       <th className="px-4 py-4 font-normal">Tejido</th>
+                      <th className="px-4 py-4 font-normal">Precio</th>
                       <th className="px-4 py-4 font-normal">Cantidad Ordenada</th>
                       <th className="px-4 py-4 font-normal">Cantidad Suministrada</th>
                       <th className="px-4 py-4 font-normal">Estado</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <TableRow className="text-center">
-                      <TableCell className="border-b border-gray-300 px-4 py-5">{item.tissueId}</TableCell>
-                      <TableCell className="border-b border-gray-300 px-4 py-5">{item.quantityOrdered}</TableCell>
-                      <TableCell className="border-b border-gray-300 px-4 py-5">{item.quantitySupplied || 0}</TableCell>
-                      <TableCell className="border-b border-gray-300 px-4 py-5">{item.status?.value || "Pendiente"}</TableCell>
-                    </TableRow>
+                  <tr className="text-center text-black">
+                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{FabricInfo.description}
+                    <IconButton onClick={() => handleOpenFabricDialog(FabricInfo.id)}>  {/*Botón para ver la información del tejido*/}
+                          <VisibilityIcon 
+                          style={{ color: "#1976d2" }}
+                          />
+                        </IconButton>
+                    </td>
+                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.price}</td>
+                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.quantityOrdered}</td>
+                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.quantitySupplied || 0}</td>
+                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.status?.value || "Pendiente"}</td>
+                  </tr>
                   </tbody>
                 </table>
               </React.Fragment>
             ))}
           </div>
         )}
+
+<Dialog // Diálogo para ver la información del tejido
+          open={openFabricDialog}
+          onClose={handleCloseFabricDialog}
+          fullScreen={isSmallScreen}
+          maxWidth="md"
+          PaperProps={{
+            sx: {
+              ...( !isSmallScreen && !isMediumScreen && {
+                marginLeft: "280px", 
+                maxWidth: "calc(100% - 280px)", 
+              }),
+              maxHeight: "calc(100% - 64px)",
+              overflowY: "auto",
+            },
+          }}
+        >
+          <DialogContent>
+            <h3 className="text-lg font-semibold text-black mb-4">
+              Información del tejido
+            </h3>
+            {selectInfoFabric ? (
+              <div className="mb-4 text-black">
+                <p className="mb-2"><strong>ID:</strong> {selectInfoFabric.id} </p>
+                <p className="mb-2"><strong>Descripción:</strong> {selectInfoFabric.purchaseDescription} </p>
+                <p className="mb-2"><strong>Patrón estructural:</strong> {selectInfoFabric.structurePattern} </p>
+                <p className="mb-2"><strong>Fecha de Vencimiento:</strong> {selectInfoFabric.id} </p>
+                <p className="mb-2"><strong>Método de Pago:</strong> {selectInfoFabric.id} </p>
+                <p className="mb-2"><strong>Estado:</strong> {selectInfoFabric.id} </p>
+                <p className="mb-2"><strong>Moneda:</strong> {selectInfoFabric.id} </p>
+              </div>
+            ) : (
+              <p>Cargando información...</p>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={handleCloseFabricDialog}
+              variant="contained"
+              style={{ backgroundColor: ERROR_COLOR, color: "#fff" }}
+            >
+              Cerrar
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Diálogo para seleccionar movimientos de ingreso */}
         <Dialog
@@ -708,7 +715,6 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
           </Alert>
         </Snackbar>
       </div>
-    </div>
     </div>
   );
 };

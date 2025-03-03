@@ -129,7 +129,7 @@ const MovIngresoHilado: React.FC = () => {
     setOpenPurchaseOrderDialog(false);
   };
 
-  const handleOpenYarnDialog = async (yarnId: string) => { // yarnID Investigar que es, por el momento se queda como string
+  const handleOpenYarnDialog = async (yarnId: string) => {
     try {
       const data = await fetchYarnbyId(yarnId);
       console.log(data);
