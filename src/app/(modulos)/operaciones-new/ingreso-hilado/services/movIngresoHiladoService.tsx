@@ -66,3 +66,8 @@ export const fetchYarnPurchaseEntryDetails = async (
     const response = await instance.get(`operations/v1/orden-compra/yarns/${id}`);  
     return response.data;
   }
+
+  export const fetchFabricTypes = async () => {
+    const response = await instance.get(`security/v1/parameters/public/fabric-types`);
+    return response.data;
+  }

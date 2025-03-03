@@ -27,6 +27,7 @@ import { Add } from "@mui/icons-material";
 import {
   fetchYarnPurchaseEntries,
   fetchYarnPurchaseEntryDetails,
+  fetchFabricTypes,
 } from "../../../ingreso-hilado/services/movIngresoHiladoService";
 import {
   fetchServiceOrders,
@@ -34,7 +35,7 @@ import {
   fetchSuppliers,
 } from "../../../ordenes-servicio/services/ordenesServicioService";
 import { createYarnDispatch } from "../../services/movSalidaHiladoService";
-import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEntryResponse } from "../../../models/models";
+import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEntryResponse, FabricType } from "../../../models/models";
 
   const CrearMovSalidaHilado: React.FC = () => {
   const [dataIngreso, setDataIngreso] = useState<any>(null); // Detalles del ingreso
@@ -47,6 +48,8 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [typeFabric, setTypeFabric] = useState<FabricType[]>([]);
+  const [selectTypeFabric, setSelectedTypeFabric] = useState<string>("");
   const [selectedSupplier, setSelectedSupplier] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<string>("");
@@ -99,6 +102,7 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
   
     loadIngresosAndOrders();
     loadSupplierData();
+    loadFabricTypes();
   }, []);
   
   // Seleccionar varias opciones de ingreso
@@ -134,6 +138,15 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
       console.error("Error al cargar los proveedores:", error);
     }
   }
+  
+  const loadFabricTypes = async () => {
+    try {
+      const fabricType = await fetchFabricTypes();
+      setTypeFabric(fabricType.fabricTypes);
+    } catch (error) {
+      console.error("Error al cargar los tipos de tejido:", error);
+    }
+  }
 
   const handleProveedorChange = (event: SelectChangeEvent<string>) => {
     setSelectedSupplier(event.target.value);
@@ -141,6 +154,10 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
 
   const handleAddressChange = (event: SelectChangeEvent<string>) => {
     setSelectedAddress(event.target.value);
+  };
+
+  const handleFabricTypeChange = (event: SelectChangeEvent<string>) => {
+    setSelectedTypeFabric(event.target.value);
   };
 
   const supplier = suppliers.find((sup) => sup.code === selectedSupplier);
@@ -263,68 +280,67 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
   const handleCloseServiceDialog = () => setIsServiceDialogOpen(false);
 
   return (
-    <><div>
-    <h1 className="text-2xl font-semibold mb-4">Crear Movimiento de Salida de Hilado</h1>
     <div>
-      <p className="text-lg mb-2">Seleccionar Proveedor y Dirección:</p>
-      <div className="flex items-center space-x-4 mb-4">
-        {/* Selección de Proveedor */}
-        <FormControl fullWidth style={{ maxWidth: "300px" }}>
-          <Select
-            labelId="proveedor-label"
-            value={selectedSupplier || ""}
-            onChange={handleProveedorChange}
-            displayEmpty
-            MenuProps={{
-              PaperProps: {
-                style: {
-                  transform: "translateX(30%)",
-                },
-              },
-            }}
-          >
-            <MenuItem value="" disabled>
-              Seleccione un Proveedor
-            </MenuItem>
-            {suppliers.map((supplier) => (
-              <MenuItem key={supplier.code} value={supplier.code}>
-                {supplier.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-  
-        {/* Selección de Dirección */}
-        {supplier && (
-          <FormControl fullWidth style={{ maxWidth: "300px" }}>
-            <Select
-              labelId="direccion-label"
-              value={selectedAddress || ""}
-              onChange={handleAddressChange}
-              displayEmpty
-              MenuProps={{
-                PaperProps: {
-                  style: {
-                    transform: "translateX(30%)",
+      <h1 className="text-2xl font-semibold mb-4">Crear Movimiento de Salida de Hilado</h1>
+        <div>
+          <p className="text-lg mb-2">Seleccionar Proveedor y Dirección:</p>
+          <div className="flex items-center space-x-4 mb-4">
+            {/* Selección de Proveedor */}
+            <FormControl fullWidth style={{ maxWidth: "300px" }}>
+              <Select
+                labelId="proveedor-label"
+                value={selectedSupplier || ""}
+                onChange={handleProveedorChange}
+                displayEmpty
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      transform: "translateX(30%)",
+                    },
                   },
-                },
-              }}
-            >
-              <MenuItem value="" disabled>
-                Seleccione una Dirección
-              </MenuItem>
-              {Object.entries(supplier.addresses).map(([code, address]) => (
-                <MenuItem key={code} value={code}>
-                  {address}
+                }}
+              >
+                <MenuItem value="" disabled>
+                  Seleccione un Proveedor
                 </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        )}
-      </div>
-    </div>
-  </div> 
-  <div>
+                {suppliers.map((supplier) => (
+                  <MenuItem key={supplier.code} value={supplier.code}>
+                    {supplier.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+      
+            {/* Selección de Dirección */}
+            {supplier && (
+              <FormControl fullWidth style={{ maxWidth: "300px" }}>
+                <Select
+                  labelId="direccion-label"
+                  value={selectedAddress || ""}
+                  onChange={handleAddressChange}
+                  displayEmpty
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        transform: "translateX(30%)",
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem value="" disabled>
+                    Seleccione una Dirección
+                  </MenuItem>
+                  {Object.entries(supplier.addresses).map(([code, address]) => (
+                    <MenuItem key={code} value={code}>
+                      {address}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          </div>
+        </div>
+      <div>
         {/* Movimiento de ingreso */}
         <div className="flex items-center justify-between mb-4">
           <p className="text-lg">
@@ -364,7 +380,37 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
                   Peso neto: <strong>{group.netWeight}</strong></h3>
                 ))}
               </React.Fragment>
-            ))}
+            ))}</div>
+        )}
+        <div>
+            <p className="text-lg mb-2">Seleccionar tipo de tejido:</p>
+            <div className="flex items-center space-x-4 mb-4">
+              {/* Selección de tipo de tejido */}
+              <FormControl fullWidth style={{ maxWidth: "300px" }}>
+                <Select
+                  labelId="tejido-label"
+                  value={selectTypeFabric || ""}
+                  onChange={handleFabricTypeChange}
+                  displayEmpty
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        transform: "translateX(30%)",
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem value="" disabled>
+                    Seleccione un tipo de tejido
+                  </MenuItem>
+                  {typeFabric.map((typefab) => (
+                    <MenuItem key={typefab.id} value={typefab.id}>
+                      {typefab.value}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+        </div>
 
             {/* {dataIngreso.detail.map((item: any, index: number) => (
               <React.Fragment key={index}>
@@ -461,8 +507,6 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
                 </table>
               </React.Fragment>
             ))} */}
-          </div>
-        )}
 
         {/* Tabla de detalles de orden de servicio */}
         {dataOS && (
@@ -663,9 +707,9 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
             {snackbarMessage}
           </Alert>
         </Snackbar>
-
-      </div></>
-      
+      </div>
+    </div>
+    </div>
   );
 };
 
