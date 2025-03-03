@@ -26,7 +26,7 @@ import { Add } from "@mui/icons-material";
 import {
   fetchYarnPurchaseEntries,
   fetchYarnPurchaseEntryDetails,
-} from "../../../ingreso-hilado/services/movIngresoHiladoService";
+} from "../../../movimiento-ingreso-hilado/services/movIngresoHiladoService";
 import {
   fetchServiceOrders,
   fetchServiceOrderById,

@@ -956,10 +956,10 @@ const Liquidacion: React.FC = () => {
             </div>
 
             {/* Tabla de Ajuste/Ventas de Hilados */}
-            <div>
+    <div>
               <h3 className="font-semibold text-lg mb-2">Ajuste/Ventas de Hilados</h3>
               <table className="w-full table-auto mb-4">
-                <thead>
+        <thead>
                   <tr className="bg-blue-900 text-center text-white">
                     <th className="px-4 py-2">O/Serv</th>
                     <th className="px-4 py-2">Tipo</th>
@@ -1013,9 +1013,9 @@ const Liquidacion: React.FC = () => {
                     <th className="px-4 py-2">NroConos</th>
                     <th className="px-4 py-2">PesoNeto</th>
                     <th className="px-4 py-2">PesoBruto</th>
-                  </tr>
-                </thead>
-                <tbody>
+          </tr>
+        </thead>
+        <tbody>
                   {consumoMermaData.length > 0 ? (
                     consumoMermaData.map((item, index) => (
                       <tr key={index} className="text-center">
@@ -1035,10 +1035,10 @@ const Liquidacion: React.FC = () => {
                       <td colSpan={9} className="text-center py-4 text-gray-500">
                         No hay datos disponibles.
                       </td>
-                    </tr>
+          </tr>
                   )}
-                </tbody>
-              </table>
+        </tbody>
+      </table>
             </div>
           </div>
         </DialogContent>

@@ -220,7 +220,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
               <strong>Proveedor:</strong> {detalle.supplierCode}
             </Typography>
             <Typography style={{ color: "black" }}>
-              <strong>O/C N°:</strong> {detalle.purchaseOrderNumber}
+              <strong>N° O/C:</strong> {detalle.purchaseOrderNumber}
             </Typography>
             <Typography style={{ color: "black" }}>
               <strong>Guia - Factura:</strong> {detalle.supplierPoCorrelative} - {detalle.supplierPoSeries || "N/A"}
@@ -288,101 +288,108 @@ const DetallesMovIngresoHilado: React.FC = () => {
       </div>
 
       {/* Tabla Resumen */}
-      <TableContainer className="rounded-md border bg-gray-50 shadow-md mt-5">
-        <Table>
-        <TableHead className="bg-blue-900">
-          <TableRow>
-            {[
-              "Item",
-              "Código",
-              "N° Bultos",
-              "N° Conos",
-              "Lote Mecsa",
-              "% Difer.",
-              "Peso Bruto",
-              "Peso Neto",
-              ...(detalle.detail.some((item) => item.isWeighted) ? ["Pesaje"] : []), // Muestra "Pesaje" solo si isWeighted es true
-            ].map((col, index) => (
-              <TableCell key={index} className="text-white text-center">
-                {col}
-              </TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-  {detalle.detail.map((item, index) => (
-    <React.Fragment key={index}>
-      <TableRow>
-        <TableCell className="text-center">{item.itemNumber}</TableCell>
-        <TableCell className="text-center">{item.yarnId}</TableCell>
-        <TableCell className="text-center">{item.guidePackageCount}</TableCell>
-        <TableCell className="text-center">{item.guideConeCount}</TableCell>
-        <TableCell className="text-center">{detalle.mecsaBatch}</TableCell>
-        <TableCell className="text-center">00.00%</TableCell>
-        <TableCell className="text-center">{item.guideGrossWeight}</TableCell>
-        <TableCell className="text-center">{item.guideNetWeight}</TableCell>
-        {item.isWeighted && ( // Oculta la columna "Pesaje" si isWeighted es false
-          <TableCell className="text-center">
-            <IconButton onClick={() => toggleRow(index)}>
-              {openRows[index] ? <ExpandLess /> : <ExpandMore />}
-            </IconButton>
-          </TableCell>
-        )}
-      </TableRow>
-      {item.isWeighted && (
-        <TableRow>
-          <TableCell colSpan={10} style={{ padding: 0 }}>
-            <Collapse in={openRows[index]} timeout="auto" unmountOnExit>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    {["Grupo", "N° Bultos", "N° Conos", "Peso Bruto", "Peso Neto", "Estado", "Bultos Restantes"].map(
-                      (subCol, subIndex) => (
-                        <TableCell key={subIndex} className="text-center">
-                          {subCol}
-                        </TableCell>
-                      )
-                    )}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {item.detailHeavy.map((group, groupIndex) => (
-                    <TableRow key={groupIndex}>
-                      <TableCell className="text-center">{group.groupNumber}</TableCell>
-                      <TableCell className="text-center">{group.packageCount}</TableCell>
-                      <TableCell className="text-center">{group.coneCount}</TableCell>
-                      <TableCell className="text-center">{group.grossWeight}</TableCell>
-                      <TableCell className="text-center">{group.netWeight}</TableCell>
-                      <TableCell className="text-center" style={{ color: "red" }}>
-                        No Despachado
-                      </TableCell>
-                      <TableCell className="text-center">{group.packagesLeft}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Collapse>
-          </TableCell>
-        </TableRow>
-      )}
-    </React.Fragment>
-  ))}
-</TableBody>
-        </Table>
-      </TableContainer>
+      <div className="max-w-full overflow-x-auto mt-5">
+        <table className="w-full table-auto border-collapse">
+          <thead className="bg-blue-900">
+            <tr>
+              {[
+                "Item",
+                "Código",
+                "N° Bultos",
+                "N° Conos",
+                "Lote Mecsa",
+                "% Difer.",
+                "Peso Bruto",
+                "Peso Neto",
+                "Pesaje", 
+              ].map((col, index) => (
+                <th key={index} className="px-4 py-4 text-center font-normal text-white">
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {detalle.detail.map((item, index) => {
+              const porcentajeDiferencia = item.guideGrossWeight !== 0 
+                ? ((1 - item.guideNetWeight / item.guideGrossWeight) * 100).toFixed(2)
+                : "0.00";
+
+              return (
+                <React.Fragment key={index}>
+                  <tr className="text-center text-black">
+                    <td className="border-b border-gray-300 px-4 py-5">{item.itemNumber}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">{item.yarnId}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">{item.guidePackageCount}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">{item.guideConeCount}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">{detalle.mecsaBatch}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">{porcentajeDiferencia}%</td>
+                    <td className="border-b border-gray-300 px-4 py-5">{item.guideGrossWeight}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">{item.guideNetWeight}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">
+                      <IconButton onClick={() => toggleRow(index)}>
+                        {openRows[index] ? <ExpandLess /> : <ExpandMore />}
+                      </IconButton>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colSpan={10} style={{ padding: 0 }}>
+                      <Collapse in={openRows[index]} timeout="auto" unmountOnExit>
+                        <div className="bg-gray-100 p-4 rounded-md shadow-inner">
+                          <table className="w-full table-auto border-collapse">
+                            <thead>
+                              <tr className="bg-gray-200">
+                                {["Grupo", "N° Bultos", "N° Conos", "Peso Bruto", "Peso Neto", "Peso Mecsa", "Estado", "Bultos Restantes"].map(
+                                  (subCol, subIndex) => (
+                                    <th key={subIndex} className="px-4 py-2 text-center font-medium text-gray-700">
+                                      {subCol}
+                                    </th>
+                                  )
+                                )}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {item.detailHeavy.map((group, groupIndex) => (
+                                <tr key={groupIndex} className="text-center text-gray-800">
+                                  <td className="border-b border-gray-300 px-4 py-2">{group.groupNumber}</td>
+                                  <td className="border-b border-gray-300 px-4 py-2">{group.packageCount}</td>
+                                  <td className="border-b border-gray-300 px-4 py-2">{group.coneCount}</td>
+                                  <td className="border-b border-gray-300 px-4 py-2">{group.grossWeight}</td>
+                                  <td className="border-b border-gray-300 px-4 py-2">{group.netWeight}</td>
+                                  <td className="border-b border-gray-300 px-4 py-2">{item.mecsaWeight}</td>
+                                  <td className="border-b border-gray-300 px-4 py-2">
+                                    <span className={group.dispatchStatus ? "text-green-600" : "text-red-600"}>
+                                      {group.dispatchStatus ? "Despachado" : "No despachado"}
+                                    </span>
+                                  </td>
+                                  <td className="border-b border-gray-300 px-4 py-2">{group.packagesLeft}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </Collapse>
+                    </td>
+                  </tr>
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
       {/* Botones de acción */}
       <div className="flex justify-between mt-5">
         <Button
           variant="contained"
           style={{ backgroundColor: "#0288d1", color: "#fff" }}
-          onClick={() => router.push("/operaciones-new/ingreso-hilado")}
+          onClick={() => router.push("/operaciones-new/movimiento-ingreso-hilado")}
         >
           Regresar a Movimientos
         </Button>
         <Button
         variant="contained"
-        style={{ backgroundColor: "#4caf50", color: "#fff" }}
+        style={{ backgroundColor: "#0288d1", color: "#fff" }}
         size="large"
         onClick={handleGenerateSalida}
       >

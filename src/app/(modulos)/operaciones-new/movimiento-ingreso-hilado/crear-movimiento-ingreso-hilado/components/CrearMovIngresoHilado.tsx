@@ -24,9 +24,11 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  FormControlLabel,
+  Menu,
 } from "@mui/material";
 import MuiAlert, { AlertProps } from "@mui/material/Alert";
-import { Add, Delete, Visibility } from "@mui/icons-material";
+import { Add, Delete, Visibility, FilterList, Search } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { fetchOrdenCompras, createYarnPurchaseEntry, fetchPurchaseOrderById } from "../services/crearMovIngresoService";
 import { fetchSuppliersHil } from "../../services/movIngresoHiladoService";
@@ -42,9 +44,9 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
 
 const CrearMovIngresoHilado: React.FC = () => {
   const router = useRouter();
-  const [guiaYFactura, setGuiaYFactura] = useState("");
+  const [guia, setGuia] = useState("");
+  const [factura, setFactura] = useState("");
   const [guiaCorrelativa, setGuiaCorrelativa] = useState("");
-  const [facturaSerie, setFacturaSerie] = useState("");
   const [loteProveedor, setLoteProveedor] = useState("");
   const [nota, setNota] = useState("");
   const [ordenesCompra, setOrdenesCompra] = useState<PurchaseOrder[]>([]);
@@ -62,6 +64,7 @@ const CrearMovIngresoHilado: React.FC = () => {
       guideConeCount: number;
       detailHeavy: { groupNumber: number; coneCount: number; packageCount: number; grossWeight: number; netWeight: number }[];
       isWeighted: boolean;
+      isActive: boolean;
     }[]
   >([]);
 
@@ -80,6 +83,11 @@ const CrearMovIngresoHilado: React.FC = () => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const isMediumScreen = useMediaQuery(theme.breakpoints.between("sm", "md"));
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -112,6 +120,7 @@ const CrearMovIngresoHilado: React.FC = () => {
       guideConeCount: 0,
       detailHeavy: [],
       isWeighted: false,
+      isActive: false,
     }));
     setDetails(initialDetails);
 
@@ -217,22 +226,32 @@ const CrearMovIngresoHilado: React.FC = () => {
     );
   };
 
-    const handleCreate = async () => {
-      if (!selectedOrden) {
-        setSnackbarMessage("Debe seleccionar una orden de compra válida.");
-        setOpenSnackbar(true);
-        return;
-      }
-    
-      const payload: YarnPurchaseEntry = {
-        period: selectedYear,
-        supplierPoCorrelative: guiaCorrelativa,
-        supplierPoSeries: facturaSerie,
-        fecgf: new Date().toISOString().split("T")[0],
-        purchaseOrderNumber: selectedOrden.purchaseOrderNumber,
-        documentNote: nota || "", // Opcional, se envía vacío si no se completa
-        supplierBatch: loteProveedor,
-        detail: details.map((detail, index) => ({
+  const handleActiveChange = (index: number, checked: boolean) => {
+    setDetails((prevDetails) =>
+      prevDetails.map((detail, i) =>
+        i === index ? { ...detail, isActive: checked } : detail
+      )
+    );
+  };
+
+  const handleCreate = async () => {
+    if (!selectedOrden) {
+      setSnackbarMessage("Debe seleccionar una orden de compra válida.");
+      setOpenSnackbar(true);
+      return;
+    }
+  
+    const payload: YarnPurchaseEntry = {
+      period: selectedYear,
+      supplierPoCorrelative: guia,
+      supplierPoSeries: factura,
+      fecgf: new Date().toISOString().split("T")[0],
+      purchaseOrderNumber: selectedOrden.purchaseOrderNumber,
+      documentNote: nota || "",
+      supplierBatch: loteProveedor,
+      detail: details
+        .filter(detail => detail.isActive)
+        .map((detail, index) => ({
           itemNumber: index + 1,
           yarnId: detail.yarnId,
           guideNetWeight: detail.guideNetWeight,
@@ -250,49 +269,66 @@ const CrearMovIngresoHilado: React.FC = () => {
             : [],
           isWeighted: detail.isWeighted,
         })),
-      };
-    
-      try {
-        const response = await createYarnPurchaseEntry(payload);
-    
-        if (response?.entryNumber) {
-          localStorage.setItem(
-            "entryNumber",
-            JSON.stringify({ entryNumber: response.entryNumber })
-          );
-    
-          setSnackbarMessage("Movimiento creado exitosamente.");
-          setOpenSnackbar(true);
-    
-          // Redirigir al componente principal
-          router.push("/operaciones-new/ingreso-hilado");
-        }
-      } catch (error: any) {
-        console.error("Error al crear el movimiento:", error);
-        setSnackbarMessage(error.message || "Error al crear el movimiento.");
+    };
+  
+    try {
+      const response = await createYarnPurchaseEntry(payload);
+  
+      if (response?.entryNumber) {
+        localStorage.setItem(
+          "entryNumber",
+          JSON.stringify({ entryNumber: response.entryNumber })
+        );
+  
+        setSnackbarMessage("Movimiento creado exitosamente.");
         setOpenSnackbar(true);
+  
+        // Redirigir al componente principal
+        router.push("/operaciones-new/movimiento-ingreso-hilado");
       }
-    };    
+    } catch (error: any) {
+      console.error("Error al crear el movimiento:", error);
+      setSnackbarMessage(error.message || "Error al crear el movimiento.");
+      setOpenSnackbar(true);
+    }
+  };    
 
   const handleCancel = () => {
-    router.push("/operaciones-new/ingreso-hilado");
+    router.push("/operaciones-new/movimiento-ingreso-hilado");
   };
 
   const handleCloseSnackbar = () => {
     setOpenSnackbar(false);
   };
 
-  const handleGuiaYFacturaChange = (value: string) => {
-    setGuiaYFactura(value);
-    const [guia, factura] = value.split(" "); 
-    setGuiaCorrelativa(guia || "");
-    setFacturaSerie(factura || "");
-  };
-
   const handleYearChange = (event: React.ChangeEvent<{ value: unknown }>) => {
     setSelectedYear(event.target.value as number);
     // Fetch or filter orders based on the selected year
   };
+
+  const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleFilterClose = () => {
+    setAnchorEl(null);
+  };
+
+  // Función para filtrar órdenes
+  const filteredOrders = ordenesCompra.filter((orden) => {
+    const matchesSearch = Object.values(orden).some((value) =>
+      String(value).toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const orderDate = new Date(orden.issueDate);
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
+
+    const matchesDate =
+      (!start || orderDate >= start) && (!end || orderDate <= end);
+
+    return matchesSearch && matchesDate;
+  });
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -328,165 +364,202 @@ const CrearMovIngresoHilado: React.FC = () => {
         </div>
 
         <form>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-          <TextField
-            label="Guía/Factura"
-            value={guiaYFactura}
-            onChange={(e) => handleGuiaYFacturaChange(e.target.value)}
-            fullWidth
-            variant="outlined"
-            size="small"
-          />
-            <TextField
-              label="Lte. Provee."
-              value={loteProveedor}
-              onChange={(e) => setLoteProveedor(e.target.value)}
-              fullWidth
-              variant="outlined"
-              size="small"
-            />
+          <div className="mb-4" style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ flex: 1 }}>
+            <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>Guía/Factura</Typography>
+              <div style={{ display: 'flex', width: '100%' }}>
+                <TextField
+                  label="Guía"
+                  value={guia}
+                  onChange={(e) => setGuia(e.target.value)}
+                  variant="outlined"
+                  size="small"
+                  style={{ flex: 1}}
+                  InputProps={{ style: { borderRadius: 0 } }}
+                />
+                <TextField
+                  label="Factura"
+                  value={factura}
+                  onChange={(e) => setFactura(e.target.value)}
+                  variant="outlined"
+                  size="small"
+                  style={{ flex: 1 }}
+                  InputProps={{ style: { borderRadius: 0 } }}
+                />
+              </div>
+            </div>
+            <div style={{ flex: 1 }}>
+            <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>Lte. Provee.</Typography>
+              <TextField
+                label="Lte. Provee."
+                value={loteProveedor}
+                onChange={(e) => setLoteProveedor(e.target.value)}
+                fullWidth
+                variant="outlined"
+                size="small"
+              />
+            </div>
           </div>
           
           {/* Hilados dinámicos */}
           {details.map((detail, index) => (
             <div key={index} className="mb-6">
               <div className="flex items-center justify-between">
-              <Typography
-                variant="subtitle1"
-                className="font-semibold mb-2"
-                style={{ color: "#000" }}
-              >
-                Hilado: {detail.yarnId}
-                <IconButton onClick={() => handleOpenYarnDialog(detail.yarnId)}>
-                  <Visibility style={{ color: "#1976d2" }} />
-                </IconButton>
-              </Typography>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <TextField
-                  label="N° Bultos"
-                  value={detail.guidePackageCount || ""}
-                  onChange={(e) => handleDetailChange(index, "guidePackageCount", parseInt(e.target.value) || 0)}
-                  fullWidth
-                  variant="outlined"
-                  size="small"
-                />
-                <TextField
-                  label="N° Conos"
-                  value={detail.guideConeCount || ""}
-                  onChange={(e) => handleDetailChange(index, "guideConeCount", parseInt(e.target.value) || 0)}
-                  fullWidth
-                  variant="outlined"
-                  size="small"
-                />
-                <TextField
-                  label="Peso Bruto"
-                  value={detail.guideGrossWeight || ""}
-                  onChange={(e) => handleDetailChange(index, "guideGrossWeight", parseFloat(e.target.value) || 0)}
-                  fullWidth
-                  variant="outlined"
-                  size="small"
-                />
-                <TextField
-                  label="Peso Neto"
-                  value={detail.guideNetWeight || ""}
-                  onChange={(e) => handleDetailChange(index, "guideNetWeight", parseFloat(e.target.value) || 0)}
-                  fullWidth
-                  variant="outlined"
-                  size="small"
-                />
-              </div>
-              <div className="flex items-center justify-between mt-4">
-                <Typography variant="subtitle1" className="font-semibold text-black">
-                  Pesaje
+                <Typography
+                  variant="subtitle1"
+                  className="font-semibold mb-2"
+                  style={{ color: "#000" }}
+                >
+                  Hilado: {detail.yarnId}
+                  <IconButton onClick={() => handleOpenYarnDialog(detail.yarnId)}>
+                    <Visibility style={{ color: "#1976d2" }} />
+                  </IconButton>
                 </Typography>
-                <Switch
-                  checked={detail.isWeighted}
-                  onChange={(e) => handleDetailChange(index, "isWeighted", e.target.checked)}
-                  color="primary"
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={detail.isActive}
+                      onChange={(e) => handleActiveChange(index, e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label={detail.isActive ? "Activo" : "Inactivo"}
                 />
               </div>
-              {detail.isWeighted && (
-                <div className="mb-4">
-                  <table className="table-auto w-full">
-                    <thead>
-                      <tr className="bg-blue-900 text-white text-sm">
-                        {["Grupo", "N° Bultos", "N° Conos", "Peso Bruto", "Peso Neto", "Acciones"].map((col, colIndex) => (
-                          <th key={colIndex} className="px-2 py-3 text-center">
-                            {col}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {detail.detailHeavy.map((group, groupIndex) => (
-                        <tr
-                          key={groupIndex}
-                          className={`${
-                            groupIndex % 2 === 0 ? "bg-gray-100" : "bg-white"
-                          } hover:bg-gray-200 text-sm`}
-                        >
-                          <td className="px-2 py-3 text-center">{group.groupNumber}</td>
-                          <td className="px-2 py-3 text-center">
-                          <TextField
-                            type="number"
-                            size="small"
-                            fullWidth
-                            value={group.packageCount}
-                            InputProps={{ readOnly: true }} // Deshabilitar edición
-                          />
-                          </td>
-                          <td className="px-2 py-3 text-center">
-                            <TextField
-                              type="number"
-                              size="small"
-                              fullWidth
-                              value={group.coneCount}
-                              onChange={(e) =>
-                                handleUpdateGroup(index, groupIndex, "coneCount", parseInt(e.target.value) || 0)
-                              }
-                            />
-                          </td>
-                          <td className="px-2 py-3 text-center">
-                            <TextField
-                              type="number"
-                              size="small"
-                              fullWidth
-                              value={group.grossWeight}
-                              onChange={(e) =>
-                                handleUpdateGroup(index, groupIndex, "grossWeight", parseFloat(e.target.value) || 0)
-                              }
-                            />
-                          </td>
-                          <td className="px-2 py-3 text-center">
-                            <TextField
-                              type="number"
-                              size="small"
-                              fullWidth
-                              value={group.netWeight}
-                              onChange={(e) =>
-                                handleUpdateGroup(index, groupIndex, "netWeight", parseFloat(e.target.value) || 0)
-                              }
-                            />
-                          </td>
-                          <td className="px-2 py-3 text-center">
-                            <IconButton
-                              color="error"
-                              onClick={() => handleDeleteGroup(index, groupIndex)}
-                            >
-                              <Delete />
-                            </IconButton>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <div className="flex justify-end mt-2">
-                    <IconButton color="primary" onClick={() => handleAddGroup(index)}>
-                      <Add />
-                    </IconButton>
+              {detail.isActive && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <TextField
+                      label="N° Bultos"
+                      value={detail.guidePackageCount || ""}
+                      onChange={(e) => handleDetailChange(index, "guidePackageCount", parseInt(e.target.value) || 0)}
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      disabled={!detail.isActive}
+                    />
+                    <TextField
+                      label="N° Conos"
+                      value={detail.guideConeCount || ""}
+                      onChange={(e) => handleDetailChange(index, "guideConeCount", parseInt(e.target.value) || 0)}
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      disabled={!detail.isActive}
+                    />
+                    <TextField
+                      label="Peso Bruto"
+                      value={detail.guideGrossWeight || ""}
+                      onChange={(e) => handleDetailChange(index, "guideGrossWeight", parseFloat(e.target.value) || 0)}
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      disabled={!detail.isActive}
+                    />
+                    <TextField
+                      label="Peso Neto"
+                      value={detail.guideNetWeight || ""}
+                      onChange={(e) => handleDetailChange(index, "guideNetWeight", parseFloat(e.target.value) || 0)}
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      disabled={!detail.isActive}
+                    />
                   </div>
-                </div>
+                  <div className="flex items-center justify-between mt-4">
+                    <Typography variant="subtitle1" className="font-semibold text-black">
+                      Pesaje
+                    </Typography>
+                    <Switch
+                      checked={detail.isWeighted}
+                      onChange={(e) => handleDetailChange(index, "isWeighted", e.target.checked)}
+                      color="primary"
+                      disabled={!detail.isActive}
+                    />
+                  </div>
+                  {detail.isWeighted && detail.isActive && (
+                    <div className="mb-4">
+                      <table className="table-auto w-full">
+                        <thead>
+                          <tr className="bg-blue-900 text-white text-sm">
+                            {["Grupo", "N° Bultos", "N° Conos", "Peso Bruto", "Peso Neto", "Acciones"].map((col, colIndex) => (
+                              <th key={colIndex} className="px-2 py-3 text-center">
+                                {col}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detail.detailHeavy.map((group, groupIndex) => (
+                            <tr
+                              key={groupIndex}
+                              className={`${
+                                groupIndex % 2 === 0 ? "bg-gray-100" : "bg-white"
+                              } hover:bg-gray-200 text-sm`}
+                            >
+                              <td className="px-2 py-3 text-center">{group.groupNumber}</td>
+                              <td className="px-2 py-3 text-center">
+                              <TextField
+                                type="number"
+                                size="small"
+                                fullWidth
+                                value={group.packageCount}
+                                InputProps={{ readOnly: true }} // Deshabilitar edición
+                              />
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <TextField
+                                  type="number"
+                                  size="small"
+                                  fullWidth
+                                  value={group.coneCount}
+                                  onChange={(e) =>
+                                    handleUpdateGroup(index, groupIndex, "coneCount", parseInt(e.target.value) || 0)
+                                  }
+                                />
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <TextField
+                                  type="number"
+                                  size="small"
+                                  fullWidth
+                                  value={group.grossWeight}
+                                  onChange={(e) =>
+                                    handleUpdateGroup(index, groupIndex, "grossWeight", parseFloat(e.target.value) || 0)
+                                  }
+                                />
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <TextField
+                                  type="number"
+                                  size="small"
+                                  fullWidth
+                                  value={group.netWeight}
+                                  onChange={(e) =>
+                                    handleUpdateGroup(index, groupIndex, "netWeight", parseFloat(e.target.value) || 0)
+                                  }
+                                />
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <IconButton
+                                  color="error"
+                                  onClick={() => handleDeleteGroup(index, groupIndex)}
+                                >
+                                  <Delete />
+                                </IconButton>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <div className="flex justify-end mt-2">
+                        <IconButton color="primary" onClick={() => handleAddGroup(index)}>
+                          <Add />
+                        </IconButton>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           ))}
@@ -520,39 +593,109 @@ const CrearMovIngresoHilado: React.FC = () => {
         </form>
       </div>
 
-      <Dialog open={openOrdenesDialog} onClose={toggleOrdenesDialog} maxWidth="md"
-      PaperProps={{
-        sx: {
-          ...( !isSmallScreen && !isMediumScreen && {
-            marginLeft: "280px", 
-            maxWidth: "calc(100% - 280px)", 
-          }),
-        },
-      }}
-        >
+      <Dialog 
+        open={openOrdenesDialog} 
+        onClose={toggleOrdenesDialog} 
+        maxWidth="md"
+        fullScreen={isSmallScreen}
+        PaperProps={{
+          sx: {
+            ...(!isSmallScreen && !isMediumScreen && {
+              marginLeft: "280px",
+              maxWidth: "calc(100% - 280px)",
+            }),
+            maxHeight: "calc(100% - 64px)",
+            overflowY: "auto",
+          },
+        }}
+      >
         <DialogTitle>Seleccionar Orden de Compra</DialogTitle>
         <DialogContent>
-          <div className="mb-4">
-            <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>
-              Seleccionar Periodo de la O/C
-            </Typography>
-            <Select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
+          <div className="flex items-center gap-4 mb-4">
+            {/* Buscador general */}
+            <TextField
+              placeholder="Buscar..."
+              size="small"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: <Search className="text-gray-400 mr-2" />,
+              }}
+              style={{ minWidth: 200 }}
+            />
+
+            {/* Botón de Filtrar por Fecha */}
+            <Button
               variant="outlined"
-              displayEmpty
-              style={{ backgroundColor: "#fff" }}
+              onClick={handleFilterClick}
+              startIcon={<FilterList />}
+              style={{ 
+                borderColor: '#1976d2',
+                color: '#1976d2',
+              }}
             >
-              <MenuItem value="" disabled>
-                Seleccionar año
-              </MenuItem>
-              {[2023, 2024, 2025].map((year) => (
-                <MenuItem key={year} value={year}>
-                  {year}
-                </MenuItem>
-              ))}
-            </Select>
+              FILTRAR POR FECHA
+            </Button>
+
+            {/* Selector de período */}
+            <div className="flex items-center gap-2">
+              <Typography variant="body2">
+                Período:
+              </Typography>
+              <Select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                size="small"
+                style={{ minWidth: 100 }}
+              >
+                {[2023, 2024, 2025].map((year) => (
+                  <MenuItem key={year} value={year}>
+                    {year}
+                  </MenuItem>
+                ))}
+              </Select>
+            </div>
           </div>
+
+          {/* Menú desplegable de filtros de fecha */}
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleFilterClose}
+            PaperProps={{
+              style: {
+                padding: '16px',
+                minWidth: '250px',
+              },
+            }}
+          >
+            <div className="p-3 space-y-4">
+              <TextField
+                label="Fecha Inicio"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                fullWidth
+                size="small"
+              />
+              <TextField
+                label="Fecha Fin"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                fullWidth
+                size="small"
+              />
+            </div>
+          </Menu>
+
+          {/* Tabla de órdenes filtradas */}
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 text-white uppercase text-sm">
@@ -564,8 +707,8 @@ const CrearMovIngresoHilado: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {ordenesCompra && ordenesCompra.length > 0 ? (
-                ordenesCompra
+              {filteredOrders.length > 0 ? (
+                filteredOrders
                   .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
                   .map((orden, index) => (
                     <tr
@@ -601,15 +744,17 @@ const CrearMovIngresoHilado: React.FC = () => {
               ) : (
                 <tr>
                   <td colSpan={6} className="text-center py-4">
-                    No hay órdenes de compra disponibles.
+                    No se encontraron órdenes de compra.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+
+          {/* Paginación */}
           <TablePagination
             component="div"
-            count={ordenesCompra ? ordenesCompra.length : 0}
+            count={filteredOrders.length}
             page={pagina}
             onPageChange={(_, newPage) => setPagina(newPage)}
             rowsPerPage={filasPorPagina}
@@ -626,13 +771,13 @@ const CrearMovIngresoHilado: React.FC = () => {
       <Dialog
         open={openPurchaseOrderDialog}
         onClose={handleClosePurchaseOrderDialog}
-        fullScreen={isSmallScreen}
         maxWidth="md"
+        fullScreen={isSmallScreen}
         PaperProps={{
           sx: {
-            ...( !isSmallScreen && !isMediumScreen && {
-              marginLeft: "280px", 
-              maxWidth: "calc(100% - 280px)", 
+            ...(!isSmallScreen && !isMediumScreen && {
+              marginLeft: "280px",
+              maxWidth: "calc(100% - 280px)",
             }),
             maxHeight: "calc(100% - 64px)",
             overflowY: "auto",
@@ -700,13 +845,13 @@ const CrearMovIngresoHilado: React.FC = () => {
       <Dialog
         open={openYarnDialog}
         onClose={handleCloseYarnDialog}
-        fullScreen={isSmallScreen}
         maxWidth="md"
+        fullScreen={isSmallScreen}
         PaperProps={{
           sx: {
-            ...( !isSmallScreen && !isMediumScreen && {
-              marginLeft: "280px", 
-              maxWidth: "calc(100% - 280px)", 
+            ...(!isSmallScreen && !isMediumScreen && {
+              marginLeft: "280px",
+              maxWidth: "calc(100% - 280px)",
             }),
             maxHeight: "calc(100% - 64px)",
             overflowY: "auto",

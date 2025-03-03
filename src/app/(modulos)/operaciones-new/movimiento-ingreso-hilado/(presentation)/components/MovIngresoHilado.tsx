@@ -97,12 +97,12 @@ const MovIngresoHilado: React.FC = () => {
   };
 
   const handleCreateMovIngresoHilado = () => {
-    router.push("/operaciones-new/ingreso-hilado/crear-mov-ingreso-hilado");
+    router.push("/operaciones-new/movimiento-ingreso-hilado/crear-movimiento-ingreso-hilado");
   };
 
   const handleDetailsClick = (entryNumber: string) => {
     localStorage.setItem("selectedPeriod", JSON.stringify(period)); // Guarda el periodo en localStorage
-    router.push(`/operaciones-new/ingreso-hilado/detalles-mov-ingreso-hilado/${entryNumber}`); // Redirige al componente de detalles
+    router.push(`/operaciones-new/movimiento-ingreso-hilado/detalle-movimiento-ingreso-por-orden-compra/${entryNumber}`); // Redirige al componente de detalles
   };
 
   const fetchOCbyId = async (purchaseOrderNumber: string) => {
@@ -258,7 +258,7 @@ const MovIngresoHilado: React.FC = () => {
                   ].map((col, index) => (
                     <th
                       key={index}
-                      className="px-4 py-4 text-center font-normal text-white"
+                      className="px-4 py-4 text-center font-normal text-white" 
                     >
                       {col}
                     </th>
@@ -284,7 +284,7 @@ const MovIngresoHilado: React.FC = () => {
                       <td className="border-b border-[#eee] px-4 py-5">
                         {hilado.creationDate}
                       </td>
-                      <td className="border-b border-[#eee] px-4 py-5">
+                      <td className="border-b border-[#eee] px-4 py-5" style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
                         {suppliers.map((supplier) =>
                           supplier.code === hilado.supplierCode
                             ? supplier.name
