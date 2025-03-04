@@ -42,31 +42,40 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
   const ERROR_COLOR = "#d32f2f";
 
   const CrearMovSalidaHilado: React.FC = () => {
-  const [dataIngreso, setDataIngreso] = useState<any>(null); // Detalles del ingreso
-  const [dataOS, setDataOS] = useState<any>(null); // Detalles de la orden de servicio
-  const [FabricInfo, setFabricInfo] = useState<any>(null); // Detalles de fibras
-  const [ingresos, setIngresos] = useState<any[]>([]);
-  const [openFabricDialog, setOpenFabricDialog] = useState(false); // Estado del diálogo de información de tejido
-  const [isSmallScreen, setIsSmallScreen] = useState(false); // Estado de tamaño de pantalla
-  const [isMediumScreen, setIsMediumScreen] = useState(false);  // Estado de tamaño de pantalla
-  const [ordenesServicio, setOrdenesServicio] = useState<ServiceOrder[]>([]);
-  const [selectedGroups, setSelectedGroups] = useState<any[]>([]);
-  const [isIngresoDialogOpen, setIsIngresoDialogOpen] = useState<boolean>(false);
-  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState<boolean>(false);
-  const [pagina, setPagina] = useState(0);
-  const [filasPorPagina, setFilasPorPagina] = useState(10);
+  // PROVEEDOR Y DIRECCION
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [typeFabric, setTypeFabric] = useState<FabricType[]>([]);
+  const [selectedSupplier, setSelectedSupplier] = useState<string>("");
+  const [selectedAddress, setSelectedAddress] = useState<string>("");
+  const [period, setPeriod] = useState<number>(2025); // Período actualizado
+
+  // TODO CON RESPECTO A INGRESOS
+  const [dataIngreso, setDataIngreso] = useState<any>(null); // Detalles del ingreso
+  const [ingresos, setIngresos] = useState<any[]>([]);
+  const [selectedEntries, setselectedEntries] = useState<YarnPurchaseEntry[]>([]); // Ingresos seleccionados
+  const [isIngresoDialogOpen, setIsIngresoDialogOpen] = useState<boolean>(false);
+
+  // TODO CON RESPECTO A ORDENES DE SERVICIO
+  const [ordenesServicio, setOrdenesServicio] = useState<ServiceOrder[]>([]); // Lista de órdenes de servicio
+  const [dataOS, setDataOS] = useState<any>(null); // Detalles de la orden de servicio
+  const [openFabricDialog, setOpenFabricDialog] = useState(false); // Estado del diálogo de información de tejido
+  const [FabricInfo, setFabricInfo] = useState<any>(null); // Detalles de fibras
+  const [typeFabric, setTypeFabric] = useState<FabricType[]>([]); // Tipos de fibras
   const [selectTypeFabric, setSelectedTypeFabric] = useState<string>("");
   const [selectInfoFabric, setSelectedInfoFabric] = useState<Fabric | null>(null); // Información del tejido seleccionado
-  const [selectedSupplier, setSelectedSupplier] = useState<string>("");
+  const [selectInfoFabricRecipe, setSelectedInfoFabricRecipe] = useState<any>(null); // Información de la receta del tejido seleccionado
+  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState<boolean>(false);
+
+  // FRAMEWORK
+
+  const [isSmallScreen, setIsSmallScreen] = useState(false); // Estado de tamaño de pantalla
+  const [isMediumScreen, setIsMediumScreen] = useState(false);  // Estado de tamaño de pantalla
+  const [selectedGroups, setSelectedGroups] = useState<any[]>([]);
+  const [pagina, setPagina] = useState(0);
+  const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedAddress, setSelectedAddress] = useState<string>("");
-  const [period, setPeriod] = useState<number>(2025);
   const [snackbarMessage, setSnackbarMessage] = useState<string>("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
   const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [selectedEntries, setselectedEntries] = useState<YarnPurchaseEntry[]>([]);
   
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbarMessage(message);
@@ -202,7 +211,7 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
       });
       console.log("Detalles de la orden de servicio:", serviceOrderDetails);
       loadFabricInfo(serviceOrderDetails.detail); // Carga la información del tejido
-      sleepES5(75); // Espera 75ms antes de cargar la información
+      sleepES5(100); // Espera 75ms antes de cargar la información
       setIsServiceDialogOpen(false); // Cierra el diálogo después de seleccionar
     } catch (error) {
       console.error("Error al cargar la orden de servicio:", error);
@@ -217,6 +226,7 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
         const data = await fetchFabricSearchId(yarnId);
         console.log(data);
         setSelectedInfoFabric(data);
+        setSelectedInfoFabricRecipe(data.recipe);
       } catch (error) {
         console.error("Error al cargar los datos del hilo:", error);
       }
@@ -523,15 +533,42 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
               <div className="mb-4 text-black">
                 <p className="mb-2"><strong>ID:</strong> {selectInfoFabric.id} </p>
                 <p className="mb-2"><strong>Descripción:</strong> {selectInfoFabric.purchaseDescription} </p>
+                <p className="mb-2"><strong>Color:</strong> {selectInfoFabric.color ? selectInfoFabric.color : "Sin color"} </p>
+                <p className="mb-2"><strong>Tipo:</strong> {selectInfoFabric.fabricType.value} </p>
+                <p className="mb-2"><strong>Densidad:</strong> {selectInfoFabric.density} </p>
+                <p className="mb-2"><strong>Ancho:</strong> {selectInfoFabric.width} </p>
                 <p className="mb-2"><strong>Patrón estructural:</strong> {selectInfoFabric.structurePattern} </p>
-                <p className="mb-2"><strong>Fecha de Vencimiento:</strong> {selectInfoFabric.id} </p>
-                <p className="mb-2"><strong>Método de Pago:</strong> {selectInfoFabric.id} </p>
-                <p className="mb-2"><strong>Estado:</strong> {selectInfoFabric.id} </p>
-                <p className="mb-2"><strong>Moneda:</strong> {selectInfoFabric.id} </p>
               </div>
             ) : (
               <p>Cargando información...</p>
             )}
+            <div className="max-w-full overflow-x-auto">
+            <h4 className="text-lg font-semibold text-black mb-4">Información de la receta</h4>
+              <table className="w-full table-auto border-collapse">
+                <thead>
+                  <tr className="bg-blue-900 uppercase text-center text-white">
+                    <th className="px-4 py-4 text-center font-normal">Descripción</th>
+                    <th className="px-4 py-4 text-center font-normal">Diametro</th>
+                    <th className="px-4 py-4 text-center font-normal">Galga</th>
+                    <th className="px-4 py-4 text-center font-normal">Numero de cabos</th>
+                    <th className="px-4 py-4 text-center font-normal">Proporción</th>
+                    <th className="px-4 py-4 text-center font-normal">Longitud de puntada</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectInfoFabricRecipe?.map((item, index) => (
+                    <tr key={index} className="text-center text-black">
+                      <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.yarn.description}</td>
+                      <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.diameter}</td>
+                      <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.galgue}</td>
+                      <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.numPlies}</td>
+                      <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.proportion}</td>
+                      <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.stitchLength}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </DialogContent>
           <DialogActions>
             <Button
