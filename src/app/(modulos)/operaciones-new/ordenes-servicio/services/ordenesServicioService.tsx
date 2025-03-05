@@ -17,6 +17,30 @@ export const fetchServiceOrderById = async (orderId: string) => {
   const response = await instance.get<ServiceOrder>(`/operations/v1/service-orders/${orderId}`);
   return response.data;
 };
+
+export const fetchServiceOrderBySupplier = async (
+  supplierId: string,
+  period: number,
+  limit: number = 10,
+  offset: number = 0,
+  includeAnnulled: boolean = false,
+  includeDetail: boolean = false
+): Promise<ServiceOrderResponse> => {
+  const response = await instance.get<ServiceOrderResponse>(
+    `/operations/v1/service-orders/`,
+    {
+      params: { 
+        supplierIds: supplierId, 
+        period, 
+        limit, 
+        offset, 
+        includeAnnulled, 
+        includeDetail 
+      },
+    }
+  );
+  return response.data;
+};
   
 export const updateServiceOrder = async (
   orderId: string,

@@ -35,9 +35,13 @@ import {
   fetchServiceOrders,
   fetchServiceOrderById,
   fetchSuppliers,
+  fetchServiceOrderBySupplier,
 } from "../../../ordenes-servicio/services/ordenesServicioService";
+import {
+  fetchYarnbyId,
+} from "../../../hilados/services/hiladoService";
 import { createYarnDispatch } from "../../services/movSalidaHiladoService";
-import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEntryResponse, Fabric, FabricType } from "../../../models/models";
+import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEntryResponse, Fabric, FabricType } from "../../../models/models";
 
   const ERROR_COLOR = "#d32f2f";
 
@@ -58,10 +62,12 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
   const [ordenesServicio, setOrdenesServicio] = useState<ServiceOrder[]>([]); // Lista de órdenes de servicio
   const [dataOS, setDataOS] = useState<any>(null); // Detalles de la orden de servicio
   const [openFabricDialog, setOpenFabricDialog] = useState(false); // Estado del diálogo de información de tejido
+  const [openYarnDialog, setOpenYarnDialog] = useState(false); // Estado del diálogo de información de tejido
   const [FabricInfo, setFabricInfo] = useState<any>(null); // Detalles de fibras
   const [typeFabric, setTypeFabric] = useState<FabricType[]>([]); // Tipos de fibras
   const [selectTypeFabric, setSelectedTypeFabric] = useState<string>("");
   const [selectInfoFabric, setSelectedInfoFabric] = useState<Fabric | null>(null); // Información del tejido seleccionado
+  const [selectInfoYarn, setSelectedInfoYarn] = useState<Yarn | null>(null); // Información del tejido seleccionado
   const [selectInfoFabricRecipe, setSelectedInfoFabricRecipe] = useState<any>(null); // Información de la receta del tejido seleccionado
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState<boolean>(false);
 
@@ -166,6 +172,17 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
     }
   }
 
+  const FilterServicebySupplier = async () => {
+    try {
+      console.log("proveedor:",selectedSupplier);
+      console.log("periodo:",period);
+      const aux = await fetchServiceOrderBySupplier(selectedSupplier,period);
+      console.log("aux:",aux);
+    } catch (error) {
+      console.error("Error al cargar los tipos de tejido:", error);
+    }
+  }
+
   const handleProveedorChange = (event: SelectChangeEvent<string>) => {
     setSelectedSupplier(event.target.value);
   };
@@ -219,14 +236,26 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
     }
   };
 
-   const handleOpenFabricDialog = async (yarnId: number) => {
+   const handleOpenFabricDialog = async (FabricId: number) => {
     setOpenFabricDialog(true);
     setSelectedInfoFabric(null);
       try {
-        const data = await fetchFabricSearchId(yarnId);
-        console.log(data);
+        const data = await fetchFabricSearchId(FabricId);
         setSelectedInfoFabric(data);
         setSelectedInfoFabricRecipe(data.recipe);
+        console.log("InfoFabricRecipe:", data.recipe);
+      } catch (error) {
+        console.error("Error al cargar los datos del hilo:", error);
+      }
+    };
+
+    const handleOpenYarnDialog = async (yarnId: string) => {
+      setOpenYarnDialog(true);
+      setSelectedInfoYarn(null);
+      try {
+        const data = await fetchYarnbyId(yarnId);
+        console.log("Yarn data:",data);
+        setSelectedInfoYarn(data);
       } catch (error) {
         console.error("Error al cargar los datos del hilo:", error);
       }
@@ -234,6 +263,10 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
 
     const handleCloseFabricDialog = () => {
       setOpenFabricDialog(false);
+    };
+
+    const handleCloseYarnDialog = () => {
+      setOpenYarnDialog(false);
     };
 
   const toggleGroupSelection = (newGroup: any) => {
@@ -509,78 +542,162 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
           </div>
         )}
 
-<Dialog // Diálogo para ver la información del tejido
-          open={openFabricDialog}
-          onClose={handleCloseFabricDialog}
-          fullScreen={isSmallScreen}
-          maxWidth="md"
-          PaperProps={{
-            sx: {
-              ...( !isSmallScreen && !isMediumScreen && {
-                marginLeft: "280px", 
-                maxWidth: "calc(100% - 280px)", 
-              }),
-              maxHeight: "calc(100% - 64px)",
-              overflowY: "auto",
-            },
-          }}
-        >
-          <DialogContent>
-            <h3 className="text-lg font-semibold text-black mb-4">
-              Información del tejido
-            </h3>
-            {selectInfoFabric ? (
-              <div className="mb-4 text-black">
-                <p className="mb-2"><strong>ID:</strong> {selectInfoFabric.id} </p>
-                <p className="mb-2"><strong>Descripción:</strong> {selectInfoFabric.purchaseDescription} </p>
-                <p className="mb-2"><strong>Color:</strong> {selectInfoFabric.color ? selectInfoFabric.color : "Sin color"} </p>
-                <p className="mb-2"><strong>Tipo:</strong> {selectInfoFabric.fabricType.value} </p>
-                <p className="mb-2"><strong>Densidad:</strong> {selectInfoFabric.density} </p>
-                <p className="mb-2"><strong>Ancho:</strong> {selectInfoFabric.width} </p>
-                <p className="mb-2"><strong>Patrón estructural:</strong> {selectInfoFabric.structurePattern} </p>
-              </div>
-            ) : (
-              <p>Cargando información...</p>
-            )}
-            <div className="max-w-full overflow-x-auto">
-            <h4 className="text-lg font-semibold text-black mb-4">Información de la receta</h4>
-              <table className="w-full table-auto border-collapse">
-                <thead>
-                  <tr className="bg-blue-900 uppercase text-center text-white">
-                    <th className="px-4 py-4 text-center font-normal">Descripción</th>
-                    <th className="px-4 py-4 text-center font-normal">Diametro</th>
-                    <th className="px-4 py-4 text-center font-normal">Galga</th>
-                    <th className="px-4 py-4 text-center font-normal">Numero de cabos</th>
-                    <th className="px-4 py-4 text-center font-normal">Proporción</th>
-                    <th className="px-4 py-4 text-center font-normal">Longitud de puntada</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/*Proveedor del Hilo (IMPORTANTE)*/}
-                  {selectInfoFabricRecipe?.map((item, index) => (
-                    <tr key={index} className="text-center text-black">
-                      <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.yarn.description}</td>
-                      <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.diameter}</td>
-                      <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.galgue}</td>
-                      <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.numPlies}</td>
-                      <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.proportion}</td>
-                      <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.stitchLength}</td>
+  <Dialog // Diálogo para ver la información del tejido
+            open={openFabricDialog}
+            onClose={handleCloseFabricDialog}
+            fullScreen={isSmallScreen}
+            maxWidth="md"
+            PaperProps={{
+              sx: {
+                ...( !isSmallScreen && !isMediumScreen && {
+                  marginLeft: "280px", 
+                  maxWidth: "calc(100% - 280px)", 
+                }),
+                maxHeight: "calc(100% - 64px)",
+                overflowY: "auto",
+              },
+            }}
+          >
+            <DialogContent>
+              <h3 className="text-lg font-semibold text-black mb-4">
+                Información del tejido
+              </h3>
+              {selectInfoFabric ? (
+                <div className="mb-4 text-black">
+                  <p className="mb-2"><strong>ID:</strong> {selectInfoFabric.id} </p>
+                  <p className="mb-2"><strong>Descripción:</strong> {selectInfoFabric.purchaseDescription} </p>
+                  <p className="mb-2"><strong>Color:</strong> {selectInfoFabric.color ? selectInfoFabric.color : "Sin color"} </p>
+                  <p className="mb-2"><strong>Tipo:</strong> {selectInfoFabric.fabricType.value} </p>
+                  <p className="mb-2"><strong>Densidad:</strong> {selectInfoFabric.density} </p>
+                  <p className="mb-2"><strong>Ancho:</strong> {selectInfoFabric.width} </p>
+                  <p className="mb-2"><strong>Patrón estructural:</strong> {selectInfoFabric.structurePattern} </p>
+                </div>
+              ) : (
+                <p>Cargando información...</p>
+              )}
+              <div className="max-w-full overflow-x-auto">
+              <h4 className="text-lg font-semibold text-black mb-4">Información de la receta</h4>
+                <table className="w-full table-auto border-collapse">
+                  <thead>
+                    <tr className="bg-blue-900 uppercase text-center text-white">
+                      <th className="px-4 py-4 text-center font-normal">Descripción</th>
+                      <th className="px-4 py-4 text-center font-normal">Diametro</th>
+                      <th className="px-4 py-4 text-center font-normal">Galga</th>
+                      <th className="px-4 py-4 text-center font-normal">Numero de cabos</th>
+                      <th className="px-4 py-4 text-center font-normal">Proporción</th>
+                      <th className="px-4 py-4 text-center font-normal">Longitud de puntada</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={handleCloseFabricDialog}
-              variant="contained"
-              style={{ backgroundColor: ERROR_COLOR, color: "#fff" }}
-            >
-              Cerrar
-            </Button>
-          </DialogActions>
-        </Dialog>
+                  </thead>
+                  <tbody>
+                    {/*Proveedor del Hilo (IMPORTANTE)*/}
+                    {selectInfoFabricRecipe?.map((item, index) => (
+                      <tr key={index} className="text-center text-black">
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.yarn.description}<IconButton 
+                        onClick={() => handleOpenYarnDialog(item.yarn.id)}>  {/*Botón para ver la información del hilo?*/}
+                            <VisibilityIcon 
+                            style={{ color: "#1976d2" }}
+                            />
+                          </IconButton></td>
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.diameter}</td>
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.galgue}</td>
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.numPlies}</td>
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.proportion}</td>
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.stitchLength}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={handleCloseFabricDialog}
+                variant="contained"
+                style={{ backgroundColor: ERROR_COLOR, color: "#fff" }}
+              >
+                Cerrar
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          <Dialog // Diálogo para ver la información del Yarn
+            open={openYarnDialog}
+            onClose={handleCloseYarnDialog}
+            fullScreen={isSmallScreen}
+            maxWidth="md"
+            PaperProps={{
+              sx: {
+                ...( !isSmallScreen && !isMediumScreen && {
+                  marginLeft: "280px", 
+                  maxWidth: "calc(100% - 280px)", 
+                }),
+                maxHeight: "calc(100% - 64px)",
+                overflowY: "auto",
+              },
+            }}
+          >
+            <DialogContent>
+              <h3 className="text-lg font-semibold text-black mb-4">
+                Información del hilado
+              </h3>
+              {selectInfoYarn ? (
+                <div className="mb-4 text-black">
+                  <p className="mb-2"><strong>ID:</strong> {selectInfoYarn.id} </p>
+                  <p className="mb-2"><strong>Descripción:</strong> {selectInfoYarn.purchaseDescription} </p>
+                  <p className="mb-2"><strong>Color:</strong> {selectInfoYarn.color?.name || "Sin color"} </p>
+                  <p className="mb-2"><strong>Recuento de Hilos:</strong> {selectInfoYarn.yarnCount?.value || "---"} </p>
+                  <p className="mb-2"><strong>Acabado de Hilado:</strong> {selectInfoYarn.spinningMethod?.value || "---"} </p>
+                  <p className="mb-2"><strong>Manufacturado en:</strong> {selectInfoYarn.manufacturedIn?.value || "---"} </p>
+                  <p className="mb-2"><strong>Distinciones: </strong> 
+                  {selectInfoYarn.distinctions?.length > 0 
+                    ? selectInfoYarn.distinctions.map((dist, index) => (
+                        <span key={dist.id}>{dist.value}{index < selectInfoYarn.distinctions.length - 1 ? ", " : ""}</span>
+                      ))
+                    : "Ninguna"}
+                  </p>
+                  <p className="mb-2">
+                    <strong>Activo:</strong> {selectInfoYarn.isActive ? "Si" : "No activo"}
+                  </p>
+                </div>
+              ) : (
+                <p>Cargando información...</p>
+              )}
+              <div className="max-w-full overflow-x-auto">
+              <h4 className="text-lg font-semibold text-black mb-4">Información de la receta</h4>
+                <table className="w-full table-auto border-collapse">
+                  <thead>
+                    <tr className="bg-blue-900 uppercase text-center text-white">
+                      <th className="px-4 py-4 text-center font-normal">Fibra</th>
+                      <th className="px-4 py-4 text-center font-normal">Proporcion</th>
+                      <th className="px-4 py-4 text-center font-normal">Origen</th>
+                      <th className="px-4 py-4 text-center font-normal">Denominacion</th>
+                      <th className="px-4 py-4 text-center font-normal">Color</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectInfoYarn?.recipe.map((item, index) => (
+                      <tr key={index} className="text-center text-black">
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.fiber.category.value}</td>
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.proportion}</td>
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.fiber.origin}</td>
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.fiber.denomination.value}</td>
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.fiber.color?.name || "Sin color"} </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={handleCloseYarnDialog}
+                variant="contained"
+                style={{ backgroundColor: ERROR_COLOR, color: "#fff" }}
+              >
+                Cerrar
+              </Button>
+            </DialogActions>
+          </Dialog>  
 
         {/* Diálogo para seleccionar movimientos de ingreso */}
         <Dialog
@@ -705,7 +822,8 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
                   </tr>
                 </thead>
                 <tbody>
-                  {ordenesServicio.slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina).map((orden) => (
+                  {ordenesServicio.slice(pagina * filasPorPagina,
+                   pagina * filasPorPagina + filasPorPagina).map((orden) => (
                     <tr key={orden.id} className="text-center">
                       <td className="border-b border-gray-300 px-4 py-5">{orden.id}</td>
                       <td className="border-b border-gray-300 px-4 py-5">{orden.supplierId}</td>
