@@ -22,11 +22,12 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import { Edit, ExpandMore, ExpandLess, Save, Cancel, Add, Delete, Block } from "@mui/icons-material";
+import { Edit, ExpandMore, ExpandLess, Save, Cancel, Add, Delete, Block, Visibility as VisibilityIcon } from "@mui/icons-material";
 import { useRouter, useParams } from "next/navigation";
 import { fetchYarnPurchaseEntryDetails, updateYarnPurchaseEntry, anulateYarnPurchaseEntry,
-  checkIfYarnPurchaseEntryIsUpdatable, fetchYarnPurchaseEntries } from "../../services/movIngresoHiladoService";
+  checkIfYarnPurchaseEntryIsUpdatable, } from "../../services/movIngresoHiladoService";
 import { YarnPurchaseEntry } from "../../../models/models";
+import { fetchYarnbyId } from "../../../hilados/services/hiladoService";
 
 const DetallesMovIngresoHilado: React.FC = () => {
   const router = useRouter();
@@ -44,6 +45,11 @@ const DetallesMovIngresoHilado: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
+  const [openYarnDialog, setOpenYarnDialog] = useState(false);
+  const [selectedYarn, setSelectedYarn] = useState(null);
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const [isMediumScreen, setIsMediumScreen] = useState(false);
+
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
   };
@@ -57,7 +63,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
   const handleGenerateSalida = () => {
     if (detalle) {
       const payload = {
-        entryNumber: entryNumber,
+        entryNumber: detalle.entryNumber,
         groups: detalle.detail.map((item) => ({
           groupNumber: item.itemNumber, // Usar groupNumber o cualquier identificador único
           coneCount: item.guideConeCount,
@@ -66,10 +72,11 @@ const DetallesMovIngresoHilado: React.FC = () => {
           netWeight: item.guideNetWeight,
         })),
       };
+      
       localStorage.setItem("entryNumber", JSON.stringify(payload));
+      router.push(
+        `/operaciones-new/salida-hilado/crear-mov-salida-hilado`);
     }
-    router.push(
-      `/operaciones-new/salida-hilado/crear-mov-salida-hilado`);
   };
     
 
@@ -188,6 +195,21 @@ const DetallesMovIngresoHilado: React.FC = () => {
       console.error("Error al guardar los cambios:", error);
     }
   };     
+
+  const handleOpenYarnDialog = async (yarnId: string) => {
+    try {
+      const data = await fetchYarnbyId(yarnId);
+      setSelectedYarn(data);
+      setOpenYarnDialog(true);
+    } catch (error) {
+      console.error("Error fetching yarn data:", error);
+    }
+  };
+
+  const handleCloseYarnDialog = () => {
+    setOpenYarnDialog(false);
+    setSelectedYarn(null);
+  };
 
   if (isLoading) {
     return (
@@ -318,7 +340,12 @@ const DetallesMovIngresoHilado: React.FC = () => {
                 <React.Fragment key={index}>
                   <tr className="text-center text-black">
                     <td className="border-b border-gray-300 px-4 py-5">{item.itemNumber}</td>
-                    <td className="border-b border-gray-300 px-4 py-5">{item.yarnId}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">
+                      {item.yarnId}
+                      <IconButton onClick={() => handleOpenYarnDialog(item.yarnId)}>
+                        <VisibilityIcon style={{ color: "#1976d2" }} />
+                      </IconButton>
+                    </td>
                     <td className="border-b border-gray-300 px-4 py-5">{item.guidePackageCount}</td>
                     <td className="border-b border-gray-300 px-4 py-5">{item.guideConeCount}</td>
                     <td className="border-b border-gray-300 px-4 py-5">{detalle.mecsaBatch}</td>
@@ -783,6 +810,100 @@ const DetallesMovIngresoHilado: React.FC = () => {
             color="primary"
           >
             Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={openYarnDialog}
+        onClose={handleCloseYarnDialog}
+        fullScreen={isSmallScreen}
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            ...(!isSmallScreen && !isMediumScreen && {
+              marginLeft: "200px",
+              maxWidth: "calc(100% - 280px)",
+            }),
+            maxHeight: "calc(100% - 64px)",
+            overflowY: "auto",
+          },
+        }}
+      >
+        <DialogContent>
+          <h3 className="text-lg font-semibold text-black mb-4">
+            Información del Hilado
+          </h3>
+          {selectedYarn ? (
+            <div className="mb-4 text-black">
+              <p className="mb-2"><strong>Descripción:</strong> {selectedYarn.description}</p>
+              <p className="mb-2"><strong>Título:</strong> {selectedYarn.yarnCount?.value || "--"}</p>
+              <p className="mb-2"><strong>Acabado:</strong> {selectedYarn.spinningMethod?.value || "--"}</p>
+              <p className="mb-2"><strong>Barcode:</strong> {selectedYarn.barcode}</p>
+              <p className="mb-2"><strong>Color:</strong> {selectedYarn.color?.name || "No teñido"}</p>
+              <p className="mb-2"><strong>Fabricado en:</strong> {selectedYarn.manufacturedIn?.value || "--"}</p>
+              <p className="mb-2">
+                <strong>Distinciones:</strong>{" "}
+                {selectedYarn.distinctions && selectedYarn.distinctions.length > 0
+                  ? selectedYarn.distinctions.map((dist) => dist.value).join(", ")
+                  : "--"
+                }
+              </p>
+            </div>
+          ) : (
+            <p>Cargando información del hilado...</p>
+          )}
+          
+          <h3 className="text-lg font-semibold text-black mb-2 mt-4">Receta</h3>
+          <div className="max-w-full overflow-x-auto">
+            <table className="w-full table-auto border-collapse">
+              <thead>
+                <tr className="bg-blue-900 uppercase text-center text-white">
+                  <th className="px-4 py-4 text-center font-normal">Categoría</th>
+                  <th className="px-4 py-4 text-center font-normal">Denominación</th>
+                  <th className="px-4 py-4 text-center font-normal">Procedencia</th>
+                  <th className="px-4 py-4 text-center font-normal">Color</th>
+                  <th className="px-4 py-4 text-center font-normal">Proporción (%)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedYarn?.recipe?.length > 0 ? (
+                  selectedYarn.recipe.map((item, index) => (
+                    <tr key={index} className="text-center text-black">
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.category?.value || "-"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.denomination?.value || "-"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.origin || "-"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.color?.name || "Crudo"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.proportion}%
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="text-center py-4 text-gray-500">
+                      No hay datos disponibles.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseYarnDialog}
+            variant="contained"
+            style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+          >
+            Cerrar
           </Button>
         </DialogActions>
       </Dialog>
