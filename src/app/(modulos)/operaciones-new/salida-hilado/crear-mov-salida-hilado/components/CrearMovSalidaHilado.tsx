@@ -556,6 +556,7 @@ import { ServiceOrder, Supplier, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEn
                   </tr>
                 </thead>
                 <tbody>
+                  {/*Proveedor del Hilo (IMPORTANTE)*/}
                   {selectInfoFabricRecipe?.map((item, index) => (
                     <tr key={index} className="text-center text-black">
                       <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.yarn.description}</td>
