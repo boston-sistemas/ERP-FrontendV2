@@ -27,6 +27,7 @@ import { Add, Details } from "@mui/icons-material";
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   fetchYarnPurchaseEntries,
+  fetchYarnIncomeEntries,
   fetchYarnPurchaseEntryDetails,
   fetchFabricTypes,
   fetchFabricSearchId,
@@ -109,10 +110,10 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
     // Cargar ingresos y órdenes de servicio cuando cambie el período
-    loadIngresosAndOrders();
-  }, [period]); // Dependencia del estado `period`  
+    FilterIngresosbySupplier();
+  }, [period]); // Dependencia del estado `period`
   
 
   useEffect(() => {
@@ -172,12 +173,20 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
     }
   }
 
+  const FilterIngresosbySupplier = async () => {
+    try {
+      const response = await fetchYarnIncomeEntries(period,selectedSupplier);
+      console.log("Ingresos:",response);
+      setIngresos(response.yarnPurchaseEntries || []);
+    } catch (error) {
+      console.error("Error al cargar los tipos de tejido:", error);
+    }
+  }
+
   const FilterServicebySupplier = async () => {
     try {
-      console.log("proveedor:",selectedSupplier);
-      console.log("periodo:",period);
-      const aux = await fetchServiceOrderBySupplier(selectedSupplier,period);
-      console.log("aux:",aux);
+      const response = await fetchServiceOrderBySupplier(selectedSupplier,period);
+      setOrdenesServicio(response.serviceOrders || []);
     } catch (error) {
       console.error("Error al cargar los tipos de tejido:", error);
     }
@@ -353,10 +362,18 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
     }
   };
   
-  const handleOpenIngresoDialog = () => setIsIngresoDialogOpen(true);
+  const handleOpenIngresoDialog = () => 
+    {FilterIngresosbySupplier();
+      sleepES5(100); // Espera 75ms antes de cargar la información
+    setIsIngresoDialogOpen(true);
+    };
   const handleCloseIngresoDialog = () => setIsIngresoDialogOpen(false);
 
-  const handleOpenServiceDialog = () => setIsServiceDialogOpen(true);
+  const handleOpenServiceDialog = () => 
+    {FilterServicebySupplier();
+      sleepES5(100); // Espera 75ms antes de cargar la información
+      setIsServiceDialogOpen(true);
+    };
   const handleCloseServiceDialog = () => setIsServiceDialogOpen(false);
 
 
@@ -427,7 +444,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
           </div>
         </div>
       <div>
-        {/* Movimiento de ingreso */}
+      {/* Movimiento de ingreso */}
         <div className="flex items-center justify-between mb-4">
           <p className="text-lg">
             Movimiento de Ingreso Asociado:{" "}
@@ -440,17 +457,102 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
           </div>
         </div>
 
-        {/* Orden de Servicio */}
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-lg">
-            Orden de Servicio Asociada: {dataOS ? <strong>{dataOS.id}</strong> : "Ninguna"}
-          </p>
-          <div>
-            <Button style={{ backgroundColor: "#1976d2", color: "#fff" }} onClick={handleOpenServiceDialog}>
-              Seleccionar Orden de Servicio
+        {/* Diálogo para seleccionar movimientos de ingreso */}
+        <Dialog
+            open={isIngresoDialogOpen}
+            onClose={handleCloseIngresoDialog}
+            fullWidth
+            maxWidth="lg"
+            sx={{
+              "& .MuiDialog-paper": {
+                width: "70%", // Incrementa el ancho
+                marginLeft: "20%", // Ajusta el margen para mantenerlo centrado en el espacio restante
+              },
+            }}
+          >
+          <DialogTitle>Seleccionar Movimiento de Ingreso</DialogTitle>
+          <DialogContent>
+            <div className="mb-4">
+              <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>
+              Seleccionar periodo
+              </Typography>
+              <Select
+                labelId="period-label"
+                value={period}
+                onChange={(e) => {
+                  const selectedPeriod = Number(e.target.value);
+                  if ([2023, 2024, 2025].includes(selectedPeriod)) {
+                    setPeriod(selectedPeriod); // Solo actualiza si el período es válido
+                  } else {
+                    showSnackbar("Período no válido.", "error");
+                  }
+                }}
+                >
+                  {[2023, 2024, 2025].map((year) => (
+                    <MenuItem key={year} value={year}>
+                      {year}
+                    </MenuItem>
+                  ))}
+              </Select>
+            </div>
+            <div className="max-w-full overflow-x-auto">
+              <table className="w-full table-auto">
+                <thead>
+                  <tr className="bg-blue-900 text-white">
+                    <th className="px-4 py-4 font-normal">Número</th>
+                    <th className="px-4 py-4 font-normal">Proveedor</th>
+                    <th className="px-4 py-4 font-normal">Fecha</th>
+                    <th className="px-4 py-4 font-normal">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ingresos
+                    .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
+                    .map((ingreso) => {
+                      const alreadySelected = selectedEntries.some(
+                        (r) => r.entryNumber === ingreso.entryNumber
+                      );
+                      return (
+                        <tr key={ingreso.entryNumber} className="text-center">
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {ingreso.entryNumber}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {ingreso.supplierCode || "--"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {ingreso.creationDate || "--"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {alreadySelected ? (
+                              <span className="text-gray-500">Seleccionado</span>
+                            ) : (
+                              <IconButton color="primary" onClick={() => loadIngresoDetails(ingreso)}>
+                                <Add />
+                              </IconButton>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+              <TablePagination
+                rowsPerPageOptions={[10, 25, 50]}
+                component="div"
+                count={ingresos.length}
+                rowsPerPage={filasPorPagina}
+                page={pagina}
+                onPageChange={(_, newPage) => setPagina(newPage)}
+                onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))} />
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseIngresoDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
+              Cancelar
             </Button>
-          </div>
-        </div>
+          </DialogActions>
+        </Dialog>
 
         {/* Tabla de detalles de ingreso */}
         {dataIngreso && (
@@ -504,6 +606,77 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
             </div>
           </>
         )}
+
+        {/* Orden de Servicio */}
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-lg">
+            Orden de Servicio Asociada: {dataOS ? <strong>{dataOS.id}</strong> : "Ninguna"}
+          </p>
+          <div>
+            <Button style={{ backgroundColor: "#1976d2", color: "#fff" }} onClick={handleOpenServiceDialog}>
+              Seleccionar Orden de Servicio
+            </Button>
+          </div>
+        </div>
+
+
+        {/* Diálogo para seleccionar órdenes de servicio */}
+        <Dialog
+        open={isServiceDialogOpen}
+        onClose={handleCloseServiceDialog}
+        fullWidth
+        maxWidth="lg"
+        sx={{
+          "& .MuiDialog-paper": {
+            width: "70%",
+            marginLeft: "20%",
+          },
+        }}
+      >
+          <DialogTitle>Seleccionar Orden de Servicio</DialogTitle>
+          <DialogContent>
+            <div className="max-w-full overflow-x-auto">
+              <table className="w-full table-auto">
+                <thead>
+                  <tr className="bg-blue-900 text-white">
+                    <th className="px-4 py-4 font-normal">Número</th>
+                    <th className="px-4 py-4 font-normal">Cliente</th>
+                    <th className="px-4 py-4 font-normal">Fecha</th>
+                    <th className="px-4 py-4 font-normal">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ordenesServicio.slice(pagina * filasPorPagina,
+                   pagina * filasPorPagina + filasPorPagina).map((orden) => (
+                    <tr key={orden.id} className="text-center">
+                      <td className="border-b border-gray-300 px-4 py-5">{orden.id}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">{orden.supplierId}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">{orden.issueDate}</td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        <IconButton color="primary" onClick={() => handleSelectServiceOrder(orden.id)}>
+                          <Add />
+                        </IconButton>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <TablePagination
+                rowsPerPageOptions={[10, 25, 50]}
+                component="div"
+                count={ordenesServicio.length}
+                rowsPerPage={filasPorPagina}
+                page={pagina}
+                onPageChange={(_, newPage) => setPagina(newPage)}
+                onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))} />
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseServiceDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
+              Cancelar
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Tabla de detalles de orden de servicio */}
         {dataOS && (
@@ -698,161 +871,6 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
               </Button>
             </DialogActions>
           </Dialog>  
-
-        {/* Diálogo para seleccionar movimientos de ingreso */}
-        <Dialog
-            open={isIngresoDialogOpen}
-            onClose={handleCloseIngresoDialog}
-            fullWidth
-            maxWidth="lg"
-            sx={{
-              "& .MuiDialog-paper": {
-                width: "70%", // Incrementa el ancho
-                marginLeft: "20%", // Ajusta el margen para mantenerlo centrado en el espacio restante
-              },
-            }}
-          >
-          <DialogTitle>Seleccionar Movimiento de Ingreso</DialogTitle>
-          <DialogContent>
-            <div className="mb-4">
-              <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>
-              Seleccionar periodo
-              </Typography>
-              <Select
-                labelId="period-label"
-                value={period}
-                onChange={(e) => {
-                  const selectedPeriod = Number(e.target.value);
-                  if ([2023, 2024, 2025].includes(selectedPeriod)) {
-                    setPeriod(selectedPeriod); // Solo actualiza si el período es válido
-                  } else {
-                    showSnackbar("Período no válido.", "error");
-                  }
-                }}
-                >
-                  {[2023, 2024, 2025].map((year) => (
-                    <MenuItem key={year} value={year}>
-                      {year}
-                    </MenuItem>
-                  ))}
-              </Select>
-            </div>
-            <div className="max-w-full overflow-x-auto">
-              <table className="w-full table-auto">
-                <thead>
-                  <tr className="bg-blue-900 text-white">
-                    <th className="px-4 py-4 font-normal">Número</th>
-                    <th className="px-4 py-4 font-normal">Proveedor</th>
-                    <th className="px-4 py-4 font-normal">Fecha</th>
-                    <th className="px-4 py-4 font-normal">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ingresos
-                    .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
-                    .map((ingreso) => {
-                      const alreadySelected = selectedEntries.some(
-                        (r) => r.entryNumber === ingreso.entryNumber
-                      );
-                      return (
-                        <tr key={ingreso.entryNumber} className="text-center">
-                          <td className="border-b border-gray-300 px-4 py-5">
-                            {ingreso.entryNumber}
-                          </td>
-                          <td className="border-b border-gray-300 px-4 py-5">
-                            {ingreso.supplierCode || "--"}
-                          </td>
-                          <td className="border-b border-gray-300 px-4 py-5">
-                            {ingreso.creationDate || "--"}
-                          </td>
-                          <td className="border-b border-gray-300 px-4 py-5">
-                            {alreadySelected ? (
-                              <span className="text-gray-500">Seleccionado</span>
-                            ) : (
-                              <IconButton color="primary" onClick={() => loadIngresoDetails(ingreso)}>
-                                <Add />
-                              </IconButton>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
-              <TablePagination
-                rowsPerPageOptions={[10, 25, 50]}
-                component="div"
-                count={ingresos.length}
-                rowsPerPage={filasPorPagina}
-                page={pagina}
-                onPageChange={(_, newPage) => setPagina(newPage)}
-                onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))} />
-            </div>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseIngresoDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
-              Cancelar
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Diálogo para seleccionar órdenes de servicio */}
-        <Dialog
-        open={isServiceDialogOpen}
-        onClose={handleCloseServiceDialog}
-        fullWidth
-        maxWidth="lg"
-        sx={{
-          "& .MuiDialog-paper": {
-            width: "70%",
-            marginLeft: "20%",
-          },
-        }}
-      >
-          <DialogTitle>Seleccionar Orden de Servicio</DialogTitle>
-          <DialogContent>
-            <div className="max-w-full overflow-x-auto">
-              <table className="w-full table-auto">
-                <thead>
-                  <tr className="bg-blue-900 text-white">
-                    <th className="px-4 py-4 font-normal">Número</th>
-                    <th className="px-4 py-4 font-normal">Cliente</th>
-                    <th className="px-4 py-4 font-normal">Fecha</th>
-                    <th className="px-4 py-4 font-normal">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ordenesServicio.slice(pagina * filasPorPagina,
-                   pagina * filasPorPagina + filasPorPagina).map((orden) => (
-                    <tr key={orden.id} className="text-center">
-                      <td className="border-b border-gray-300 px-4 py-5">{orden.id}</td>
-                      <td className="border-b border-gray-300 px-4 py-5">{orden.supplierId}</td>
-                      <td className="border-b border-gray-300 px-4 py-5">{orden.issueDate}</td>
-                      <td className="border-b border-gray-300 px-4 py-5">
-                        <IconButton color="primary" onClick={() => handleSelectServiceOrder(orden.id)}>
-                          <Add />
-                        </IconButton>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <TablePagination
-                rowsPerPageOptions={[10, 25, 50]}
-                component="div"
-                count={ordenesServicio.length}
-                rowsPerPage={filasPorPagina}
-                page={pagina}
-                onPageChange={(_, newPage) => setPagina(newPage)}
-                onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))} />
-            </div>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseServiceDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
-              Cancelar
-            </Button>
-          </DialogActions>
-        </Dialog>
 
         {/* Botón para guardar la salida */}
         {dataIngreso && dataOS && (

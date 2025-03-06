@@ -24,6 +24,24 @@ export const fetchYarnPurchaseEntries = async (
   return response.data;
 };
 
+export const fetchYarnIncomeEntries = async (
+  period: number,
+  supplierIds?: string,
+  includeInactive: boolean = false
+): Promise<YarnPurchaseEntryResponse> => {
+  const response = await instance.get<YarnPurchaseEntryResponse>(
+    `/operations/v1/yarn-purchase-entries/`,
+    {
+      params: {
+        period,
+        supplierIds,
+        includeInactive
+      }
+    }
+  );
+  return response.data;
+};
+
 export const fetchYarnPurchaseEntryDetails = async (
     entryNumber: string,
     period: number
