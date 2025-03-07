@@ -139,7 +139,10 @@ const DetallesMovIngresoHilado: React.FC = () => {
 
   const handleAnulateEntry = async (entryNumber: string) => {
     try {
-      await anulateYarnPurchaseEntry(entryNumber);
+      const savedPeriod = localStorage.getItem("selectedPeriod");
+      const period = savedPeriod ? JSON.parse(savedPeriod) : 2024;
+
+      await anulateYarnPurchaseEntry(entryNumber, period);
       showSnackbar(`Movimiento de ingreso N° ${entryNumber} anulado con éxito.`, "success");
       setDetalle((prev) =>
         prev

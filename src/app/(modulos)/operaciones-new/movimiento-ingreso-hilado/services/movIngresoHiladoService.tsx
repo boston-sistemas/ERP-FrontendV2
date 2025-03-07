@@ -45,8 +45,8 @@ export const fetchYarnPurchaseEntryDetails = async (
     );
   };
 
-  export const anulateYarnPurchaseEntry = async (entryNumber: string) => {
-    await instance.put(`/operations/v1/yarn-purchase-entries/${entryNumber}/anulate?period=2024`);
+  export const anulateYarnPurchaseEntry = async (entryNumber: string, period: number) => {
+    await instance.put(`/operations/v1/yarn-purchase-entries/${entryNumber}/anulate?period=${period}`);
   };
   
   // Servicio para verificar si el movimiento de ingreso de hilado es actualizable
