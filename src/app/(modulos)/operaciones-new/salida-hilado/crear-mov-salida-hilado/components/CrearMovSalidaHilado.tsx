@@ -60,7 +60,8 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
   const [ingresos, setIngresos] = useState<any[]>([]);
   const [selectedEntries, setselectedEntries] = useState<YarnPurchaseEntry[]>([]); // Ingresos seleccionados
   const [isIngresoDialogOpen, setIsIngresoDialogOpen] = useState<boolean>(false);
-  const [selectYarnEntryInfo, setYarnEntriesByEntryNumber] = useState<any[]>([]);
+  const [selectYarnEntryInfo, setYarnEntriesByEntryNumber] = useState<YarnPurchaseEntryResponse | null>(null);
+  const [selectYarnEntryInfoDetail, setYarnEntriesByEntryNumberDetail] = useState<any>(null);
   const [openYarnEntryInfoDialog, setOpenYarnEntryInfoDialog] = useState(false);
 
   // TODO CON RESPECTO A ORDENES DE SERVICIO
@@ -78,6 +79,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
 
   // FRAMEWORK
 
+  const [inputText, setInputText] = useState("");
   const [isSmallScreen, setIsSmallScreen] = useState(false); // Estado de tamaño de pantalla
   const [isMediumScreen, setIsMediumScreen] = useState(false);  // Estado de tamaño de pantalla
   const [selectedGroups, setSelectedGroups] = useState<any[]>([]);
@@ -267,11 +269,13 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
 
     const handleOpenYarnEntryInfoDialog = async (yarnEntryNumber: string) => {
       setOpenYarnEntryInfoDialog(true);
-      setYarnEntriesByEntryNumber([]);
+      setYarnEntriesByEntryNumber(null);
       try {
         const data = await fetchYarnEntriesByEntryNumber(period, yarnEntryNumber);
-        console.log("Datos de lo obtenido:",data.yarnPurchaseEntries);
-        setYarnEntriesByEntryNumber(data.yarnPurchaseEntries || []);
+        console.log("Datos de lo obtenido:",data);
+        console.log("Datos Detalles de lo obtenido:",data.detail);
+        setYarnEntriesByEntryNumber(data);
+        setYarnEntriesByEntryNumberDetail(data.detail);
       } catch (error) {
         console.error("Error al cargar los datos del hilo:", error);
         }
@@ -397,12 +401,17 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
       sleepES5(100); // Espera 75ms antes de cargar la información
       setIsServiceDialogOpen(true);
     };
+
   const handleCloseServiceDialog = () => setIsServiceDialogOpen(false);
 
 
   var sleepES5 = function(ms: number){  // Función sleep
     var esperarHasta = new Date().getTime() + ms;
     while(new Date().getTime() < esperarHasta) continue;
+  };
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputText(e.target.value);
   };
 
   return (
@@ -772,7 +781,6 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
           </div>
         </div>
 
-
         {/* Diálogo para seleccionar movimientos de ingreso */}
         <Dialog
             open={isIngresoDialogOpen}
@@ -817,8 +825,10 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
                 <thead>
                   <tr className="bg-blue-900 text-white">
                     <th className="px-4 py-4 font-normal">Número</th>
-                    <th className="px-4 py-4 font-normal">Proveedor</th>
-                    <th className="px-4 py-4 font-normal">Fecha</th>
+                    <th className="px-4 py-4 font-normal">Peso Bruto</th>
+                    <th className="px-4 py-4 font-normal">Peso Neto</th>
+                    <th className="px-4 py-4 font-normal">Paquetes restantes</th>
+                    <th className="px-4 py-4 font-normal">Conos restantes</th>
                     <th className="px-4 py-4 font-normal">Acciones</th>
                   </tr>
                 </thead>
@@ -829,6 +839,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
                       const alreadySelected = selectedEntries.some(
                         (r) => r.entryNumber === ingreso.entryNumber
                       );
+                      const detail = ingreso.detailHeavy?.[0] || {}; 
                       return (
                         <tr key={ingreso.entryNumber} className="text-center">
                           <td className="border-b border-gray-300 px-4 py-5">
@@ -837,12 +848,18 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
                           style={{ color: "#1976d2" }}
                           />
                         </IconButton>
+                        </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {detail.grossWeight || "--"}
                           </td>
                           <td className="border-b border-gray-300 px-4 py-5">
-                            {ingreso.supplierCode || "--"}
+                            {detail.netWeight || "--"}
                           </td>
                           <td className="border-b border-gray-300 px-4 py-5">
-                            {ingreso.creationDate || "--"}
+                            {detail.packagesLeft || "--"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {detail.conesLeft || "--"}
                           </td>
                           <td className="border-b border-gray-300 px-4 py-5">
                             {alreadySelected ? (
@@ -898,31 +915,66 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
               {selectYarnEntryInfo ? (
                 <div className="mb-4 text-black">
                   <p className="mb-2"><strong>ID:</strong> {selectYarnEntryInfo.entryNumber} </p>
+                  <p className="mb-2"><strong>Numero de orden de la compra:</strong> {selectYarnEntryInfo.purchaseOrderNumber} </p>
+                  <p className="mb-2"><strong>Proveedor de lote:</strong> {selectYarnEntryInfo.supplierBatch} </p>
+                  <p className="mb-2"><strong>Tipo de cambio:</strong> {selectYarnEntryInfo.exchangeRate} </p>
                   <p className="mb-2"><strong>Fecha de creación:</strong> {selectYarnEntryInfo.creationDate} </p>
                   <p className="mb-2"><strong>Tiempo de creación:</strong> {selectYarnEntryInfo.creationTime} </p>
-                  <p className="mb-2"><strong>Numero de orden de la compra:</strong> {selectYarnEntryInfo.purchaseOrderNumber} </p>
-                  <p className="mb-2"><strong>Color:</strong> {selectYarnEntryInfo.color?.name || "Sin color"} </p>
-                  <p className="mb-2"><strong>Recuento de Hilos:</strong> {selectYarnEntryInfo.yarnCount?.value || "---"} </p>
-                  <p className="mb-2"><strong>Acabado de Hilado:</strong> {selectYarnEntryInfo.spinningMethod?.value || "---"} </p>
-                  <p className="mb-2"><strong>Manufacturado en:</strong> {selectYarnEntryInfo.manufacturedIn?.value || "---"} </p>
-                  <p className="mb-2"><strong>Distinciones: </strong> 
-                  {selectYarnEntryInfo.distinctions?.length > 0 
-                    ? selectYarnEntryInfo.distinctions.map((dist, index) => (
-                        <span key={dist.id}>{dist.value}{index < selectYarnEntryInfo.distinctions.length - 1 ? ", " : ""}</span>
-                      ))
-                    : "Ninguna"}
-                  </p>
-                  <p className="mb-2">
-                    <strong>Activo:</strong> {selectYarnEntryInfo.isActive ? "Si" : "No activo"}
-                  </p>
+                  <p className="mb-2"><strong>Notas del documento:</strong> {selectYarnEntryInfo.documentNote || "No hay notas"} </p>
                 </div>
               ) : (
                 <p>Cargando información...</p>
               )}
+              <div className="max-w-full overflow-x-auto">
+                <table className="w-full table-auto">
+                <thead>
+                  <tr className="bg-blue-900 text-white">
+                    <th className="px-4 py-4 font-normal">Ítem</th>
+                    <th className="px-4 py-4 font-normal">ID Hilo</th>
+                    <th className="px-4 py-4 font-normal">Lote de proveedor</th>
+                    <th className="px-4 py-4 font-normal">Peso Bruto</th>
+                    <th className="px-4 py-4 font-normal">Peso Neto</th>
+                    <th className="px-4 py-4 font-normal">Conos</th>
+                    <th className="px-4 py-4 font-normal">Paquetes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectYarnEntryInfoDetail?.map((ingreso: any, index: number) => {
+                    const alreadySelected = selectedEntries.some(
+                      (r) => r.yarnId === ingreso.yarnId
+                    );
+                    const detail = ingreso.detailHeavy?.[0] || {};
+                    return (
+                        <tr key={index} className="text-center">
+                        <td className="border-b border-gray-300 px-4 py-5">{ingreso.itemNumber}</td>
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          {ingreso.yarnId}
+                        </td>
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          {ingreso.supplierBatch}
+                        </td>
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          {ingreso.guideGrossWeight || "--"}
+                        </td>
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          {ingreso.guideNetWeight || "--"}
+                        </td>
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          {ingreso.guideConeCount || "--"}
+                        </td>
+                        <td className="border-b border-gray-300 px-4 py-5">
+                          {ingreso.guidePackageCount || "--"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                </table>
+              </div>
             </DialogContent>
             <DialogActions>
               <Button
-                onClick={handleCloseYarnDialog}
+                onClick={handleCloseYarnEntryInfoDialog}
                 variant="contained"
                 style={{ backgroundColor: ERROR_COLOR, color: "#fff" }}
               >
@@ -960,37 +1012,10 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
             </div>
           )}
 
-        {dataIngreso && (<>
-            <p className="text-lg mb-2">Seleccionar tipo de tejido:</p>
-            <div className="flex items-center space-x-4 mb-4">
-              {/* Selección de tipo de tejido */}
-              <FormControl fullWidth style={{ maxWidth: "300px" }}>
-                <Select
-                  labelId="tejido-label"
-                  value={selectTypeFabric || ""}
-                  onChange={handleFabricTypeChange}
-                  displayEmpty
-                  MenuProps={{
-                    PaperProps: {
-                      style: {
-                        transform: "translateX(0%)", // Ajusta la posición del menú desplegable
-                      },
-                    },
-                  }}
-                >
-                  <MenuItem value="" disabled>
-                    Seleccione un tipo de tejido
-                  </MenuItem>
-                  {typeFabric.map((typefab) => (
-                    <MenuItem key={typefab.id} value={typefab.id}>
-                      {typefab.value}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </div>
+        {/*{dataIngreso && (<>
+            <p className="text-lg font-semibold mb-3">Tipo de tejido seleccionado: {selectInfoFabric.fabricType.value}</p>
           </>
-        )} 
+        )} */}
 
         {/* Botón para guardar la salida */}
         {dataIngreso && dataOS && (
