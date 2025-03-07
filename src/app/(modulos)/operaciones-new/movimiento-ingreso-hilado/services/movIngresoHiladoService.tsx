@@ -5,7 +5,7 @@ export const fetchYarnPurchaseEntries = async (
   period: number,
   limit: number,
   offset: number,
-  include_inactive: boolean,
+  includeAnnulled: boolean,
   startDate?: string,
   endDate?: string
 ): Promise<YarnPurchaseEntryResponse> => {
@@ -15,7 +15,7 @@ export const fetchYarnPurchaseEntries = async (
         period,
         limit,
         offset,
-        include_inactive,
+        includeAnnulled,
         startDate,
         endDate
       }
