@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Table,
+  Tooltip,
   TableRow,
   TableCell,
   Button,
@@ -31,6 +32,7 @@ import {
   fetchYarnPurchaseEntryDetails,
   fetchFabricTypes,
   fetchFabricSearchId,
+  fetchYarnEntriesByEntryNumber,
 } from "../../../ingreso-hilado/services/movIngresoHiladoService";
 import {
   fetchServiceOrders,
@@ -58,6 +60,8 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
   const [ingresos, setIngresos] = useState<any[]>([]);
   const [selectedEntries, setselectedEntries] = useState<YarnPurchaseEntry[]>([]); // Ingresos seleccionados
   const [isIngresoDialogOpen, setIsIngresoDialogOpen] = useState<boolean>(false);
+  const [selectYarnEntryInfo, setYarnEntriesByEntryNumber] = useState<any[]>([]);
+  const [openYarnEntryInfoDialog, setOpenYarnEntryInfoDialog] = useState(false);
 
   // TODO CON RESPECTO A ORDENES DE SERVICIO
   const [ordenesServicio, setOrdenesServicio] = useState<ServiceOrder[]>([]); // Lista de órdenes de servicio
@@ -66,7 +70,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
   const [openYarnDialog, setOpenYarnDialog] = useState(false); // Estado del diálogo de información de tejido
   const [FabricInfo, setFabricInfo] = useState<any>(null); // Detalles de fibras
   const [typeFabric, setTypeFabric] = useState<FabricType[]>([]); // Tipos de fibras
-  const [selectTypeFabric, setSelectedTypeFabric] = useState<string>("");
+  const [selectTypeFabric, setSelectedTypeFabric] = useState<string>(""); // Tipo de fibra seleccionado
   const [selectInfoFabric, setSelectedInfoFabric] = useState<Fabric | null>(null); // Información del tejido seleccionado
   const [selectInfoYarn, setSelectedInfoYarn] = useState<Yarn | null>(null); // Información del tejido seleccionado
   const [selectInfoFabricRecipe, setSelectedInfoFabricRecipe] = useState<any>(null); // Información de la receta del tejido seleccionado
@@ -110,7 +114,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
     }
   };
 
-useEffect(() => {
+  useEffect(() => {
     // Cargar ingresos y órdenes de servicio cuando cambie el período
     FilterIngresosbySupplier();
   }, [period]); // Dependencia del estado `period`
@@ -175,8 +179,11 @@ useEffect(() => {
 
   const FilterIngresosbySupplier = async () => {
     try {
-      const response = await fetchYarnIncomeEntries(period,selectedSupplier);
-      console.log("Ingresos:",response);
+      if (!ordenesServicio || ordenesServicio.length === 0) {
+        return; // Salimos de la función si no hay órdenes de servicio
+      }
+      const response = await fetchYarnIncomeEntries(period,ordenesServicio[0].id);
+      console.log("Ingresos filtrados por proveedor:", response);
       setIngresos(response.yarnPurchaseEntries || []);
     } catch (error) {
       console.error("Error al cargar los tipos de tejido:", error);
@@ -193,6 +200,7 @@ useEffect(() => {
   }
 
   const handleProveedorChange = (event: SelectChangeEvent<string>) => {
+    console.log("Proveedor seleccionado:", event.target.value);
     setSelectedSupplier(event.target.value);
   };
 
@@ -252,10 +260,21 @@ useEffect(() => {
         const data = await fetchFabricSearchId(FabricId);
         setSelectedInfoFabric(data);
         setSelectedInfoFabricRecipe(data.recipe);
-        console.log("InfoFabricRecipe:", data.recipe);
       } catch (error) {
         console.error("Error al cargar los datos del hilo:", error);
       }
+    };
+
+    const handleOpenYarnEntryInfoDialog = async (yarnEntryNumber: string) => {
+      setOpenYarnEntryInfoDialog(true);
+      setYarnEntriesByEntryNumber([]);
+      try {
+        const data = await fetchYarnEntriesByEntryNumber(period, yarnEntryNumber);
+        console.log("Datos de lo obtenido:",data.yarnPurchaseEntries);
+        setYarnEntriesByEntryNumber(data.yarnPurchaseEntries || []);
+      } catch (error) {
+        console.error("Error al cargar los datos del hilo:", error);
+        }
     };
 
     const handleOpenYarnDialog = async (yarnId: string) => {
@@ -272,6 +291,10 @@ useEffect(() => {
 
     const handleCloseFabricDialog = () => {
       setOpenFabricDialog(false);
+    };
+
+    const handleCloseYarnEntryInfoDialog = () => {
+      setOpenYarnEntryInfoDialog(false);
     };
 
     const handleCloseYarnDialog = () => {
@@ -444,178 +467,27 @@ useEffect(() => {
           </div>
         </div>
       <div>
-      {/* Movimiento de ingreso */}
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-lg">
-            Movimiento de Ingreso Asociado:{" "}
-            {dataIngreso ? <strong>{dataIngreso.entryNumber}</strong> : "Ninguno"}
-          </p>
-          <div>
-          <Button style={{ backgroundColor: "#1976d2", color: "#fff" }} onClick={handleOpenIngresoDialog}>
-              Seleccionar Movimiento de Ingreso
-            </Button>
-          </div>
-        </div>
-
-        {/* Diálogo para seleccionar movimientos de ingreso */}
-        <Dialog
-            open={isIngresoDialogOpen}
-            onClose={handleCloseIngresoDialog}
-            fullWidth
-            maxWidth="lg"
-            sx={{
-              "& .MuiDialog-paper": {
-                width: "70%", // Incrementa el ancho
-                marginLeft: "20%", // Ajusta el margen para mantenerlo centrado en el espacio restante
-              },
-            }}
-          >
-          <DialogTitle>Seleccionar Movimiento de Ingreso</DialogTitle>
-          <DialogContent>
-            <div className="mb-4">
-              <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>
-              Seleccionar periodo
-              </Typography>
-              <Select
-                labelId="period-label"
-                value={period}
-                onChange={(e) => {
-                  const selectedPeriod = Number(e.target.value);
-                  if ([2023, 2024, 2025].includes(selectedPeriod)) {
-                    setPeriod(selectedPeriod); // Solo actualiza si el período es válido
-                  } else {
-                    showSnackbar("Período no válido.", "error");
-                  }
-                }}
-                >
-                  {[2023, 2024, 2025].map((year) => (
-                    <MenuItem key={year} value={year}>
-                      {year}
-                    </MenuItem>
-                  ))}
-              </Select>
-            </div>
-            <div className="max-w-full overflow-x-auto">
-              <table className="w-full table-auto">
-                <thead>
-                  <tr className="bg-blue-900 text-white">
-                    <th className="px-4 py-4 font-normal">Número</th>
-                    <th className="px-4 py-4 font-normal">Proveedor</th>
-                    <th className="px-4 py-4 font-normal">Fecha</th>
-                    <th className="px-4 py-4 font-normal">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ingresos
-                    .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
-                    .map((ingreso) => {
-                      const alreadySelected = selectedEntries.some(
-                        (r) => r.entryNumber === ingreso.entryNumber
-                      );
-                      return (
-                        <tr key={ingreso.entryNumber} className="text-center">
-                          <td className="border-b border-gray-300 px-4 py-5">
-                            {ingreso.entryNumber}
-                          </td>
-                          <td className="border-b border-gray-300 px-4 py-5">
-                            {ingreso.supplierCode || "--"}
-                          </td>
-                          <td className="border-b border-gray-300 px-4 py-5">
-                            {ingreso.creationDate || "--"}
-                          </td>
-                          <td className="border-b border-gray-300 px-4 py-5">
-                            {alreadySelected ? (
-                              <span className="text-gray-500">Seleccionado</span>
-                            ) : (
-                              <IconButton color="primary" onClick={() => loadIngresoDetails(ingreso)}>
-                                <Add />
-                              </IconButton>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
-              <TablePagination
-                rowsPerPageOptions={[10, 25, 50]}
-                component="div"
-                count={ingresos.length}
-                rowsPerPage={filasPorPagina}
-                page={pagina}
-                onPageChange={(_, newPage) => setPagina(newPage)}
-                onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))} />
-            </div>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseIngresoDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
-              Cancelar
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Tabla de detalles de ingreso */}
-        {dataIngreso && (
-          <div className="max-w-full overflow-x-auto mb-6">
-            <h2 className="text-lg font-semibold mb-3">Detalles del Movimiento de Ingreso</h2>
-            {dataIngreso.detail.map((item: any, index: number) => (
-              <React.Fragment key={index}>
-                <h2 className="text-lg font-semibold mb-4">
-                  Hilado {index + 1}: {item.yarnId}
-                </h2>
-                {item.detailHeavy.map((group: any, groupIndex: number) => (
-                  <div key={groupIndex} className="border-b border-gray-300 py-4 mb-4">
-                    <h3 className="text-lg font-semibold mb-2">
-                      Peso bruto: <strong>{group.grossWeight}</strong>  &emsp;&emsp;&emsp;&emsp;&emsp;
-                      Peso neto: <strong>{group.netWeight}</strong>
-                    </h3>
-                  </div>
-                ))}
-              </React.Fragment>
-            ))}
-          </div>
-        )}
-        {dataIngreso && (<>
-            <p className="text-lg mb-2">Seleccionar tipo de tejido:</p>
-            <div className="flex items-center space-x-4 mb-4">
-              {/* Selección de tipo de tejido */}
-              <FormControl fullWidth style={{ maxWidth: "300px" }}>
-                <Select
-                  labelId="tejido-label"
-                  value={selectTypeFabric || ""}
-                  onChange={handleFabricTypeChange}
-                  displayEmpty
-                  MenuProps={{
-                    PaperProps: {
-                      style: {
-                        transform: "translateX(0%)", // Ajusta la posición del menú desplegable
-                      },
-                    },
-                  }}
-                >
-                  <MenuItem value="" disabled>
-                    Seleccione un tipo de tejido
-                  </MenuItem>
-                  {typeFabric.map((typefab) => (
-                    <MenuItem key={typefab.id} value={typefab.id}>
-                      {typefab.value}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </div>
-          </>
-        )}
-
         {/* Orden de Servicio */}
         <div className="flex items-center justify-between mb-4">
           <p className="text-lg">
             Orden de Servicio Asociada: {dataOS ? <strong>{dataOS.id}</strong> : "Ninguna"}
           </p>
           <div>
-            <Button style={{ backgroundColor: "#1976d2", color: "#fff" }} onClick={handleOpenServiceDialog}>
-              Seleccionar Orden de Servicio
-            </Button>
+          <Tooltip title={selectedSupplier === "" ? "No hay órdenes de servicio disponibles" : ""} arrow>
+            <span> {/* Necesario para envolver el botón cuando está deshabilitado */}
+              <Button
+                style={{
+                  backgroundColor: selectedSupplier === "" ? "#BDBDBD" : "#1976d2",
+                  color: "#fff",
+                  cursor: selectedSupplier === "" ? "not-allowed" : "pointer",
+                }}
+                onClick={handleOpenServiceDialog}
+                disabled={selectedSupplier === ""}
+              >
+                Seleccionar Orden de servicio
+              </Button>
+            </span>
+          </Tooltip>
           </div>
         </div>
 
@@ -748,7 +620,7 @@ useEffect(() => {
               ) : (
                 <p>Cargando información...</p>
               )}
-              <div className="max-w-full overflow-x-auto">
+              <div className="max-w-full overflow-x-auto"> 
               <h4 className="text-lg font-semibold text-black mb-4">Información de la receta</h4>
                 <table className="w-full table-auto border-collapse">
                   <thead>
@@ -870,7 +742,255 @@ useEffect(() => {
                 Cerrar
               </Button>
             </DialogActions>
-          </Dialog>  
+          </Dialog>
+
+        {/* Movimiento de ingreso */}
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-lg">
+            Movimiento de Ingreso Asociado:{" "}
+            {dataIngreso ? <strong>{dataIngreso.entryNumber}</strong> : "Ninguno"}
+          </p>
+          <div>
+            <Tooltip 
+              title={!dataOS ? "Debe seleccionar una Orden de Servicio primero" : ""} 
+              arrow
+            >
+              <span> {/* Necesario para que Tooltip funcione en un botón deshabilitado */}
+                <Button
+                  style={{
+                    backgroundColor: !dataOS ? "#BDBDBD" : "#1976d2",
+                    color: "#fff",
+                    cursor: !dataOS ? "not-allowed" : "pointer",
+                  }}
+                  onClick={handleOpenIngresoDialog}
+                  disabled={!dataOS} // Se deshabilita si NO hay orden de servicio seleccionada
+                >
+                  Seleccionar movimiento de ingreso
+                </Button>
+              </span>
+            </Tooltip>
+          </div>
+        </div>
+
+
+        {/* Diálogo para seleccionar movimientos de ingreso */}
+        <Dialog
+            open={isIngresoDialogOpen}
+            onClose={handleCloseIngresoDialog}
+            fullWidth
+            maxWidth="lg"
+            sx={{
+              "& .MuiDialog-paper": {
+                width: "70%", // Incrementa el ancho
+                marginLeft: "20%", // Ajusta el margen para mantenerlo centrado en el espacio restante
+              },
+            }}
+          >
+          <DialogTitle>Seleccionar movimiento de ingreso</DialogTitle>
+          <DialogContent>
+            <div className="mb-4">
+              <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>
+              Seleccionar periodo
+              </Typography>
+              <Select
+                labelId="period-label"
+                value={period}
+                onChange={(e) => {
+                  const selectedPeriod = Number(e.target.value);
+                  if ([2023, 2024, 2025].includes(selectedPeriod)) {
+                    setPeriod(selectedPeriod); // Solo actualiza si el período es válido
+                  } else {
+                    showSnackbar("Período no válido.", "error");
+                  }
+                }}
+                >
+                  {[2023, 2024, 2025].map((year) => (
+                    <MenuItem key={year} value={year}>
+                      {year}
+                    </MenuItem>
+                  ))}
+              </Select>
+            </div>
+            
+            <div className="max-w-full overflow-x-auto">
+              <table className="w-full table-auto">
+                <thead>
+                  <tr className="bg-blue-900 text-white">
+                    <th className="px-4 py-4 font-normal">Número</th>
+                    <th className="px-4 py-4 font-normal">Proveedor</th>
+                    <th className="px-4 py-4 font-normal">Fecha</th>
+                    <th className="px-4 py-4 font-normal">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ingresos
+                    .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
+                    .map((ingreso) => {
+                      const alreadySelected = selectedEntries.some(
+                        (r) => r.entryNumber === ingreso.entryNumber
+                      );
+                      return (
+                        <tr key={ingreso.entryNumber} className="text-center">
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {ingreso.entryNumber}<IconButton onClick={() => handleOpenYarnEntryInfoDialog(ingreso.entryNumber)}>
+                          <VisibilityIcon 
+                          style={{ color: "#1976d2" }}
+                          />
+                        </IconButton>
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {ingreso.supplierCode || "--"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {ingreso.creationDate || "--"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {alreadySelected ? (
+                              <span className="text-gray-500">Seleccionado</span>
+                            ) : (
+                              <IconButton color="primary" onClick={() => loadIngresoDetails(ingreso)}>
+                                <Add />
+                              </IconButton>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+              <TablePagination
+                rowsPerPageOptions={[10, 25, 50]}
+                component="div"
+                count={ingresos.length}
+                rowsPerPage={filasPorPagina}
+                page={pagina}
+                onPageChange={(_, newPage) => setPagina(newPage)}
+                onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))} />
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseIngresoDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
+              Cancelar
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog
+            open={openYarnEntryInfoDialog}
+            onClose={handleCloseYarnEntryInfoDialog}
+            fullScreen={isSmallScreen}
+            maxWidth="md"
+            PaperProps={{
+              sx: {
+                ...( !isSmallScreen && !isMediumScreen && {
+                  marginLeft: "280px", 
+                  maxWidth: "calc(100% - 280px)", 
+                }),
+                maxHeight: "calc(100% - 64px)",
+                overflowY: "auto",
+              },
+            }}
+          >
+            <DialogContent>
+              <h3 className="text-lg font-semibold text-black mb-4">
+                Información del movimiento de ingreso
+              </h3>
+              {selectYarnEntryInfo ? (
+                <div className="mb-4 text-black">
+                  <p className="mb-2"><strong>ID:</strong> {selectYarnEntryInfo.entryNumber} </p>
+                  <p className="mb-2"><strong>Fecha de creación:</strong> {selectYarnEntryInfo.creationDate} </p>
+                  <p className="mb-2"><strong>Tiempo de creación:</strong> {selectYarnEntryInfo.creationTime} </p>
+                  <p className="mb-2"><strong>Numero de orden de la compra:</strong> {selectYarnEntryInfo.purchaseOrderNumber} </p>
+                  <p className="mb-2"><strong>Color:</strong> {selectYarnEntryInfo.color?.name || "Sin color"} </p>
+                  <p className="mb-2"><strong>Recuento de Hilos:</strong> {selectYarnEntryInfo.yarnCount?.value || "---"} </p>
+                  <p className="mb-2"><strong>Acabado de Hilado:</strong> {selectYarnEntryInfo.spinningMethod?.value || "---"} </p>
+                  <p className="mb-2"><strong>Manufacturado en:</strong> {selectYarnEntryInfo.manufacturedIn?.value || "---"} </p>
+                  <p className="mb-2"><strong>Distinciones: </strong> 
+                  {selectYarnEntryInfo.distinctions?.length > 0 
+                    ? selectYarnEntryInfo.distinctions.map((dist, index) => (
+                        <span key={dist.id}>{dist.value}{index < selectYarnEntryInfo.distinctions.length - 1 ? ", " : ""}</span>
+                      ))
+                    : "Ninguna"}
+                  </p>
+                  <p className="mb-2">
+                    <strong>Activo:</strong> {selectYarnEntryInfo.isActive ? "Si" : "No activo"}
+                  </p>
+                </div>
+              ) : (
+                <p>Cargando información...</p>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={handleCloseYarnDialog}
+                variant="contained"
+                style={{ backgroundColor: ERROR_COLOR, color: "#fff" }}
+              >
+                Cerrar
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+        {/* Tabla de detalles de ingreso */}
+        {dataIngreso && (
+            <div className="max-w-full overflow-x-auto mb-6">
+              <h2 className="text-lg font-semibold mb-3">Detalles del Movimiento de Ingreso</h2>
+              <table className="w-full border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-blue-900 uppercase text-center text-white">
+                    <th className="border border-gray-300 px-4 py-2">#</th>
+                    <th className="border border-gray-300 px-4 py-2">Hilado</th>
+                    <th className="border border-gray-300 px-4 py-2">Peso Bruto</th>
+                    <th className="border border-gray-300 px-4 py-2">Peso Neto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dataIngreso.detail.map((item: any, index: number) =>
+                    item.detailHeavy.map((group: any, groupIndex: number) => (
+                      <tr key={`${index}-${groupIndex}`} className="text-center border-b border-gray-300">
+                        <td className="border border-gray-300 px-4 py-2">{index + 1}</td>
+                        <td className="border border-gray-300 px-4 py-2">{item.yarnId}</td>
+                        <td className="border border-gray-300 px-4 py-2">{group.grossWeight}</td>
+                        <td className="border border-gray-300 px-4 py-2">{group.netWeight}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+        {dataIngreso && (<>
+            <p className="text-lg mb-2">Seleccionar tipo de tejido:</p>
+            <div className="flex items-center space-x-4 mb-4">
+              {/* Selección de tipo de tejido */}
+              <FormControl fullWidth style={{ maxWidth: "300px" }}>
+                <Select
+                  labelId="tejido-label"
+                  value={selectTypeFabric || ""}
+                  onChange={handleFabricTypeChange}
+                  displayEmpty
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        transform: "translateX(0%)", // Ajusta la posición del menú desplegable
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem value="" disabled>
+                    Seleccione un tipo de tejido
+                  </MenuItem>
+                  {typeFabric.map((typefab) => (
+                    <MenuItem key={typefab.id} value={typefab.id}>
+                      {typefab.value}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </div>
+          </>
+        )} 
 
         {/* Botón para guardar la salida */}
         {dataIngreso && dataOS && (
