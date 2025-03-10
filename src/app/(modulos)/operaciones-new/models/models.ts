@@ -157,7 +157,6 @@ export interface YarnDispatchDetail {
 }
 
 export interface YarnDispatch {
-  period: number; // Período
   supplierCode: string; // Código del proveedor
   documentNote: string | null; // Nota del documento
   nrodir: string; // Dirección seleccionada

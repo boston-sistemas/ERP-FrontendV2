@@ -23,8 +23,13 @@ import {
   Alert,
   Snackbar,
   Typography,
+  Card,
+  CardContent, 
+  Grid, 
+  Stack
 } from "@mui/material";
 import { Add, Details } from "@mui/icons-material";
+import RemoveIcon from "@mui/icons-material/Remove";
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   fetchYarnPurchaseEntries,
@@ -63,6 +68,9 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
   const [selectYarnEntryInfo, setYarnEntriesByEntryNumber] = useState<YarnPurchaseEntryResponse | null>(null);
   const [selectYarnEntryInfoDetail, setYarnEntriesByEntryNumberDetail] = useState<any>(null);
   const [openYarnEntryInfoDialog, setOpenYarnEntryInfoDialog] = useState(false);
+  const [ingresosSeleccionados, setIngresosSeleccionados] = useState<YarnPurchaseEntry[]>([]);
+  const [cantidadRequerida, setCantidadRequerida] = useState(0);
+
 
   // TODO CON RESPECTO A ORDENES DE SERVICIO
   const [ordenesServicio, setOrdenesServicio] = useState<ServiceOrder[]>([]); // Lista de órdenes de servicio
@@ -82,7 +90,6 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
   const [inputText, setInputText] = useState("");
   const [isSmallScreen, setIsSmallScreen] = useState(false); // Estado de tamaño de pantalla
   const [isMediumScreen, setIsMediumScreen] = useState(false);  // Estado de tamaño de pantalla
-  const [selectedGroups, setSelectedGroups] = useState<any[]>([]);
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
@@ -119,7 +126,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
   useEffect(() => {
     // Cargar ingresos y órdenes de servicio cuando cambie el período
     FilterIngresosbySupplier();
-  }, [period]); // Dependencia del estado `period`
+  }, [period]);
   
 
   useEffect(() => {
@@ -127,7 +134,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
     if (savedEntryNumber) {
       const parsedPayload = JSON.parse(savedEntryNumber);
       loadIngresoDetails(parsedPayload); // Carga los detalles del ingreso
-      setSelectedGroups(parsedPayload.groups || []); // Preselecciona los grupos
+      //setSelectedGroups(parsedPayload.groups || []); // Preselecciona los grupos
       localStorage.removeItem("entryNumber"); // Limpia el localStorage después de cargar
     }
   
@@ -135,31 +142,31 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
     loadSupplierData();
     loadFabricTypes();
   }, []);
-  
-  // Seleccionar varias opciones de ingreso
 
-  const handleAddEntry = (ingreso: YarnPurchaseEntry) => {
-    if (!selectedEntries.some((r) => r.entryNumber === ingreso.entryNumber)) {
-      setselectedEntries((prev) => [...prev, ingreso]);
-      showSnackbar("Entrada añadida.", "success");
-    }
+  const handleRemoveEntry = (entryNumber: string) => {
+    setselectedEntries((prev) => prev.filter((entry) => entry.entryNumber !== entryNumber));
+    showSnackbar("Entrada eliminada.", "success");
   };
-
+  
   const loadIngresoDetails = async (ingreso: string) => {
     try {
-      const response = await fetchYarnPurchaseEntryDetails(ingreso.entryNumber, period); // Usa el período actualizado
-      setDataIngreso({
-        ...response,
-        detail: response.detail || [], // Asegura que siempre haya un array de detalles
+      const response = await fetchYarnPurchaseEntryDetails(ingreso.entryNumber, period);
+      setDataIngreso((prev) => ({
+        ...prev,
+        detail: response.detail || [], 
+      }));
+      setselectedEntries((prev) => {
+        if (!prev.some((r) => r.entryNumber === ingreso.entryNumber)) {
+          return [...prev, ingreso];
+        }
+        return prev;
       });
-      if (!selectedEntries.some((r) => r.entryNumber === ingreso.entryNumber)) {
-        setselectedEntries((prev) => [...prev, ingreso]);
-        showSnackbar("Entrada añadida.", "success");
-      }
+      showSnackbar("Entrada añadida.", "success");
     } catch (error) {
       showSnackbar("Error al cargar detalles del ingreso.", "error");
     }
-  };    
+  };
+  
 
   const loadSupplierData = async () => {
     try {
@@ -185,7 +192,6 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
         return; // Salimos de la función si no hay órdenes de servicio
       }
       const response = await fetchYarnIncomeEntries(period,ordenesServicio[0].id);
-      console.log("Ingresos filtrados por proveedor:", response);
       setIngresos(response.yarnPurchaseEntries || []);
     } catch (error) {
       console.error("Error al cargar los tipos de tejido:", error);
@@ -202,7 +208,6 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
   }
 
   const handleProveedorChange = (event: SelectChangeEvent<string>) => {
-    console.log("Proveedor seleccionado:", event.target.value);
     setSelectedSupplier(event.target.value);
   };
 
@@ -215,19 +220,6 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
   };
 
   const supplier = suppliers.find((sup) => sup.code === selectedSupplier);
-
-  const handleGroupInputChange = (
-    itemIndex: number,
-    groupIndex: number,
-    field: string,
-    value: number
-  ) => {
-    setDataIngreso((prevData: any) => {
-      const updatedData = { ...prevData };
-      updatedData.detail[itemIndex].detailHeavy[groupIndex][field] = value;
-      return updatedData;
-    });
-  };
 
   const loadFabricInfo = async (details: any) => { // Carga la información del tejido
     try {
@@ -245,9 +237,8 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
         ...serviceOrderDetails,
         detail: serviceOrderDetails.detail || [], // Asegura que haya un array de detalles
       });
-      console.log("Detalles de la orden de servicio:", serviceOrderDetails);
       loadFabricInfo(serviceOrderDetails.detail); // Carga la información del tejido
-      sleepES5(100); // Espera 75ms antes de cargar la información
+      sleepES5(120); // Espera 75ms antes de cargar la información
       setIsServiceDialogOpen(false); // Cierra el diálogo después de seleccionar
     } catch (error) {
       console.error("Error al cargar la orden de servicio:", error);
@@ -272,8 +263,6 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
       setYarnEntriesByEntryNumber(null);
       try {
         const data = await fetchYarnEntriesByEntryNumber(period, yarnEntryNumber);
-        console.log("Datos de lo obtenido:",data);
-        console.log("Datos Detalles de lo obtenido:",data.detail);
         setYarnEntriesByEntryNumber(data);
         setYarnEntriesByEntryNumberDetail(data.detail);
       } catch (error) {
@@ -286,7 +275,6 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
       setSelectedInfoYarn(null);
       try {
         const data = await fetchYarnbyId(yarnId);
-        console.log("Yarn data:",data);
         setSelectedInfoYarn(data);
       } catch (error) {
         console.error("Error al cargar los datos del hilo:", error);
@@ -304,114 +292,150 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
     const handleCloseYarnDialog = () => {
       setOpenYarnDialog(false);
     };
-
-  const toggleGroupSelection = (newGroup: any) => {
-    setSelectedGroups(prev => {
-      const existe = prev.some(
-        g =>
-          g.entryGroupNumber === newGroup.entryGroupNumber &&
-          g.entryItemNumber === newGroup.entryItemNumber
-      );
-      return existe
-        ? // si ya estaba, lo quitamos
-          prev.filter(
-            g =>
-              !(
-                g.entryGroupNumber === newGroup.entryGroupNumber &&
-                g.entryItemNumber === newGroup.entryItemNumber
-              )
-          )
-        : // si no estaba, lo agregamos
-          [...prev, newGroup];
-    });
-  };
   
-  
-
-  const handleSaveSalida = async () => {
-    if (!dataIngreso || !dataOS) {
-      showSnackbar("Debe seleccionar un movimiento de ingreso y una orden de servicio.", "error");
-      return;
+    interface Ingreso {
+      numeroIngreso: string;
+      pesoNeto: number;
+      paquetesRestantes: number;
+      conosRestantes: number;
+      asignado: number;
+      paquetesAsignados: number;
+      conosAsignados: number;
     }
-    
-    if (!selectedAddress) {
-      showSnackbar("Debe seleccionar una dirección de proveedor.", "error");
-      return;
-    }
-    
-    if (selectedGroups.length === 0) {
-      showSnackbar("Debe seleccionar al menos un grupo para generar la salida.", "error");
-      return;
-    }    
-  
-    const period = 2025; // Cambia esto según el período actual
-    const supplierCode = suppliers.find((supplier) => supplier.code === selectedSupplier)?.code || "";
-    const serviceOrderId = dataOS.id; // Id de la orden de servicio
-    const nrodir = selectedAddress; // Dirección seleccionada
-    const detail = selectedGroups
-  .filter((g) =>
-    g.itemNumber !== undefined &&      // o `typeof g.itemNumber === "number"`
-    g.entryNumber !== undefined &&
-    g.entryGroupNumber !== undefined &&
-    g.entryItemNumber !== undefined &&
-    g.entryPeriod !== undefined
-  )
-  .map((g) => ({
-    itemNumber: g.itemNumber,
-    entryNumber: g.entryNumber,
-    entryGroupNumber: g.entryGroupNumber,
-    entryItemNumber: g.entryItemNumber,
-    entryPeriod: g.entryPeriod,
-    coneCount: g.coneCount,
-    packageCount: g.packageCount,
-    grossWeight: g.grossWeight,
-    netWeight: g.netWeight,
-  }));
 
-    const payload: YarnDispatch = {
-      period,
-      supplierCode,
-      documentNote: null, // Ajusta según lo necesario
-      nrodir,
-      serviceOrderId,
-      detail,
+    const handleDistribuir = () => {
+      let pesoRestante = cantidadRequerida;
+      let nuevaSeleccion: YarnPurchaseEntry[] = [];
+  
+      // Ordenamos los ingresos disponibles de mayor a menor peso neto
+      const ingresosOrdenados = selectedEntries.flatMap(entry => entry.detailHeavy).sort((a, b) => b.netWeight - a.netWeight);
+  
+      for (let ingreso of ingresosOrdenados) {
+        if (pesoRestante <= 0) break;
+        let asignado = Math.min(pesoRestante, ingreso.netWeight);
+        pesoRestante -= asignado;
+  
+        nuevaSeleccion.push({
+          ...ingreso,
+          netWeight: asignado,
+          packageCount: ingreso.packageCount, // Editable
+          coneCount: ingreso.coneCount, // Editable
+        });
+      }
+  
+      if (pesoRestante > 0) {
+        showSnackbar("Error: No hay suficiente peso disponible.", "error");
+        setIngresosSeleccionados([]);
+      } else {
+        setIngresosSeleccionados(nuevaSeleccion);
+        console.log("Ingresos seleccionados:", nuevaSeleccion);
+      }
     };
   
-    console.log("Payload enviado:", JSON.stringify(payload, null, 2));
-  
-    try {
-      const response = await createYarnDispatch(payload);
-      alert("Movimiento de salida creado exitosamente.");
-      console.log("Respuesta del backend:", response);
-    } catch (error) {
-      console.error("Error al guardar el movimiento de salida:", error);
-      alert("Hubo un error al intentar guardar el movimiento de salida.");
-    }
-  };
+    const handleEditarIngreso = (index: number, campo: keyof YarnPurchaseEntry, valor: number) => {
+      const copia = [...ingresosSeleccionados];
+      copia[index] = { ...copia[index], [campo]: valor };
+      setIngresosSeleccionados(copia);
+    };
+
+    const handleSaveSalida = async () => {
+      // Validaciones previas
+      if (!dataIngreso) {
+        showSnackbar("Debe seleccionar un movimiento de ingreso.", "error");
+        return;
+      }
+    
+      if (!dataOS) {
+        showSnackbar("Debe seleccionar una orden de servicio.", "error");
+        return;
+      }
+    
+      if (!selectedAddress) {
+        showSnackbar("Debe seleccionar una dirección de proveedor.", "error");
+        return;
+      }
+    
+      if (selectedEntries.length === 0) {
+        showSnackbar("Debe seleccionar al menos un grupo para generar la salida.", "error");
+        return;
+      }
+    
+      // Validación del proveedor
+      const supplier = suppliers.find((supplier) => supplier.code === selectedSupplier);
+      if (!supplier) {
+        showSnackbar("El proveedor seleccionado no es válido.", "error");
+        return;
+      }
+    
+      console.log("Ingresos seleccionados para output:", selectedEntries);
+      console.log("Fabric:", FabricInfo);
+
+      const detail = selectedEntries.flatMap(entry =>
+        entry.detailHeavy.map(g => ({
+          itemNumber: g.itemNumber,
+          entryNumber: g.ingressNumber, // Asegurar que sea el correcto
+          entryGroupNumber: g.groupNumber, // Si aplica
+          entryItemNumber: g.itemNumber, // Confirmar si este campo es correcto
+          entryPeriod: g.period || 0, // Asegurar que no sea undefined
+          coneCount: g.coneCount || 0,
+          packageCount: g.packageCount || 0,
+          netWeight: g.netWeight || 0,
+          grossWeight: g.grossWeight || 0,
+          fabricId: FabricInfo.id,
+        }))
+      );
+
+      console.log("Detalle generado correctamente:", detail);
+
+    
+      if (detail.length === 0) {
+        showSnackbar("No se encontraron datos válidos para procesar la salida.", "error");
+        return;
+      }
+    
+      const payload: YarnDispatch = {
+        supplierCode: supplier.code,
+        documentNote: null, // Ajustar según necesidad
+        nrodir: selectedAddress,
+        serviceOrderId: dataOS.id,
+        detail,
+      };
+    
+      console.log("Enviando payload:", JSON.stringify(payload, null, 2));
+    
+      try {
+        const response = await createYarnDispatch(payload);
+        showSnackbar("Movimiento de salida creado exitosamente.", "success");
+        console.log("Respuesta del backend:", response);
+    
+        // Opcional: limpiar estados después de éxito
+        setselectedEntries([]);
+        setIngresosSeleccionados([]);
+      } catch (error) {
+        console.error("Error al guardar el movimiento de salida:", error);
+        showSnackbar("Hubo un error al intentar guardar el movimiento de salida.", "error");
+      }
+    };
+    
   
   const handleOpenIngresoDialog = () => 
     {FilterIngresosbySupplier();
-      sleepES5(100); // Espera 75ms antes de cargar la información
+      sleepES5(100);
     setIsIngresoDialogOpen(true);
     };
   const handleCloseIngresoDialog = () => setIsIngresoDialogOpen(false);
 
   const handleOpenServiceDialog = () => 
     {FilterServicebySupplier();
-      sleepES5(100); // Espera 75ms antes de cargar la información
+      sleepES5(100);
       setIsServiceDialogOpen(true);
     };
 
   const handleCloseServiceDialog = () => setIsServiceDialogOpen(false);
 
-
   var sleepES5 = function(ms: number){  // Función sleep
     var esperarHasta = new Date().getTime() + ms;
     while(new Date().getTime() < esperarHasta) continue;
-  };
-
-  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputText(e.target.value);
   };
 
   return (
@@ -983,6 +1007,45 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
             </DialogActions>
           </Dialog>
 
+
+        {/* Tabla de ingresos seleccionados */}
+        {selectedEntries.length > 0 && (
+            <div className="max-w-full overflow-x-auto mb-6">
+              <h2 className="text-lg font-semibold mb-3">Ingresos Seleccionados</h2>
+              <table className="w-full border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-blue-900 uppercase text-center text-white">
+                    <th className="border border-gray-300 px-4 py-2">Número de Ingreso</th>
+                    <th className="border border-gray-300 px-4 py-2">Peso Bruto</th>
+                    <th className="border border-gray-300 px-4 py-2">Peso Neto</th>
+                    <th className="border border-gray-300 px-4 py-2">Paquetes Restantes</th>
+                    <th className="border border-gray-300 px-4 py-2">Conos Restantes</th>
+                    <th className="border border-gray-300 px-4 py-2">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedEntries.map((ingreso, index) => {
+                    const detail = ingreso.detailHeavy?.[0] || {};
+                    return (
+                      <tr key={ingreso.entryNumber} className="text-center border-b border-gray-300">
+                        <td className="border border-gray-300 px-4 py-2">{ingreso.entryNumber}</td>
+                        <td className="border border-gray-300 px-4 py-2">{detail.grossWeight || "--"}</td>
+                        <td className="border border-gray-300 px-4 py-2">{detail.netWeight || "--"}</td>
+                        <td className="border border-gray-300 px-4 py-2">{detail.packagesLeft || "--"}</td>
+                        <td className="border border-gray-300 px-4 py-2">{detail.conesLeft || "--"}</td>
+                        <td className="border border-gray-300 px-4 py-2">
+                          <IconButton color="secondary" onClick={() => handleRemoveEntry(ingreso.entryNumber)}>
+                            <RemoveIcon />
+                          </IconButton>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+        )}
+          
         {/* Tabla de detalles de ingreso */}
         {dataIngreso && (
             <div className="max-w-full overflow-x-auto mb-6">
@@ -1012,10 +1075,119 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
             </div>
           )}
 
-        {/*{dataIngreso && (<>
-            <p className="text-lg font-semibold mb-3">Tipo de tejido seleccionado: {selectInfoFabric.fabricType.value}</p>
-          </>
-        )} */}
+        {selectedEntries.length > 0 && (
+          <Stack direction="row" spacing={2} alignItems="center">
+          <TextField
+            label="Cantidad Requerida (kg)"
+            type="number"
+            value={cantidadRequerida}
+            onChange={(e) => setCantidadRequerida(parseFloat(e.target.value) || 0)}
+            variant="outlined"
+            sx={{
+              width: "25%", // Ocupa solo 1/4 del ancho
+              minWidth: "150px", // Evita que sea muy pequeño
+              "& input": {
+                appearance: "textfield",
+              },
+              "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
+                appearance: "none",
+                margin: 0,
+              },
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "8px",
+                boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.1)",
+              },
+            }}
+          />
+
+          <Button
+            onClick={handleDistribuir}
+            variant="contained"
+            sx={{
+              backgroundColor: "#1976D2 !important",
+              color: "white !important",
+              fontWeight: "bold",
+              textTransform: "uppercase",
+              padding: "8px 16px",
+              borderRadius: "4px",
+              boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.2)",
+              "&:hover": {
+                backgroundColor: "#1565C0 !important",
+              },
+            }}
+          >
+            Distribuir
+          </Button>
+        </Stack>
+        )}
+
+        
+       {/* Mostrar ingresos seleccionados */}
+      <Grid container spacing={2} sx={{ marginTop: 2 }}>
+        {ingresosSeleccionados.map((ingreso, index) => (
+          <Grid item xs={12} sm={6} md={4} key={index}>
+            <Card sx={{ borderRadius: "12px", boxShadow: "0px 4px 10px rgba(0,0,0,0.1)" }}>
+              <CardContent>
+                <Typography variant="h6" fontWeight="bold">
+                  Hilado: {ingreso.yarnId}
+                </Typography>
+                <Typography variant="body1" color="textSecondary">
+                  Peso Asignado: <strong>{ingreso.netWeight} kg</strong>
+                </Typography>
+
+                {/* Contenedor para inputs alineados */}
+                <Grid container spacing={1} sx={{ marginTop: 1 }}>
+                  <Grid item xs={6}>
+                    <TextField
+                      label="Paquetes"
+                      type="number"
+                      value={ingreso.packageCount}
+                      onChange={(e) => handleEditarIngreso(index, "packageCount", parseInt(e.target.value) || 0)}
+                      fullWidth
+                      variant="outlined"
+                      sx={{
+                        "& input": {
+                          appearance: "textfield",
+                        },
+                        "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
+                          appearance: "none",
+                          margin: 0,
+                        },
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: "8px",
+                        },
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={6}>
+                    <TextField
+                      label="Conos"
+                      type="number"
+                      value={ingreso.coneCount}
+                      onChange={(e) => handleEditarIngreso(index, "coneCount", parseInt(e.target.value) || 0)}
+                      fullWidth
+                      variant="outlined"
+                      sx={{
+                        "& input": {
+                          appearance: "textfield",
+                        },
+                        "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
+                          appearance: "none",
+                          margin: 0,
+                        },
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: "8px",
+                        },
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
 
         {/* Botón para guardar la salida */}
         {dataIngreso && dataOS && (
