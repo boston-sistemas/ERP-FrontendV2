@@ -30,7 +30,7 @@ const MovSalidaHilado: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [includeInactive, setIncludeInactive] = useState(false);
-  const [period, setPeriod] = useState(2024); // Período inicial
+  const [period, setPeriod] = useState(2025);
 
   // Estado para manejar el diálogo
   const [openDialog, setOpenDialog] = useState(false);

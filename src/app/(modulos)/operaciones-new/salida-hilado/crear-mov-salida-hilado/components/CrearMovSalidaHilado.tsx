@@ -28,8 +28,7 @@ import {
   Grid, 
   Stack
 } from "@mui/material";
-import { Add, Details } from "@mui/icons-material";
-import RemoveIcon from "@mui/icons-material/Remove";
+import { Add, Details,DeleteForever } from "@mui/icons-material";
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   fetchYarnPurchaseEntries,
@@ -70,6 +69,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
   const [openYarnEntryInfoDialog, setOpenYarnEntryInfoDialog] = useState(false);
   const [ingresosSeleccionados, setIngresosSeleccionados] = useState<YarnPurchaseEntry[]>([]);
   const [cantidadRequerida, setCantidadRequerida] = useState(0);
+  const [bultosRequerido, setBultosRequerido] = useState(0);
 
 
   // TODO CON RESPECTO A ORDENES DE SERVICIO
@@ -142,6 +142,13 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
     loadSupplierData();
     loadFabricTypes();
   }, []);
+
+  useEffect(() => {
+    setCantidadRequerida(0);
+    setBultosRequerido(0);
+    setIngresosSeleccionados([]);
+  }, [selectedEntries]);
+  
 
   const handleRemoveEntry = (entryNumber: string) => {
     setselectedEntries((prev) => prev.filter((entry) => entry.entryNumber !== entryNumber));
@@ -317,7 +324,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
   
         nuevaSeleccion.push({
           ...ingreso,
-          netWeight: asignado,
+          AssignedWeight: asignado,
           packageCount: ingreso.packageCount, // Editable
           coneCount: ingreso.coneCount, // Editable
         });
@@ -329,6 +336,46 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
       } else {
         setIngresosSeleccionados(nuevaSeleccion);
         console.log("Ingresos seleccionados:", nuevaSeleccion);
+      }
+    };
+
+    const handleDistribuirBultos = () => {
+      let bultosRestantes = bultosRequerido;
+      let nuevaSeleccion: YarnPurchaseEntry[] = [];
+      let pesoTotalCalculado = 0; 
+
+      // Ordenar ingresos de mayor a menor según los paquetes disponibles
+      const ingresosOrdenados = selectedEntries.flatMap(entry => entry.detailHeavy).sort((a, b) => b.packagesLeft - a.packagesLeft);
+      console.log("Ingresos ordenados por bultos:", ingresosOrdenados);
+  
+      for (let ingreso of ingresosOrdenados) {
+        if (bultosRestantes <= 0) break;
+        let pesoPorPaquete = ingreso.unitNetWeightForPackage || 0; // Asegurar que tenemos peso unitario
+        let paquetesDisponibles = ingreso.packagesLeft || 0; // Paquetes restantes en el lote
+
+        let paquetesAsignados = Math.min(paquetesDisponibles, bultosRestantes);
+        let pesoAsignado = paquetesAsignados * pesoPorPaquete;
+        let conosNecesarios = Math.ceil(pesoAsignado / ingreso.unitNetWeightForCone);
+
+        pesoTotalCalculado += pesoAsignado;
+        bultosRestantes -= paquetesAsignados;
+
+        nuevaSeleccion.push({
+          ...ingreso,
+          AssignedWeight: pesoAsignado, // Peso total asignado
+          packageCount: paquetesAsignados, // Bultos asignados
+          coneCount: conosNecesarios, // No cambiamos conos
+        });
+
+      }
+  
+      if (bultosRestantes > 0) {
+        showSnackbar("Error: No hay suficientes bultos disponibles.", "error");
+        setIngresosSeleccionados([]);
+      } else {
+        setIngresosSeleccionados(nuevaSeleccion);
+        console.log("Ingresos seleccionados:", nuevaSeleccion);
+        console.log("Peso total calculado:", pesoTotalCalculado);
       }
     };
   
@@ -355,7 +402,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
         return;
       }
     
-      if (selectedEntries.length === 0) {
+      if (ingresosSeleccionados.length === 0) {
         showSnackbar("Debe seleccionar al menos un grupo para generar la salida.", "error");
         return;
       }
@@ -367,23 +414,21 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
         return;
       }
     
-      console.log("Ingresos seleccionados para output:", selectedEntries);
+      console.log("Ingresos seleccionados para output:", ingresosSeleccionados);
       console.log("Fabric:", FabricInfo);
 
-      const detail = selectedEntries.flatMap(entry =>
-        entry.detailHeavy.map(g => ({
-          itemNumber: g.itemNumber,
-          entryNumber: g.ingressNumber, // Asegurar que sea el correcto
-          entryGroupNumber: g.groupNumber, // Si aplica
-          entryItemNumber: g.itemNumber, // Confirmar si este campo es correcto
-          entryPeriod: g.period || 0, // Asegurar que no sea undefined
-          coneCount: g.coneCount || 0,
-          packageCount: g.packageCount || 0,
-          netWeight: g.netWeight || 0,
-          grossWeight: g.grossWeight || 0,
-          fabricId: FabricInfo.id,
-        }))
-      );
+      const detail = ingresosSeleccionados.map(g => ({
+        itemNumber: g.itemNumber,
+        entryNumber: g.ingressNumber, // Asegurar que sea el correcto
+        entryGroupNumber: g.groupNumber, // Si aplica
+        entryItemNumber: g.itemNumber, // Confirmar si este campo es correcto
+        entryPeriod: g.period || 0, // Asegurar que no sea undefined
+        coneCount: g.coneCount || 0,
+        packageCount: g.packageCount || 0,
+        netWeight: g.AssignedWeight || 0,
+        grossWeight: g.AssignedWeight || 0,
+        fabricId: FabricInfo.id,
+      }));
 
       console.log("Detalle generado correctamente:", detail);
 
@@ -1034,8 +1079,8 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
                         <td className="border border-gray-300 px-4 py-2">{detail.packagesLeft || "--"}</td>
                         <td className="border border-gray-300 px-4 py-2">{detail.conesLeft || "--"}</td>
                         <td className="border border-gray-300 px-4 py-2">
-                          <IconButton color="secondary" onClick={() => handleRemoveEntry(ingreso.entryNumber)}>
-                            <RemoveIcon />
+                          <IconButton color="#FF0000" onClick={() => handleRemoveEntry(ingreso.entryNumber)}>
+                            <DeleteForever />
                           </IconButton>
                         </td>
                       </tr>
@@ -1047,9 +1092,9 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
         )}
           
         {/* Tabla de detalles de ingreso */}
-        {dataIngreso && (
+        {dataIngreso && selectedEntries.length > 0 && (
             <div className="max-w-full overflow-x-auto mb-6">
-              <h2 className="text-lg font-semibold mb-3">Detalles del Movimiento de Ingreso</h2>
+              <h2 className="text-lg font-semibold mb-3">Detalles del ultimo movimiento de ingreso seleccionado:</h2>
               <table className="w-full border-collapse border border-gray-300">
                 <thead>
                   <tr className="bg-blue-900 uppercase text-center text-white">
@@ -1075,8 +1120,9 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
             </div>
           )}
 
-        {selectedEntries.length > 0 && (
-          <Stack direction="row" spacing={2} alignItems="center">
+      {selectedEntries.length > 0 && (
+        <Stack direction="row" spacing={3} justifyContent="center" alignItems="center">
+          {/* Input de Cantidad Requerida (kg) */}
           <TextField
             label="Cantidad Requerida (kg)"
             type="number"
@@ -1084,8 +1130,8 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
             onChange={(e) => setCantidadRequerida(parseFloat(e.target.value) || 0)}
             variant="outlined"
             sx={{
-              width: "25%", // Ocupa solo 1/4 del ancho
-              minWidth: "150px", // Evita que sea muy pequeño
+              width: "20%",
+              minWidth: "180px",
               "& input": {
                 appearance: "textfield",
               },
@@ -1100,6 +1146,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
             }}
           />
 
+          {/* Botón para distribuir por peso */}
           <Button
             onClick={handleDistribuir}
             variant="contained"
@@ -1108,8 +1155,52 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
               color: "white !important",
               fontWeight: "bold",
               textTransform: "uppercase",
-              padding: "8px 16px",
-              borderRadius: "4px",
+              padding: "10px 20px",
+              borderRadius: "8px",
+              boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.2)",
+              "&:hover": {
+                backgroundColor: "#1565C0 !important",
+              },
+            }}
+          >
+            Distribuir
+          </Button>
+
+          {/* Input de Bultos Requeridos */}
+          <TextField
+            label="Cantidad de Bultos"
+            type="number"
+            value={bultosRequerido}
+            onChange={(e) => setBultosRequerido(parseFloat(e.target.value) || 0)}
+            variant="outlined"
+            sx={{
+              width: "20%",
+              minWidth: "180px",
+              "& input": {
+                appearance: "textfield",
+              },
+              "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
+                appearance: "none",
+                margin: 0,
+              },
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "8px",
+                boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.1)",
+              },
+            }}
+          />
+
+          {/* Botón para distribuir por bultos */}
+          <Button
+            onClick={handleDistribuirBultos}
+            variant="contained"
+            sx={{
+              backgroundColor: "#1976D2 !important",
+              color: "white !important",
+              fontWeight: "bold",
+              textTransform: "uppercase",
+              padding: "10px 20px",
+              borderRadius: "8px",
               boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.2)",
               "&:hover": {
                 backgroundColor: "#1565C0 !important",
@@ -1119,20 +1210,33 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
             Distribuir
           </Button>
         </Stack>
-        )}
+      )}
+
 
         
-       {/* Mostrar ingresos seleccionados */}
-      <Grid container spacing={2} sx={{ marginTop: 2 }}>
+    {selectedEntries.length > 0 && (
+      <Grid 
+        container 
+        spacing={2} 
+        sx={{ marginTop: 2 }} 
+        justifyContent="center" // Centra las tarjetas horizontalmente
+      >
         {ingresosSeleccionados.map((ingreso, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
-            <Card sx={{ borderRadius: "12px", boxShadow: "0px 4px 10px rgba(0,0,0,0.1)" }}>
+          <Grid item xs={12} sm={6} md={4} key={index} sx={{ display: "flex", justifyContent: "center" }}>
+            <Card 
+              sx={{ 
+                borderRadius: "12px", 
+                boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
+                maxWidth: "320px", // Evita que las tarjetas sean demasiado anchas
+                width: "100%" // Se ajusta al tamaño del contenedor
+              }}
+            >
               <CardContent>
                 <Typography variant="h6" fontWeight="bold">
                   Hilado: {ingreso.yarnId}
                 </Typography>
                 <Typography variant="body1" color="textSecondary">
-                  Peso Asignado: <strong>{ingreso.netWeight} kg</strong>
+                  Peso Asignado: <strong>{ingreso.AssignedWeight} kg</strong>
                 </Typography>
 
                 {/* Contenedor para inputs alineados */}
@@ -1188,13 +1292,34 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
           </Grid>
         ))}
       </Grid>
+    )}
 
-        {/* Botón para guardar la salida */}
-        {dataIngreso && dataOS && (
-          <Button variant="contained" onClick={handleSaveSalida} style={{ marginTop: "16px", backgroundColor: "#4caf50", color: "#fff" }}>
+    
+
+      {/* Botón para guardar la salida */}
+      {ingresosSeleccionados.length > 0 && dataOS && (
+        <Stack alignItems="center" marginTop={2}>
+          <Button
+            variant="contained" 
+            onClick={handleSaveSalida} 
+            sx={{
+              backgroundColor: "#18c93f !important",
+              color: "white !important",
+              fontWeight: "bold",
+              textTransform: "uppercase",
+              padding: "10px 20px",
+              borderRadius: "8px",
+              boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.2)",
+              "&:hover": {
+                backgroundColor: "#088c25 !important",
+              },
+            }}
+          >
             Guardar Salida
           </Button>
-        )}
+        </Stack>
+      )}
+
         <Snackbar
           open={openSnackbar}
           autoHideDuration={3000}
