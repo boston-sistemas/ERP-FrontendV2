@@ -30,15 +30,15 @@ import {
   createServiceOrder,
 } from "../../services/ordenesServicioService";
 
-// (NUEVO) Importa el servicio que traiga tus tejidos
-import { fetchTejidos } from "../../../tejidos/services/tejidosService"; // Ejemplo
+import { fetchTejidos } from "../../../tejidos/services/tejidosService"; 
 
 import { ServiceOrder, Supplier } from "../../../models/models";
 
 const OrdenesServicio: React.FC = () => {
   const router = useRouter();
   const [ordenesServicio, setOrdenesServicio] = useState<ServiceOrder[]>([]);
-  const [pagina, setPagina] = useState(0);
+  const [pagina, setPagina] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [includeInactive, setIncludeInactive] = useState(false);
@@ -69,14 +69,20 @@ const OrdenesServicio: React.FC = () => {
   });
 
   // Estado para el período
-  const [period, setPeriod] = useState<number>(new Date().getFullYear());
+  const [period, setPeriod] = useState(() => new Date().getFullYear());
 
   // Cargar OS
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      const resp = await fetchServiceOrders(filasPorPagina, pagina * filasPorPagina, includeInactive, period);
+      const resp = await fetchServiceOrders(
+        period,
+        includeInactive, // includeAnnulled
+        true, // includeDetail
+        undefined // supplierIds opcional
+      );
       setOrdenesServicio(resp.serviceOrders || []);
+      setTotalItems(resp.total || resp.serviceOrders.length); // Por si el backend devuelve total
     } catch (e) {
       console.error("Error al cargar órdenes:", e);
     } finally {
@@ -86,7 +92,7 @@ const OrdenesServicio: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [pagina, filasPorPagina, includeInactive, period]);
+  }, [period, includeInactive]); // Ya no depende de pagina y filasPorPagina
 
   // Cargar suppliers
   useEffect(() => {
@@ -180,6 +186,16 @@ const OrdenesServicio: React.FC = () => {
     router.push(`/operaciones-new/ordenes-servicio/detalles/${orderId}`);
   };
 
+  // Actualizar handlers de paginación
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPagina(newPage + 1); // Ajustar a base 1
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setFilasPorPagina(parseInt(event.target.value, 10));
+    setPagina(1); // Reset a primera página
+  };
+
   return (
     <div className="space-y-5">
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default">
@@ -260,7 +276,9 @@ const OrdenesServicio: React.FC = () => {
                     {getSupplierName(o.supplierId)}
                   </td>
                   <td className="border-b border-[#eee] px-4 py-4">{o.issueDate}</td>
-                  <td className="border-b border-[#eee] px-4 py-4">{o.statusFlag}</td>
+                  <td className="border-b border-[#eee] px-4 py-4">
+                    {o.status?.value || '---'}
+                  </td>
                   <td className="border-b border-[#eee] px-4 py-4">
                     <IconButton onClick={() => handleDetailsClick(o.id)}>
                       <Visibility />
@@ -282,12 +300,14 @@ const OrdenesServicio: React.FC = () => {
         <TablePagination
           rowsPerPageOptions={[10, 25, 50]}
           component="div"
-          count={ordenesServicio.length}
+          count={totalItems}
           rowsPerPage={filasPorPagina}
-          page={pagina}
-          onPageChange={(_, newPage) => setPagina(newPage)}
-          onRowsPerPageChange={(e) =>
-            setFilasPorPagina(parseInt(e.target.value, 10))
+          page={pagina - 1} // Convertir a base 0 para MUI
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          labelRowsPerPage="Filas por página:"
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
           }
         />
       </div>
