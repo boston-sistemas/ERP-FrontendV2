@@ -11,7 +11,7 @@ import {
 import {
   fetchYarnPurchaseEntries,
   fetchYarnPurchaseEntryDetails,
-} from "../../../ingreso-hilado/services/movIngresoHiladoService";
+} from "../../../movimiento-ingreso-hilado/services/movIngresoHiladoService";
 import { fetchSuppliers } from "../../../ordenes-servicio/services/ordenesServicioService";
 import {
   fetchServiceOrders,

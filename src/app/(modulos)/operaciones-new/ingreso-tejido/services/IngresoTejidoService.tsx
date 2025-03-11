@@ -3,14 +3,24 @@ import { Supplier, WeavingServiceEntry } from "../../models/models";
 
 export const fetchWeavingServiceEntries = async (
     period: number,
-    limit: number,
-    offset: number,
-    include_inactive: boolean
-): Promise<{ weavingServiceEntries: WeavingServiceEntry[] }> => {
-    const response = await instance.get<{ weavingServiceEntries: WeavingServiceEntry[] }>(
-        `/operations/v1/weaving-service-entries/?period=${period}&limit=${limit}&offset=${offset}&include_inactive=${include_inactive}`
+    includeAnnulled: boolean = false,
+    includeDetail: boolean = true,
+    page: number = 1,
+    startDate?: string,
+    endDate?: string
+): Promise<WeavingServiceEntryResponse> => {
+    const response = await instance.get<WeavingServiceEntryResponse>(
+        `/operations/v1/weaving-service-entries/`, {
+            params: {
+                period,
+                includeAnnulled,
+                includeDetail,
+                page,
+                startDate,
+                endDate
+            }
+        }
     );
-    console.log(response.data);
     return response.data;
 };
 

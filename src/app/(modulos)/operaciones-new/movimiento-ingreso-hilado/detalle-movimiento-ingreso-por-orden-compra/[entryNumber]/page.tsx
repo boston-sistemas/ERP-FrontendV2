@@ -4,13 +4,13 @@ import DefaultLayout from "@/common/components/Layouts/DefaultLayout";
 import { Metadata } from "next"; 
 
 export const metadata: Metadata = {
-  title: "Detalles Movimiento Ingreso de Hilado",
+  title: "MOVIMIENTO DE INGRESO DE HILADO POR ORDEN DE COMPRA",
 };
 
 const TablesPage = () => {
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="DETALLES DE INGRESO DE HILADO" />
+      <Breadcrumb pageName="MOVIMIENTO DE INGRESO DE HILADO POR ORDEN DE COMPRA" />
       <div className="flex flex-col gap-10">
         <DetallesMovIngresoHilado />
       </div>

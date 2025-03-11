@@ -2,16 +2,24 @@
 import { ServiceOrder, ServiceOrderDetail, ServiceOrderResponse, Supplier } from "../../models/models";
 
 export const fetchServiceOrders = async (
-    limit: number,
-    offset: number,
-    includeInactive: boolean,
-    period: number
-  ): Promise<ServiceOrderResponse> => {
-    const response = await instance.get<ServiceOrderResponse>(
-      `/operations/v1/service-orders/?limit=${limit}&offset=${offset}&include_inactive=${includeInactive}&period=${period}`
-    );
-    return response.data;
-  };
+  period: number,
+  includeAnnulled: boolean = false,
+  includeDetail: boolean = true,
+  supplierIds?: string[]
+): Promise<{ serviceOrders: ServiceOrder[] }> => {
+  const response = await instance.get<{ serviceOrders: ServiceOrder[] }>(
+    `/operations/v1/service-orders/`,
+    {
+      params: {
+        period,
+        includeAnnulled,
+        includeDetail,
+        supplierIds
+      }
+    }
+  );
+  return response.data;
+};
   
 export const fetchServiceOrderById = async (orderId: string) => {
   const response = await instance.get<ServiceOrder>(`/operations/v1/service-orders/${orderId}`);
@@ -97,4 +105,9 @@ export const fetchServiceOrderStatus = async () => {
     serviceOrderStatus: Array<{ id: number; value: string }>;
   }>("/security/v1/parameters/public/service-order-status");
   return response.data; 
+};
+
+export const fetchFabricById = async (fabricId: string) => {
+  const response = await instance.get(`/operations/v1/fabrics/${fabricId}`);
+  return response.data;
 };

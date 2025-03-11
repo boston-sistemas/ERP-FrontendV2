@@ -15,21 +15,37 @@ import {
   MenuItem,
   Select,
   Typography,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Visibility, Add, Close, Search } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { WeavingServiceEntry } from "../../../models/models";
 import { fetchWeavingServiceEntries, fetchWeavingServiceEntryById, annulWeavingServiceEntry, checkWeavingServiceEntryIsUpdatable } from "../../services/IngresoTejidoService";
 
+const getCurrentYear = () => new Date().getFullYear();
+const generateYearOptions = (currentYear: number) => {
+  return Array.from({ length: 4 }, (_, index) => currentYear - index);
+};
+
 const MovIngresoTejido: React.FC = () => {
     const router = useRouter();
     const [entries, setEntries] = useState<WeavingServiceEntry[]>([]);
-    const [pagina, setPagina] = useState(0);
+    const [pagina, setPagina] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
     const [filasPorPagina, setFilasPorPagina] = useState(10);
     const [searchTerm, setSearchTerm] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [includeInactive, setIncludeInactive] = useState(false);
-    const [period, setPeriod] = useState(2024);
+    const [period, setPeriod] = useState(() => {
+      const currentYear = getCurrentYear();
+      return currentYear;
+    });
+    const [startDate, setStartDate] = useState<string | undefined>(undefined);
+    const [endDate, setEndDate] = useState<string | undefined>(undefined);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState("");
+    const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
   
     useEffect(() => {
       const fetchData = async () => {
@@ -37,20 +53,24 @@ const MovIngresoTejido: React.FC = () => {
         try {
           const response = await fetchWeavingServiceEntries(
             period,
-            filasPorPagina,
-            pagina * filasPorPagina,
-            includeInactive
+            includeInactive,
+            true,
+            pagina,
+            startDate || undefined,
+            endDate || undefined
           );
           setEntries(response.weavingServiceEntries || []);
+          setTotalItems(response.total);
         } catch (error) {
           console.error("Error al cargar los datos:", error);
+          showSnackbar("Error al cargar los datos", "error");
         } finally {
           setIsLoading(false);
         }
       };
   
       fetchData();
-    }, [pagina, filasPorPagina, includeInactive, period]);
+    }, [pagina, includeInactive, period, startDate, endDate]);
   
     const handleCreateEntry = () => {
       router.push("/operaciones-new/ingreso-tejido/crear-mov-ingreso-tejido");
@@ -65,6 +85,25 @@ const MovIngresoTejido: React.FC = () => {
         String(value).toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
+  
+    const handleChangePage = (event: unknown, newPage: number) => {
+      setPagina(newPage + 1);
+    };
+  
+    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+      setFilasPorPagina(parseInt(event.target.value, 10));
+      setPagina(1);
+    };
+  
+    const handleSnackbarClose = () => {
+      setSnackbarOpen(false);
+    };
+  
+    const showSnackbar = (message: string, severity: "success" | "error") => {
+      setSnackbarMessage(message);
+      setSnackbarSeverity(severity);
+      setSnackbarOpen(true);
+    };
   
     return (
       <div className="space-y-5">
@@ -106,7 +145,7 @@ const MovIngresoTejido: React.FC = () => {
                     size="small"
                     style={{ width: "120px", backgroundColor: "#fff" }}
                   >
-                    {[2023, 2024, 2025].map((year) => (
+                    {generateYearOptions(getCurrentYear()).map((year) => (
                       <MenuItem key={year} value={year}>
                         {year}
                       </MenuItem>
@@ -197,21 +236,38 @@ const MovIngresoTejido: React.FC = () => {
           </div>
   
           <TablePagination
-            rowsPerPageOptions={[10, 25, 50]}
             component="div"
-            count={entries.length}
+            count={totalItems}
+            page={pagina - 1}
             rowsPerPage={filasPorPagina}
-            page={pagina}
-            onPageChange={(_, newPage) => setPagina(newPage)}
-            onRowsPerPageChange={(e) =>
-              setFilasPorPagina(parseInt(e.target.value, 10))
-            }
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
             labelRowsPerPage="Filas por página:"
             labelDisplayedRows={({ from, to, count }) =>
               `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
             }
+            rowsPerPageOptions={[10, 25, 50]}
           />
         </div>
+        
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={3000}
+          onClose={handleSnackbarClose}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        >
+          <Alert
+            onClose={handleSnackbarClose}
+            severity={snackbarSeverity}
+            sx={{
+              width: "100%",
+              backgroundColor: snackbarSeverity === "success" ? "#1976d2" : "#d32f2f",
+              color: "#fff",
+            }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
       </div>
     );
   };

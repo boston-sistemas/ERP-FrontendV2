@@ -32,17 +32,22 @@ import {
   WeavingServiceEntry,
 } from "@/app/(modulos)/operaciones-new/models/models";
 
+const getCurrentYear = () => new Date().getFullYear();
+const generateYearOptions = (currentYear: number) => {
+  return Array.from({ length: 4 }, (_, index) => currentYear - index);
+};
+
 const CrearIngresoTejido: React.FC = () => {
   const router = useRouter();
 
   // State para formulario principal
-  const [period, setPeriod] = useState<number>(2024);
+  const [period, setPeriod] = useState<number>(() => getCurrentYear());
   const [supplierId, setSupplierId] = useState<string>("");
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [supplierPoCorrelative, setSupplierPoCorrelative] = useState<string>("");
   const [supplierPoSeries, setSupplierPoSeries] = useState<string>("");
   const [documentNote, setDocumentNote] = useState<string>("");
-  const [fecgf, setFecgf] = useState<string>("2024-01-10");
+  const [fecgf, setFecgf] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [generateCards, setGenerateCards] = useState<boolean>(false);
 
   // State para detalles
@@ -61,6 +66,11 @@ const CrearIngresoTejido: React.FC = () => {
     "success"
   );
 
+  // Agregar estados para paginación
+  const [pagina, setPagina] = useState(1);
+  const [filasPorPagina, setFilasPorPagina] = useState(10);
+  const [includeInactive, setIncludeInactive] = useState(false);
+
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
   };
@@ -77,11 +87,16 @@ const CrearIngresoTejido: React.FC = () => {
         const suppliersResp = await fetchSuppliersT();
         setSuppliers(suppliersResp);
 
-        const serviceOrdersResp = await fetchServiceOrders(10, 0, false);
+        const serviceOrdersResp = await fetchServiceOrders(
+          period,
+          false,
+          true,
+          undefined
+        );
 
-        // Ordenar las órdenes de servicio por fecha de creación (issueDate)
         const sortedServiceOrders = serviceOrdersResp.serviceOrders.sort(
-          (a: ServiceOrder, b: ServiceOrder) => new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime()
+          (a: ServiceOrder, b: ServiceOrder) => 
+            new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime()
         );
 
         setServiceOrders(sortedServiceOrders || []);
@@ -91,7 +106,7 @@ const CrearIngresoTejido: React.FC = () => {
       }
     };
     fetchInitialData();
-  }, []);
+  }, [period]);
 
   const handleServiceOrderChange = async (e: SelectChangeEvent<string>) => {
     const orderId = e.target.value;
@@ -175,7 +190,7 @@ const CrearIngresoTejido: React.FC = () => {
               value={period}
               onChange={(e) => setPeriod(Number(e.target.value))}
             >
-              {[2023, 2024, 2025].map((year) => (
+              {generateYearOptions(getCurrentYear()).map((year) => (
                 <MenuItem key={year} value={year}>
                   {year}
                 </MenuItem>

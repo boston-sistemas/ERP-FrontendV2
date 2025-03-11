@@ -5,7 +5,7 @@ export const fetchYarnPurchaseEntries = async (
   period: number,
   limit: number,
   offset: number,
-  include_inactive: boolean,
+  includeAnnulled: boolean,
   startDate?: string,
   endDate?: string
 ): Promise<YarnPurchaseEntryResponse> => {
@@ -15,7 +15,7 @@ export const fetchYarnPurchaseEntries = async (
         period,
         limit,
         offset,
-        include_inactive,
+        includeAnnulled,
         startDate,
         endDate
       }
@@ -75,8 +75,8 @@ export const fetchYarnPurchaseEntryDetails = async (
     );
   };
 
-  export const anulateYarnPurchaseEntry = async (entryNumber: string) => {
-    await instance.put(`/operations/v1/yarn-purchase-entries/${entryNumber}/anulate?period=2024`);
+  export const anulateYarnPurchaseEntry = async (entryNumber: string, period: number) => {
+    await instance.put(`/operations/v1/yarn-purchase-entries/${entryNumber}/anulate?period=${period}`);
   };
   
   // Servicio para verificar si el movimiento de ingreso de hilado es actualizable

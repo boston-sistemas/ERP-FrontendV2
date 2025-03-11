@@ -19,9 +19,13 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  Typography,
 } from "@mui/material";
 import { Edit, Block, Settings, Add, Close, Search } from "@mui/icons-material";
 import { useParams, useRouter } from "next/navigation";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
+import Visibility from '@mui/icons-material/Visibility';
 
 import {
   fetchServiceOrderById,
@@ -30,13 +34,12 @@ import {
   checkIfServiceOrderIsUpdatable,
   fetchServiceOrderStatus,
   fetchSuppliers,
+  fetchFabricById,
 } from "../../services/ordenesServicioService";
 
 import { ServiceOrder, ServiceOrderDetail, Supplier } from "../../../models/models";
 
-// <-- Debes tener un servicio que retorne los tejidos:
 import { fetchTejidos } from "../../../tejidos/services/tejidosService"; 
-// Ej: fetchTejidos -> GET /operations/v1/fabrics => {fabrics: Fabric[]}
 
 const DetallesOrdenServicio: React.FC = () => {
   const { id } = useParams(); // Puede ser string | string[]
@@ -62,6 +65,7 @@ const DetallesOrdenServicio: React.FC = () => {
   const [isFabricDialogOpen, setIsFabricDialogOpen] = useState(false);
   const [fabrics, setFabrics] = useState<any[]>([]); // tu interfaz Fabric
   const [fabricSelectIndex, setFabricSelectIndex] = useState<number | null>(null);
+  const [selectedFabric, setSelectedFabric] = useState<any>(null);
 
   // ================== Anular ==================
   const [isAnulateDialogOpen, setIsAnulateDialogOpen] = useState(false);
@@ -75,6 +79,9 @@ const DetallesOrdenServicio: React.FC = () => {
   // ================== Updatable? ==================
   const [isEditable, setIsEditable] = useState<boolean>(false);
   const [isAnulable, setIsAnulable] = useState<boolean>(false);
+
+  // ================== Diálogo para detalles del tejido ==================
+  const [isFabricDetailsDialogOpen, setIsFabricDetailsDialogOpen] = useState(false);
 
   // ================== Efecto: cargar OS + checkUpdatable ==================
   useEffect(() => {
@@ -192,6 +199,20 @@ const DetallesOrdenServicio: React.FC = () => {
     handleCloseFabricDialog();
   };
 
+  const handleOpenFabricDetailsDialog = async (fabricId: string) => {
+    try {
+      const fabricData = await fetchFabricById(fabricId);
+      setSelectedFabric(fabricData);
+      setIsFabricDetailsDialogOpen(true);
+    } catch (error) {
+      console.error("Error al cargar detalles del tejido:", error);
+    }
+  };
+
+  const handleCloseFabricDetails = () => {
+    setIsFabricDetailsDialogOpen(false);
+    setSelectedFabric(null);
+  };
 
   function getSupplierNameById(id: string, suppliers: Supplier[]): string {
     const supplier = suppliers.find((item) => item.code === id);
@@ -280,9 +301,9 @@ const DetallesOrdenServicio: React.FC = () => {
     }
   };
 
-  const isEditableOrAnulable = (statusFlag: string, isUpdatable: boolean): boolean => {
+  const isEditableOrAnulable = (isUpdatable: boolean): boolean => {
     // Habilitar si el estado es "No iniciado" y la orden es editable
-    return statusFlag === "P" && isUpdatable; // Ajusta "P" si "No iniciado" tiene otro valor
+    return isUpdatable; // Ajusta "P" si "No iniciado" tiene otro valor
   };
   
   const isOrderCanceled = (statusFlag: string): boolean => {
@@ -293,6 +314,39 @@ const DetallesOrdenServicio: React.FC = () => {
   // ================== Volver ==================
   const handleGoBack = () => {
     router.push("/operaciones-new/ordenes-servicio");
+  };
+
+  // ================== Responsive ==================
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMediumScreen = useMediaQuery(theme.breakpoints.down("md"));
+
+  // ================== New states for new dialogs ==================
+  const [isYarnDetailsDialogOpen, setIsYarnDetailsDialogOpen] = useState(false);
+  const [selectedYarn, setSelectedYarn] = useState<any>(null);
+
+  const [isFiberDetailsDialogOpen, setIsFiberDetailsDialogOpen] = useState(false);
+  const [selectedFiber, setSelectedFiber] = useState<any>(null);
+
+  // ================== New functions for new dialogs ==================
+  const handleOpenYarnDetails = (yarn: any) => {
+    setSelectedYarn(yarn);
+    setIsYarnDetailsDialogOpen(true);
+  };
+
+  const handleCloseYarnDetails = () => {
+    setIsYarnDetailsDialogOpen(false);
+    setSelectedYarn(null);
+  };
+
+  const handleOpenFiberDetails = (fiber: any) => {
+    setSelectedFiber(fiber);
+    setIsFiberDetailsDialogOpen(true);
+  };
+
+  const handleCloseFiberDetails = () => {
+    setIsFiberDetailsDialogOpen(false);
+    setSelectedFiber(null);
   };
 
   // ================== Render ==================
@@ -326,95 +380,45 @@ const DetallesOrdenServicio: React.FC = () => {
 
           {/* EDITAR */}
           <Tooltip
-          title={
-            isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
-              ? ""
-              : "No se puede editar en este estado"
-          }
-        >
-          <span>
-            <Button
-              startIcon={<Edit />}
-              variant="contained"
-              disabled={
-                !isEditableOrAnulable(orden.statusFlag, isEditable) || isOrderCanceled(orden.statusFlag)
-              }
-              onClick={
-                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
-                  ? handleOpenEditDialog
-                  : undefined
-              }
-              style={
-                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
+            title={isEditable ? "" : "No se puede editar en este estado"}
+          >
+            <span>
+              <Button
+                startIcon={<Edit />}
+                variant="contained"
+                disabled={!isEditable || isOrderCanceled(orden.statusFlag)}
+                onClick={isEditable && !isOrderCanceled(orden.statusFlag) 
+                  ? handleOpenEditDialog 
+                  : undefined}
+                style={isEditable && !isOrderCanceled(orden.statusFlag)
                   ? { backgroundColor: "#1976d2", color: "#fff" }
-                  : { backgroundColor: "#b0b0b0", color: "#fff" }
-              }
-            >
-              Editar
-            </Button>
-          </span>
-        </Tooltip>
-          {/* CAMBIAR ESTADO */}
-          <Tooltip
-          title={
-            isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
-              ? ""
-              : "No se puede cambiar estado en este estado"
-          }
-        >
-          <span>
-            <Button
-              startIcon={<Settings />}
-              variant="contained"
-              disabled={
-                !isEditableOrAnulable(orden.statusFlag, isEditable) || isOrderCanceled(orden.statusFlag)
-              }
-              onClick={
-                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
-                  ? handleOpenStatusDialog
-                  : undefined
-              }
-              style={
-                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
-                  ? { backgroundColor: "#1976d2", color: "#fff" }
-                  : { backgroundColor: "#b0b0b0", color: "#fff" }
-              }
-            >
-              Cambiar Estado
-            </Button>
-          </span>
-        </Tooltip>
+                  : { backgroundColor: "#b0b0b0", color: "#fff" }}
+              >
+                Editar
+              </Button>
+            </span>
+          </Tooltip>
 
           {/* ANULAR */}
           <Tooltip
-          title={
-            isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
-              ? ""
-              : "No se puede anular en este estado"
-          }
-        >
-          <span>
-            <Button
-              startIcon={<Block />}
-              variant="contained"
-              disabled={
-                !isEditableOrAnulable(orden.statusFlag, isEditable) || isOrderCanceled(orden.statusFlag)
-              }
-              onClick={
-                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
+            title={isAnulable ? "" : "No se puede anular en este estado"}
+          >
+            <span>
+              <Button
+                startIcon={<Block />}
+                variant="contained"
+                disabled={!isAnulable || isOrderCanceled(orden.statusFlag)}
+                onClick={isAnulable && !isOrderCanceled(orden.statusFlag)
                   ? handleOpenAnulateDialog
-                  : undefined
-              }
-              style={
-                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
+                  : undefined}
+                style={isAnulable && !isOrderCanceled(orden.statusFlag)
                   ? { backgroundColor: "#d32f2f", color: "#fff" }
-                  : { backgroundColor: "#b0b0b0", color: "#fff" }
-              }
-            >
-              Anular
-            </Button>
-          </span>
-        </Tooltip>
+                  : { backgroundColor: "#b0b0b0", color: "#fff" }}
+              >
+                Anular
+              </Button>
+            </span>
+          </Tooltip>
         </div>
       </div>
 
@@ -437,7 +441,7 @@ const DetallesOrdenServicio: React.FC = () => {
                 {getSupplierNameById(orden.supplierId, suppliers)}
               </td>
               <td className="border-b border-[#eee] px-4 py-5">{orden.issueDate}</td>
-              <td className="border-b border-[#eee] px-4 py-5">{orden.statusFlag}</td>
+              <td className="border-b border-[#eee] px-4 py-5">{orden.status?.value || '---'}</td>
             </tr>
           </tbody>
         </table>
@@ -450,8 +454,8 @@ const DetallesOrdenServicio: React.FC = () => {
           <thead>
             <tr className="bg-blue-900 uppercase text-center text-white">
               <th className="px-4 py-4 font-normal">Tejido</th>
-              <th className="px-4 py-4 font-normal">Cantidad Ordenada</th>
-              <th className="px-4 py-4 font-normal">Cantidad Suministrada</th>
+              <th className="px-4 py-4 font-normal">Cantidad Programada</th>
+              <th className="px-4 py-4 font-normal">Cantidad Recibida</th>
               <th className="px-4 py-4 font-normal">Precio</th>
               <th className="px-4 py-4 font-normal">Estado</th>
             </tr>
@@ -460,8 +464,18 @@ const DetallesOrdenServicio: React.FC = () => {
             {orden.detail.map((det, idx) => (
               <tr key={idx} className="text-center">
                 {/* Si la API no trae .fabricId, mostramos .tissueId */}
-                <td className="border-b border-[#eee] px-4 py-5">
-                  {(det as any).fabricId || det.tissueId || "(sin id)"}
+                <td className="border-b border-[#eee] px-4 py-5 flex items-center justify-center">
+                  <span>{(det as any).fabricId || det.tissueId || "(sin id)"}</span>
+                  <IconButton 
+                    color = "primary"
+                    onClick={async () => {
+                      const fabric = await fetchFabricById((det as any).fabricId || det.tissueId);
+                      setSelectedFabric(fabric);
+                      setIsFabricDetailsDialogOpen(true);
+                    }}
+                  >
+                    <Visibility />
+                  </IconButton>
                 </td>
                 <td className="border-b border-[#eee] px-4 py-5">
                   {det.quantityOrdered}
@@ -483,8 +497,18 @@ const DetallesOrdenServicio: React.FC = () => {
       <Dialog
         open={isEditDialogOpen}
         onClose={handleCloseEditDialog}
-        fullWidth
-        maxWidth="md"
+        fullScreen={isSmallScreen}
+          maxWidth="md"
+          PaperProps={{
+            sx: {
+              ...( !isSmallScreen && !isMediumScreen && {
+                marginLeft: "280px", 
+                maxWidth: "calc(100% - 280px)", 
+              }),
+              maxHeight: "calc(100% - 64px)",
+              overflowY: "auto",
+            },
+          }}
       >
         <DialogTitle>Editar Orden</DialogTitle>
         <DialogContent>
@@ -511,7 +535,8 @@ const DetallesOrdenServicio: React.FC = () => {
           <table className="w-full table-auto border-collapse">
             <thead>
               <tr className="bg-blue-900 text-white text-center">
-                <th className="px-4 py-2">Tejido (fabricId)</th>
+                <th className="px-4 py-2">Tejido</th>
+                <th className="px-4 py-2">Información</th>
                 <th className="px-4 py-2">Cantidad</th>
                 <th className="px-4 py-2">Precio</th>
                 <th className="px-4 py-2">Eliminar</th>
@@ -521,13 +546,20 @@ const DetallesOrdenServicio: React.FC = () => {
               {editedDetails.map((item, idx) => (
                 <tr key={idx} className="text-center">
                   <td className="border-b border-[#eee] px-2 py-1">
-                    {item.fabricId || "(nuevo)"}
-                    <IconButton
-                      size="small"
+                    <Button
+                      variant="outlined"
                       onClick={() => openFabricDialogForIndex(idx)}
-                      style={{ marginLeft: 8 }}
+                      startIcon={<Search />}
                     >
-                      <Search fontSize="small" />
+                      {item.fabricId ? `Tejido: ${item.fabricId}` : "Seleccionar Tejido"}
+                    </Button>
+                  </td>
+                  <td>
+                    <IconButton
+                      onClick={() => item.fabricId && handleOpenFabricDetailsDialog(item.fabricId)}
+                      disabled={!item.fabricId}
+                    >
+                      <Visibility />
                     </IconButton>
                   </td>
                   <td className="border-b border-[#eee] px-2 py-1">
@@ -586,8 +618,18 @@ onClick={handleCloseEditDialog}>Cancelar</Button>
       <Dialog
         open={isFabricDialogOpen}
         onClose={handleCloseFabricDialog}
-        fullWidth
-        maxWidth="lg"
+        fullScreen={isSmallScreen}
+          maxWidth="md"
+          PaperProps={{
+            sx: {
+              ...( !isSmallScreen && !isMediumScreen && {
+                marginLeft: "280px", 
+                maxWidth: "calc(100% - 280px)", 
+              }),
+              maxHeight: "calc(100% - 64px)",
+              overflowY: "auto",
+            },
+          }}
       >
         <DialogTitle>
           Seleccionar Tejido
@@ -606,6 +648,7 @@ onClick={handleCloseEditDialog}>Cancelar</Button>
                 <TableRow style={{ backgroundColor: "#f5f5f5" }}>
                   <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>ID</TableCell>
                   <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Descripción</TableCell>
+                  <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Información</TableCell>
                   <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Acciones</TableCell>
                 </TableRow>
               </TableHead>
@@ -614,6 +657,15 @@ onClick={handleCloseEditDialog}>Cancelar</Button>
                   <TableRow key={fabric.id} hover>
                     <TableCell>{fabric.id}</TableCell>
                     <TableCell>{fabric.description}</TableCell>
+                    <TableCell>
+                      <IconButton
+                        onClick={() => handleOpenFabricDetailsDialog(fabric.id)}
+                        size="small"
+                        color="primary"
+                      >
+                        <Visibility />
+                      </IconButton>
+                    </TableCell>
                     <TableCell>
                       <Button
                         variant="contained"
@@ -698,6 +750,209 @@ onClick={handleCloseEditDialog}>Cancelar</Button>
             disabled={!selectedStatusId}
           >
             Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Diálogo para detalles del tejido */}
+      <Dialog
+        open={isFabricDetailsDialogOpen}
+        onClose={handleCloseFabricDetails}
+        fullScreen={isSmallScreen}
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            ...(!isSmallScreen && !isMediumScreen && {
+              marginLeft: "280px",
+              maxWidth: "calc(100% - 280px)",
+            }),
+            maxHeight: "calc(100% - 64px)",
+            overflowY: "auto",
+          },
+        }}
+      >
+        <DialogTitle>
+          <h1 className="text-lg font-semibold text-black mb-2">
+          Detalles del Tejido
+          </h1>
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseFabricDetails}
+            sx={{ position: "absolute", right: 8, top: 8 }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {selectedFabric ? (
+            <div className="mb-4 text-black">
+              <p className="mb-2"><strong>ID:</strong> {selectedFabric.id}</p>
+              <p className="mb-2"><strong>Descripción:</strong> {selectedFabric.description}</p>
+              <p className="mb-2"><strong>Barcode:</strong> {selectedFabric.barcode}</p>
+              <p className="mb-2"><strong>Tipo de Tejido:</strong> {selectedFabric.fabricType?.value || "--"}</p>
+              <p className="mb-2"><strong>Densidad:</strong> {selectedFabric.density || "--"}</p>
+              <p className="mb-2"><strong>Ancho:</strong> {selectedFabric.width || "--"}</p>
+              <p className="mb-2"><strong>Patrón de Estructura:</strong> {selectedFabric.structurePattern || "--"}</p>
+              <p className="mb-2"><strong>Unidad de Inventario:</strong> {selectedFabric.inventoryUnitCode || "--"}</p>
+              <p className="mb-2"><strong>Unidad de Compra:</strong> {selectedFabric.purchaseUnitCode || "--"}</p>
+              <p className="mb-2"><strong>Activo:</strong> {selectedFabric.isActive ? "Sí" : "No"}</p>
+              <h3 className="text-lg font-semibold text-black mb-2">Receta</h3>
+              <div className="max-w-full overflow-x-auto">
+                <table className="w-full table-auto border-collapse">
+                  <thead>
+                    <tr className="bg-blue-900 uppercase text-center text-white">
+                      <th className="px-4 py-4 font-normal">Hilado</th>
+                      <th className="px-4 py-4 font-normal">Proporción</th>
+                      <th className="px-4 py-4 font-normal">Diametro</th>
+                      <th className="px-4 py-4 font-normal">Galga</th>
+                      <th className="px-4 py-4 font-normal">Pliegues</th>
+                      <th className="px-4 py-4 font-normal">Longitud de Malla</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedFabric.recipe.map((item: any, index: number) => (
+                      <tr key={index} className="text-center text-black">
+                        <td className="border-b border-[#eee] px-4 py-5">
+                          {item.yarn.description}
+                          <IconButton color = "primary" onClick={() => handleOpenYarnDetails(item.yarn)}>
+                            <Visibility />
+                          </IconButton>
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5">
+                          {item.proportion}%
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5">
+                          {item.diameter}
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5">
+                          {item.galgue}
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5">
+                          {item.numPlies}
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5">
+                          {item.stitchLength}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-center items-center p-4">
+              <CircularProgress />
+            </div>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseFabricDetails} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Diálogo para detalles del hilado */}
+      <Dialog
+        open={isYarnDetailsDialogOpen}
+        onClose={handleCloseYarnDetails}
+        fullScreen={isSmallScreen}
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            ...(!isSmallScreen && !isMediumScreen && {
+              marginLeft: "280px",
+              maxWidth: "calc(100% - 280px)",
+            }),
+            maxHeight: "calc(100% - 64px)",
+            overflowY: "auto",
+          },
+        }}
+      >
+        <DialogTitle>
+          <h1 className="text-lg font-semibold text-black mb-2">
+          Información del Hilado
+          </h1>
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseYarnDetails}
+            sx={{ position: "absolute", right: 8, top: 8 }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {selectedYarn ? (
+            <div className="mb-4 text-black">
+              <p className="mb-2"><strong>ID:</strong> {selectedYarn.id || "--"}</p>
+              <p className="mb-2"><strong>Descripción:</strong> {selectedYarn.description}</p>
+              <p className="mb-2"><strong>Título:</strong> {selectedYarn.yarnCount?.value || "--"}</p>
+              <p className="mb-2"><strong>Acabado:</strong> {selectedYarn.spinningMethod?.value || "--"}</p>
+              <p className="mb-2"><strong>Código de barras:</strong> {selectedYarn.barcode}</p>
+              <p className="mb-2"><strong>Color:</strong> {selectedYarn.color?.name || "No teñido"}</p>
+              <p className="mb-2"><strong>Fabricado en:</strong> {selectedYarn.manufacturedIn?.value || "--"}</p>
+              <p className="mb-2"><strong>Distinciones:</strong>{" "}
+                {selectedYarn.distinctions && selectedYarn.distinctions.length > 0
+                  ? selectedYarn.distinctions.map((dist) => dist.value).join(", ")
+                  : "--"
+                }
+              </p>
+              <h3 className="text-lg font-semibold text-black mb-2">Receta</h3>
+              <div className="max-w-full overflow-x-auto">
+                <table className="w-full table-auto border-collapse">
+                  <thead>
+                    <tr className="bg-blue-900 uppercase text-center text-white">
+                      <th className="px-4 py-4 text-center font-normal">Categoría</th>
+                      <th className="px-4 py-4 text-center font-normal">Denominación</th>
+                      <th className="px-4 py-4 text-center font-normal">Procedencia</th>
+                      <th className="px-4 py-4 text-center font-normal">Color</th>
+                      <th className="px-4 py-4 text-center font-normal">Proporción (%)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedYarn.recipe?.length > 0 ? (
+                      selectedYarn.recipe.map((item, index) => (
+                        <tr key={index} className="text-center text-black">
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {item.fiber?.category?.value || "-"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {item.fiber?.denomination?.value || "-"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {item.fiber?.origin || "-"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {item.fiber?.color?.name || "Crudo"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {item.proportion}%
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="text-center py-4 text-gray-500">
+                          No hay datos disponibles.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-center items-center p-4">
+              <CircularProgress />
+            </div>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseYarnDetails}
+            variant="contained"
+            style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+          >
+            Cerrar
           </Button>
         </DialogActions>
       </Dialog>

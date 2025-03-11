@@ -22,11 +22,12 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import { Edit, ExpandMore, ExpandLess, Save, Cancel, Add, Delete, Block } from "@mui/icons-material";
+import { Edit, ExpandMore, ExpandLess, Save, Cancel, Add, Delete, Block, Visibility as VisibilityIcon } from "@mui/icons-material";
 import { useRouter, useParams } from "next/navigation";
 import { fetchYarnPurchaseEntryDetails, updateYarnPurchaseEntry, anulateYarnPurchaseEntry,
-  checkIfYarnPurchaseEntryIsUpdatable, fetchYarnPurchaseEntries } from "../../services/movIngresoHiladoService";
+  checkIfYarnPurchaseEntryIsUpdatable, } from "../../services/movIngresoHiladoService";
 import { YarnPurchaseEntry } from "../../../models/models";
+import { fetchYarnbyId } from "../../../hilados/services/hiladoService";
 
 const DetallesMovIngresoHilado: React.FC = () => {
   const router = useRouter();
@@ -44,6 +45,11 @@ const DetallesMovIngresoHilado: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
+  const [openYarnDialog, setOpenYarnDialog] = useState(false);
+  const [selectedYarn, setSelectedYarn] = useState(null);
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const [isMediumScreen, setIsMediumScreen] = useState(false);
+
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
   };
@@ -57,7 +63,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
   const handleGenerateSalida = () => {
     if (detalle) {
       const payload = {
-        entryNumber: entryNumber,
+        entryNumber: detalle.entryNumber,
         groups: detalle.detail.map((item) => ({
           groupNumber: item.itemNumber, // Usar groupNumber o cualquier identificador único
           coneCount: item.guideConeCount,
@@ -66,10 +72,11 @@ const DetallesMovIngresoHilado: React.FC = () => {
           netWeight: item.guideNetWeight,
         })),
       };
+      
       localStorage.setItem("entryNumber", JSON.stringify(payload));
+      router.push(
+        `/operaciones-new/salida-hilado/crear-mov-salida-hilado`);
     }
-    router.push(
-      `/operaciones-new/salida-hilado/crear-mov-salida-hilado`);
   };
     
 
@@ -132,7 +139,10 @@ const DetallesMovIngresoHilado: React.FC = () => {
 
   const handleAnulateEntry = async (entryNumber: string) => {
     try {
-      await anulateYarnPurchaseEntry(entryNumber);
+      const savedPeriod = localStorage.getItem("selectedPeriod");
+      const period = savedPeriod ? JSON.parse(savedPeriod) : 2024;
+
+      await anulateYarnPurchaseEntry(entryNumber, period);
       showSnackbar(`Movimiento de ingreso N° ${entryNumber} anulado con éxito.`, "success");
       setDetalle((prev) =>
         prev
@@ -189,6 +199,21 @@ const DetallesMovIngresoHilado: React.FC = () => {
     }
   };     
 
+  const handleOpenYarnDialog = async (yarnId: string) => {
+    try {
+      const data = await fetchYarnbyId(yarnId);
+      setSelectedYarn(data);
+      setOpenYarnDialog(true);
+    } catch (error) {
+      console.error("Error fetching yarn data:", error);
+    }
+  };
+
+  const handleCloseYarnDialog = () => {
+    setOpenYarnDialog(false);
+    setSelectedYarn(null);
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -219,7 +244,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
               <strong>Proveedor:</strong> {detalle.supplierCode}
             </Typography>
             <Typography style={{ color: "black" }}>
-              <strong>O/C N°:</strong> {detalle.purchaseOrderNumber}
+              <strong>N° O/C:</strong> {detalle.purchaseOrderNumber}
             </Typography>
             <Typography style={{ color: "black" }}>
               <strong>Guia - Factura:</strong> {detalle.supplierPoCorrelative} - {detalle.supplierPoSeries || "N/A"}
@@ -287,101 +312,113 @@ const DetallesMovIngresoHilado: React.FC = () => {
       </div>
 
       {/* Tabla Resumen */}
-      <TableContainer className="rounded-md border bg-gray-50 shadow-md mt-5">
-        <Table>
-        <TableHead className="bg-blue-900">
-          <TableRow>
-            {[
-              "Item",
-              "Código",
-              "N° Bultos",
-              "N° Conos",
-              "Lote Mecsa",
-              "% Difer.",
-              "Peso Bruto",
-              "Peso Neto",
-              ...(detalle.detail.some((item) => item.isWeighted) ? ["Pesaje"] : []), // Muestra "Pesaje" solo si isWeighted es true
-            ].map((col, index) => (
-              <TableCell key={index} className="text-white text-center">
-                {col}
-              </TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-  {detalle.detail.map((item, index) => (
-    <React.Fragment key={index}>
-      <TableRow>
-        <TableCell className="text-center">{item.itemNumber}</TableCell>
-        <TableCell className="text-center">{item.yarnId}</TableCell>
-        <TableCell className="text-center">{item.guidePackageCount}</TableCell>
-        <TableCell className="text-center">{item.guideConeCount}</TableCell>
-        <TableCell className="text-center">{detalle.mecsaBatch}</TableCell>
-        <TableCell className="text-center">00.00%</TableCell>
-        <TableCell className="text-center">{item.guideGrossWeight}</TableCell>
-        <TableCell className="text-center">{item.guideNetWeight}</TableCell>
-        {item.isWeighted && ( // Oculta la columna "Pesaje" si isWeighted es false
-          <TableCell className="text-center">
-            <IconButton onClick={() => toggleRow(index)}>
-              {openRows[index] ? <ExpandLess /> : <ExpandMore />}
-            </IconButton>
-          </TableCell>
-        )}
-      </TableRow>
-      {item.isWeighted && (
-        <TableRow>
-          <TableCell colSpan={10} style={{ padding: 0 }}>
-            <Collapse in={openRows[index]} timeout="auto" unmountOnExit>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    {["Grupo", "N° Bultos", "N° Conos", "Peso Bruto", "Peso Neto", "Estado", "Bultos Restantes"].map(
-                      (subCol, subIndex) => (
-                        <TableCell key={subIndex} className="text-center">
-                          {subCol}
-                        </TableCell>
-                      )
-                    )}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {item.detailHeavy.map((group, groupIndex) => (
-                    <TableRow key={groupIndex}>
-                      <TableCell className="text-center">{group.groupNumber}</TableCell>
-                      <TableCell className="text-center">{group.packageCount}</TableCell>
-                      <TableCell className="text-center">{group.coneCount}</TableCell>
-                      <TableCell className="text-center">{group.grossWeight}</TableCell>
-                      <TableCell className="text-center">{group.netWeight}</TableCell>
-                      <TableCell className="text-center" style={{ color: "red" }}>
-                        No Despachado
-                      </TableCell>
-                      <TableCell className="text-center">{group.packagesLeft}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Collapse>
-          </TableCell>
-        </TableRow>
-      )}
-    </React.Fragment>
-  ))}
-</TableBody>
-        </Table>
-      </TableContainer>
+      <div className="max-w-full overflow-x-auto mt-5">
+        <table className="w-full table-auto border-collapse">
+          <thead className="bg-blue-900">
+            <tr>
+              {[
+                "Item",
+                "Código",
+                "N° Bultos",
+                "N° Conos",
+                "Lote Mecsa",
+                "% Difer.",
+                "Peso Bruto",
+                "Peso Neto",
+                "Pesaje", 
+              ].map((col, index) => (
+                <th key={index} className="px-4 py-4 text-center font-normal text-white">
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {detalle.detail.map((item, index) => {
+              const porcentajeDiferencia = item.guideGrossWeight !== 0 
+                ? ((1 - item.guideNetWeight / item.guideGrossWeight) * 100).toFixed(2)
+                : "0.00";
+
+              return (
+                <React.Fragment key={index}>
+                  <tr className="text-center text-black">
+                    <td className="border-b border-gray-300 px-4 py-5">{item.itemNumber}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">
+                      {item.yarnId}
+                      <IconButton onClick={() => handleOpenYarnDialog(item.yarnId)}>
+                        <VisibilityIcon style={{ color: "#1976d2" }} />
+                      </IconButton>
+                    </td>
+                    <td className="border-b border-gray-300 px-4 py-5">{item.guidePackageCount}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">{item.guideConeCount}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">{detalle.mecsaBatch}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">{porcentajeDiferencia}%</td>
+                    <td className="border-b border-gray-300 px-4 py-5">{item.guideGrossWeight}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">{item.guideNetWeight}</td>
+                    <td className="border-b border-gray-300 px-4 py-5">
+                      <IconButton onClick={() => toggleRow(index)}>
+                        {openRows[index] ? <ExpandLess /> : <ExpandMore />}
+                      </IconButton>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colSpan={10} style={{ padding: 0 }}>
+                      <Collapse in={openRows[index]} timeout="auto" unmountOnExit>
+                        <div className="bg-gray-100 p-4 rounded-md shadow-inner">
+                          <table className="w-full table-auto border-collapse">
+                            <thead>
+                              <tr className="bg-gray-200">
+                                {["Grupo", "N° Bultos", "N° Conos", "Peso Bruto", "Peso Neto", "Peso Mecsa", "Estado", "Bultos Restantes"].map(
+                                  (subCol, subIndex) => (
+                                    <th key={subIndex} className="px-4 py-2 text-center font-medium text-gray-700">
+                                      {subCol}
+                                    </th>
+                                  )
+                                )}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {item.detailHeavy.map((group, groupIndex) => (
+                                <tr key={groupIndex} className="text-center text-gray-800">
+                                  <td className="border-b border-gray-300 px-4 py-2">{group.groupNumber}</td>
+                                  <td className="border-b border-gray-300 px-4 py-2">{group.packageCount}</td>
+                                  <td className="border-b border-gray-300 px-4 py-2">{group.coneCount}</td>
+                                  <td className="border-b border-gray-300 px-4 py-2">{group.grossWeight}</td>
+                                  <td className="border-b border-gray-300 px-4 py-2">{group.netWeight}</td>
+                                  <td className="border-b border-gray-300 px-4 py-2">{item.mecsaWeight}</td>
+                                  <td className="border-b border-gray-300 px-4 py-2">
+                                    <span className={group.dispatchStatus ? "text-green-600" : "text-red-600"}>
+                                      {group.dispatchStatus ? "Despachado" : "No despachado"}
+                                    </span>
+                                  </td>
+                                  <td className="border-b border-gray-300 px-4 py-2">{group.packagesLeft}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </Collapse>
+                    </td>
+                  </tr>
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
       {/* Botones de acción */}
       <div className="flex justify-between mt-5">
         <Button
           variant="contained"
           style={{ backgroundColor: "#0288d1", color: "#fff" }}
-          onClick={() => router.push("/operaciones-new/ingreso-hilado")}
+          onClick={() => router.push("/operaciones-new/movimiento-ingreso-hilado")}
         >
           Regresar a Movimientos
         </Button>
         <Button
         variant="contained"
-        style={{ backgroundColor: "#4caf50", color: "#fff" }}
+        style={{ backgroundColor: "#0288d1", color: "#fff" }}
         size="large"
         onClick={handleGenerateSalida}
       >
@@ -776,6 +813,100 @@ const DetallesMovIngresoHilado: React.FC = () => {
             color="primary"
           >
             Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={openYarnDialog}
+        onClose={handleCloseYarnDialog}
+        fullScreen={isSmallScreen}
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            ...(!isSmallScreen && !isMediumScreen && {
+              marginLeft: "200px",
+              maxWidth: "calc(100% - 280px)",
+            }),
+            maxHeight: "calc(100% - 64px)",
+            overflowY: "auto",
+          },
+        }}
+      >
+        <DialogContent>
+          <h3 className="text-lg font-semibold text-black mb-4">
+            Información del Hilado
+          </h3>
+          {selectedYarn ? (
+            <div className="mb-4 text-black">
+              <p className="mb-2"><strong>Descripción:</strong> {selectedYarn.description}</p>
+              <p className="mb-2"><strong>Título:</strong> {selectedYarn.yarnCount?.value || "--"}</p>
+              <p className="mb-2"><strong>Acabado:</strong> {selectedYarn.spinningMethod?.value || "--"}</p>
+              <p className="mb-2"><strong>Barcode:</strong> {selectedYarn.barcode}</p>
+              <p className="mb-2"><strong>Color:</strong> {selectedYarn.color?.name || "No teñido"}</p>
+              <p className="mb-2"><strong>Fabricado en:</strong> {selectedYarn.manufacturedIn?.value || "--"}</p>
+              <p className="mb-2">
+                <strong>Distinciones:</strong>{" "}
+                {selectedYarn.distinctions && selectedYarn.distinctions.length > 0
+                  ? selectedYarn.distinctions.map((dist) => dist.value).join(", ")
+                  : "--"
+                }
+              </p>
+            </div>
+          ) : (
+            <p>Cargando información del hilado...</p>
+          )}
+          
+          <h3 className="text-lg font-semibold text-black mb-2 mt-4">Receta</h3>
+          <div className="max-w-full overflow-x-auto">
+            <table className="w-full table-auto border-collapse">
+              <thead>
+                <tr className="bg-blue-900 uppercase text-center text-white">
+                  <th className="px-4 py-4 text-center font-normal">Categoría</th>
+                  <th className="px-4 py-4 text-center font-normal">Denominación</th>
+                  <th className="px-4 py-4 text-center font-normal">Procedencia</th>
+                  <th className="px-4 py-4 text-center font-normal">Color</th>
+                  <th className="px-4 py-4 text-center font-normal">Proporción (%)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedYarn?.recipe?.length > 0 ? (
+                  selectedYarn.recipe.map((item, index) => (
+                    <tr key={index} className="text-center text-black">
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.category?.value || "-"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.denomination?.value || "-"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.origin || "-"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.fiber?.color?.name || "Crudo"}
+                      </td>
+                      <td className="border-b border-gray-300 px-4 py-5">
+                        {item.proportion}%
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="text-center py-4 text-gray-500">
+                      No hay datos disponibles.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseYarnDialog}
+            variant="contained"
+            style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+          >
+            Cerrar
           </Button>
         </DialogActions>
       </Dialog>
