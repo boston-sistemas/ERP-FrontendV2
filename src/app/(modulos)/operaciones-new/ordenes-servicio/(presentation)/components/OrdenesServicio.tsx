@@ -21,6 +21,8 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { Search, Visibility, Add, Delete, Close } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
@@ -70,6 +72,10 @@ const OrdenesServicio: React.FC = () => {
 
   // Estado para el período
   const [period, setPeriod] = useState(() => new Date().getFullYear());
+
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMediumScreen = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
   // Cargar OS
   const fetchOrders = async () => {
@@ -313,7 +319,19 @@ const OrdenesServicio: React.FC = () => {
       </div>
 
       {/* Diálogo Crear OS */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="md">
+      <Dialog open={openDialog} onClose={handleCloseDialog} 
+        fullScreen={isSmallScreen}
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            ...( !isSmallScreen && !isMediumScreen && {
+              marginLeft: "280px", 
+              maxWidth: "calc(100% - 280px)", 
+            }),
+            maxHeight: "calc(100% - 64px)",
+            overflowY: "auto",
+          },
+        }}>
         <DialogTitle>Crear Nueva Orden de Servicio</DialogTitle>
         <DialogContent>
           <div className="space-y-4">
@@ -406,58 +424,58 @@ const OrdenesServicio: React.FC = () => {
       </Dialog>
 
       {/* Diálogo para seleccionar tejido */}
-<Dialog
-  open={isFabricDialogOpen}
-  onClose={handleCloseFabricDialog}
-  fullWidth
-  maxWidth="lg"
->
-  <DialogTitle>
-    Seleccionar Tejido
-    <IconButton
-      aria-label="close"
-      onClick={handleCloseFabricDialog}
-      sx={{ position: "absolute", right: 8, top: 8 }}
-    >
-      <Close />
-    </IconButton>
-  </DialogTitle>
-  <DialogContent>
-    <div style={{ overflowX: "auto", border: "1px solid #ddd", borderRadius: "8px" }}>
-      <Table>
-        <TableHead>
-          <TableRow style={{ backgroundColor: "#f5f5f5" }}>
-            <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>ID</TableCell>
-            <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Descripción</TableCell>
-            <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Acciones</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {fabrics.map((fabric) => (
-            <TableRow key={fabric.id} hover>
-              <TableCell>{fabric.id}</TableCell>
-              <TableCell>{fabric.description}</TableCell>
-              <TableCell>
-                <Button
-                  variant="contained"
-                  style={{ backgroundColor: "#1976d2", color: "#fff" }}
-                  size="small"
-                  onClick={() => handleSelectFabric(fabric.id)}
-                >
-                  Seleccionar
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={handleCloseFabricDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}
-    >Cerrar</Button>
-  </DialogActions>
-</Dialog>
+      <Dialog
+        open={isFabricDialogOpen}
+        onClose={handleCloseFabricDialog}
+        fullWidth
+        maxWidth="lg"
+      >
+        <DialogTitle>
+          Seleccionar Tejido
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseFabricDialog}
+            sx={{ position: "absolute", right: 8, top: 8 }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <div style={{ overflowX: "auto", border: "1px solid #ddd", borderRadius: "8px" }}>
+            <Table>
+              <TableHead>
+                <TableRow style={{ backgroundColor: "#f5f5f5" }}>
+                  <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>ID</TableCell>
+                  <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Descripción</TableCell>
+                  <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Acciones</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {fabrics.map((fabric) => (
+                  <TableRow key={fabric.id} hover>
+                    <TableCell>{fabric.id}</TableCell>
+                    <TableCell>{fabric.description}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="contained"
+                        style={{ backgroundColor: "#1976d2", color: "#fff" }}
+                        size="small"
+                        onClick={() => handleSelectFabric(fabric.id)}
+                      >
+                        Seleccionar
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseFabricDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}
+          >Cerrar</Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

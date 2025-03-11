@@ -21,10 +21,11 @@ import {
   TableBody,
   Typography,
 } from "@mui/material";
-import { Edit, Block, Settings, Add, Close, Search, Visibility } from "@mui/icons-material";
+import { Edit, Block, Settings, Add, Close, Search } from "@mui/icons-material";
 import { useParams, useRouter } from "next/navigation";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
+import Visibility from '@mui/icons-material/Visibility';
 
 import {
   fetchServiceOrderById,
@@ -198,7 +199,7 @@ const DetallesOrdenServicio: React.FC = () => {
     handleCloseFabricDialog();
   };
 
-  const handleOpenFabricDetails = async (fabricId: string) => {
+  const handleOpenFabricDetailsDialog = async (fabricId: string) => {
     try {
       const fabricData = await fetchFabricById(fabricId);
       setSelectedFabric(fabricData);
@@ -300,9 +301,9 @@ const DetallesOrdenServicio: React.FC = () => {
     }
   };
 
-  const isEditableOrAnulable = (statusFlag: string, isUpdatable: boolean): boolean => {
+  const isEditableOrAnulable = (isUpdatable: boolean): boolean => {
     // Habilitar si el estado es "No iniciado" y la orden es editable
-    return statusFlag === "P" && isUpdatable; // Ajusta "P" si "No iniciado" tiene otro valor
+    return isUpdatable; // Ajusta "P" si "No iniciado" tiene otro valor
   };
   
   const isOrderCanceled = (statusFlag: string): boolean => {
@@ -379,65 +380,45 @@ const DetallesOrdenServicio: React.FC = () => {
 
           {/* EDITAR */}
           <Tooltip
-          title={
-            isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
-              ? ""
-              : "No se puede editar en este estado"
-          }
-        >
-          <span>
-            <Button
-              startIcon={<Edit />}
-              variant="contained"
-              disabled={
-                !isEditableOrAnulable(orden.statusFlag, isEditable) || isOrderCanceled(orden.statusFlag)
-              }
-              onClick={
-                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
-                  ? handleOpenEditDialog
-                  : undefined
-              }
-              style={
-                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
+            title={isEditable ? "" : "No se puede editar en este estado"}
+          >
+            <span>
+              <Button
+                startIcon={<Edit />}
+                variant="contained"
+                disabled={!isEditable || isOrderCanceled(orden.statusFlag)}
+                onClick={isEditable && !isOrderCanceled(orden.statusFlag) 
+                  ? handleOpenEditDialog 
+                  : undefined}
+                style={isEditable && !isOrderCanceled(orden.statusFlag)
                   ? { backgroundColor: "#1976d2", color: "#fff" }
-                  : { backgroundColor: "#b0b0b0", color: "#fff" }
-              }
-            >
-              Editar
-            </Button>
-          </span>
-        </Tooltip>
+                  : { backgroundColor: "#b0b0b0", color: "#fff" }}
+              >
+                Editar
+              </Button>
+            </span>
+          </Tooltip>
 
           {/* ANULAR */}
           <Tooltip
-          title={
-            isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
-              ? ""
-              : "No se puede anular en este estado"
-          }
-        >
-          <span>
-            <Button
-              startIcon={<Block />}
-              variant="contained"
-              disabled={
-                !isEditableOrAnulable(orden.statusFlag, isEditable) || isOrderCanceled(orden.statusFlag)
-              }
-              onClick={
-                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
+            title={isAnulable ? "" : "No se puede anular en este estado"}
+          >
+            <span>
+              <Button
+                startIcon={<Block />}
+                variant="contained"
+                disabled={!isAnulable || isOrderCanceled(orden.statusFlag)}
+                onClick={isAnulable && !isOrderCanceled(orden.statusFlag)
                   ? handleOpenAnulateDialog
-                  : undefined
-              }
-              style={
-                isEditableOrAnulable(orden.statusFlag, isEditable) && !isOrderCanceled(orden.statusFlag)
+                  : undefined}
+                style={isAnulable && !isOrderCanceled(orden.statusFlag)
                   ? { backgroundColor: "#d32f2f", color: "#fff" }
-                  : { backgroundColor: "#b0b0b0", color: "#fff" }
-              }
-            >
-              Anular
-            </Button>
-          </span>
-        </Tooltip>
+                  : { backgroundColor: "#b0b0b0", color: "#fff" }}
+              >
+                Anular
+              </Button>
+            </span>
+          </Tooltip>
         </div>
       </div>
 
@@ -473,8 +454,8 @@ const DetallesOrdenServicio: React.FC = () => {
           <thead>
             <tr className="bg-blue-900 uppercase text-center text-white">
               <th className="px-4 py-4 font-normal">Tejido</th>
-              <th className="px-4 py-4 font-normal">Cantidad Ordenada</th>
-              <th className="px-4 py-4 font-normal">Cantidad Suministrada</th>
+              <th className="px-4 py-4 font-normal">Cantidad Programada</th>
+              <th className="px-4 py-4 font-normal">Cantidad Recibida</th>
               <th className="px-4 py-4 font-normal">Precio</th>
               <th className="px-4 py-4 font-normal">Estado</th>
             </tr>
@@ -516,8 +497,18 @@ const DetallesOrdenServicio: React.FC = () => {
       <Dialog
         open={isEditDialogOpen}
         onClose={handleCloseEditDialog}
-        fullWidth
-        maxWidth="md"
+        fullScreen={isSmallScreen}
+          maxWidth="md"
+          PaperProps={{
+            sx: {
+              ...( !isSmallScreen && !isMediumScreen && {
+                marginLeft: "280px", 
+                maxWidth: "calc(100% - 280px)", 
+              }),
+              maxHeight: "calc(100% - 64px)",
+              overflowY: "auto",
+            },
+          }}
       >
         <DialogTitle>Editar Orden</DialogTitle>
         <DialogContent>
@@ -544,7 +535,8 @@ const DetallesOrdenServicio: React.FC = () => {
           <table className="w-full table-auto border-collapse">
             <thead>
               <tr className="bg-blue-900 text-white text-center">
-                <th className="px-4 py-2">Tejido (fabricId)</th>
+                <th className="px-4 py-2">Tejido</th>
+                <th className="px-4 py-2">Información</th>
                 <th className="px-4 py-2">Cantidad</th>
                 <th className="px-4 py-2">Precio</th>
                 <th className="px-4 py-2">Eliminar</th>
@@ -554,13 +546,20 @@ const DetallesOrdenServicio: React.FC = () => {
               {editedDetails.map((item, idx) => (
                 <tr key={idx} className="text-center">
                   <td className="border-b border-[#eee] px-2 py-1">
-                    {item.fabricId || "(nuevo)"}
-                    <IconButton
-                      size="small"
+                    <Button
+                      variant="outlined"
                       onClick={() => openFabricDialogForIndex(idx)}
-                      style={{ marginLeft: 8 }}
+                      startIcon={<Search />}
                     >
-                      <Search fontSize="small" />
+                      {item.fabricId ? `Tejido: ${item.fabricId}` : "Seleccionar Tejido"}
+                    </Button>
+                  </td>
+                  <td>
+                    <IconButton
+                      onClick={() => item.fabricId && handleOpenFabricDetailsDialog(item.fabricId)}
+                      disabled={!item.fabricId}
+                    >
+                      <Visibility />
                     </IconButton>
                   </td>
                   <td className="border-b border-[#eee] px-2 py-1">
@@ -619,8 +618,18 @@ onClick={handleCloseEditDialog}>Cancelar</Button>
       <Dialog
         open={isFabricDialogOpen}
         onClose={handleCloseFabricDialog}
-        fullWidth
-        maxWidth="lg"
+        fullScreen={isSmallScreen}
+          maxWidth="md"
+          PaperProps={{
+            sx: {
+              ...( !isSmallScreen && !isMediumScreen && {
+                marginLeft: "280px", 
+                maxWidth: "calc(100% - 280px)", 
+              }),
+              maxHeight: "calc(100% - 64px)",
+              overflowY: "auto",
+            },
+          }}
       >
         <DialogTitle>
           Seleccionar Tejido
@@ -639,6 +648,7 @@ onClick={handleCloseEditDialog}>Cancelar</Button>
                 <TableRow style={{ backgroundColor: "#f5f5f5" }}>
                   <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>ID</TableCell>
                   <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Descripción</TableCell>
+                  <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Información</TableCell>
                   <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Acciones</TableCell>
                 </TableRow>
               </TableHead>
@@ -647,6 +657,15 @@ onClick={handleCloseEditDialog}>Cancelar</Button>
                   <TableRow key={fabric.id} hover>
                     <TableCell>{fabric.id}</TableCell>
                     <TableCell>{fabric.description}</TableCell>
+                    <TableCell>
+                      <IconButton
+                        onClick={() => handleOpenFabricDetailsDialog(fabric.id)}
+                        size="small"
+                        color="primary"
+                      >
+                        <Visibility />
+                      </IconButton>
+                    </TableCell>
                     <TableCell>
                       <Button
                         variant="contained"
@@ -743,7 +762,7 @@ onClick={handleCloseEditDialog}>Cancelar</Button>
         PaperProps={{
           sx: {
             ...(!isSmallScreen && !isMediumScreen && {
-              marginLeft: "200px",
+              marginLeft: "280px",
               maxWidth: "calc(100% - 280px)",
             }),
             maxHeight: "calc(100% - 64px)",
