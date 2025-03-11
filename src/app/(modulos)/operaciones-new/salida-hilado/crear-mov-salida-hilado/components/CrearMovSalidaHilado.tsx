@@ -37,7 +37,7 @@ import {
   fetchFabricTypes,
   fetchFabricSearchId,
   fetchYarnEntriesByEntryNumber,
-} from "../../../ingreso-hilado/services/movIngresoHiladoService";
+} from "../../../movimiento-ingreso-hilado/services/movIngresoHiladoService";
 import {
   fetchServiceOrders,
   fetchServiceOrderById,
@@ -112,7 +112,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
     try {
       const [ingresosResponse, ordenesServicioResponse] = await Promise.all([
         fetchYarnPurchaseEntries(period, 50, 0, false), // Usa el período actualizado
-        fetchServiceOrders(50, 0, false,period),
+        fetchServiceOrders(period,false,false),
       ]);
       setIngresos(ingresosResponse.yarnPurchaseEntries || []);
       setOrdenesServicio(ordenesServicioResponse.serviceOrders || []);
@@ -690,7 +690,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
                   <p className="mb-2"><strong>ID:</strong> {selectInfoFabric.id} </p>
                   <p className="mb-2"><strong>Descripción:</strong> {selectInfoFabric.purchaseDescription} </p>
                   <p className="mb-2"><strong>Color:</strong> {selectInfoFabric.color ? selectInfoFabric.color : "Sin color"} </p>
-                  <p className="mb-2"><strong>Tipo:</strong> {selectInfoFabric.fabricType.value} </p>
+                  <p className="mb-2"><strong>Tipo:</strong> {selectInfoFabric.fabricType ? selectInfoFabric.fabricType : "No tiene tipo"} </p>
                   <p className="mb-2"><strong>Densidad:</strong> {selectInfoFabric.density} </p>
                   <p className="mb-2"><strong>Ancho:</strong> {selectInfoFabric.width} </p>
                   <p className="mb-2"><strong>Patrón estructural:</strong> {selectInfoFabric.structurePattern} </p>
