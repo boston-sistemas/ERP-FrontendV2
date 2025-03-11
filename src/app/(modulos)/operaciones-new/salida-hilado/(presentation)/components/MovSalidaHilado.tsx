@@ -19,18 +19,21 @@ import {
 import { Visibility, Add, Close, Search } from "@mui/icons-material";
 import { useRouter, useSearchParams } from "next/navigation";
 import { YarnDispatch } from "../../../models/models";
+import { fetchSuppliers } from "../../../ordenes-servicio/services/ordenesServicioService";
 import { fetchYarnDispatches } from "../../services/movSalidaHiladoService";
+import { Supplier } from "../../../models/models";
 
 const MovSalidaHilado: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [dispatches, setDispatches] = useState<YarnDispatch[]>([]);
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [includeInactive, setIncludeInactive] = useState(false);
-  const [period, setPeriod] = useState(2024); // Período inicial
+  const [period, setPeriod] = useState(2025);
 
   // Estado para manejar el diálogo
   const [openDialog, setOpenDialog] = useState(false);
@@ -47,6 +50,8 @@ const MovSalidaHilado: React.FC = () => {
           pagina * filasPorPagina,
           includeInactive
         );
+        const suppliers = await fetchSuppliers();
+        setSuppliers(suppliers);
         setDispatches(response.yarnWeavingDispatches || []);
       } catch (error) {
         console.error("Error al cargar los datos:", error);
@@ -54,6 +59,7 @@ const MovSalidaHilado: React.FC = () => {
         setIsLoading(false);
       }
     };
+    
 
     fetchData();
   }, [pagina, filasPorPagina, includeInactive, period]); // Actualizar cuando cambie el período
@@ -206,10 +212,14 @@ const MovSalidaHilado: React.FC = () => {
                       {dispatch.creationTime}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
-                      {dispatch.supplierCode}
+                        {suppliers.map((supplier) =>
+                          supplier.code === dispatch.supplierCode
+                            ? supplier.name
+                            : ""
+                        )}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
-                      {dispatch.statusFlag}
+                      {dispatch.promecStatus.name}
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
                       <IconButton

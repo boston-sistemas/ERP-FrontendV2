@@ -24,6 +24,36 @@ export const fetchYarnPurchaseEntries = async (
   return response.data;
 };
 
+export const fetchYarnEntriesByEntryNumber = async (
+  period: number,
+  serviceOrderId?: string
+): Promise<YarnPurchaseEntryResponse> => {
+  const response = await instance.get<YarnPurchaseEntryResponse>(
+    `/operations/v1/yarn-purchase-entries/${serviceOrderId}`, {
+      params: {
+        period,
+      }
+    }
+  );
+  return response.data;
+};
+
+export const fetchYarnIncomeEntries = async (
+  period: number,
+  serviceOrderId?: string
+): Promise<YarnPurchaseEntryResponse> => {
+  const response = await instance.get<YarnPurchaseEntryResponse>(
+    `/operations/v1/yarn-purchase-entries/search/items-groups-availability?`,
+    {
+      params: {
+        period,
+        serviceOrderId
+      }
+    }
+  );
+  return response.data;
+};
+
 export const fetchYarnPurchaseEntryDetails = async (
     entryNumber: string,
     period: number

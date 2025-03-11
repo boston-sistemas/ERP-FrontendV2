@@ -401,7 +401,7 @@ const DetallesMovSalidaHilado: React.FC = () => {
             <strong>Periodo:</strong> {dispatchDetail.period}
           </Typography>
           <Typography>
-            <strong>Estado:</strong> {dispatchDetail.statusFlag}
+            <strong>Estado:</strong> {dispatchDetail.promecStatus.name}
           </Typography>
         </div>
         <div>
@@ -412,7 +412,11 @@ const DetallesMovSalidaHilado: React.FC = () => {
             <strong>Hora de Creación:</strong> {dispatchDetail.creationTime}
           </Typography>
           <Typography>
-            <strong>Proveedor:</strong> {dispatchDetail.supplierCode}
+            <strong>Proveedor:</strong> {suppliers.map((supplier) =>
+                          supplier.code === dispatchDetail.supplierCode
+                            ? supplier.name
+                            : ""
+                        )}
           </Typography>
         </div>
       </div>
@@ -431,10 +435,10 @@ const DetallesMovSalidaHilado: React.FC = () => {
             <tr className="bg-blue-900 text-white text-center">
               <th className="px-4 py-3 font-normal">Hilado</th>
               <th className="px-4 py-3 font-normal">Ítem Número</th>
-              <th className="px-4 py-3 font-normal">Conos</th>
-              <th className="px-4 py-3 font-normal">Bultos</th>
-              <th className="px-4 py-3 font-normal">Peso Neto</th>
               <th className="px-4 py-3 font-normal">Peso Bruto</th>
+              <th className="px-4 py-3 font-normal">Peso Neto</th>
+              <th className="px-4 py-3 font-normal">Bultos</th>
+              <th className="px-4 py-3 font-normal">Conos</th>
             </tr>
           </thead>
           <tbody>
@@ -449,16 +453,16 @@ const DetallesMovSalidaHilado: React.FC = () => {
                     {item.itemNumber}
                   </td>
                   <td className="border-b border-gray-200 px-4 py-2">
-                    {item.coneCount}
-                  </td>
-                  <td className="border-b border-gray-200 px-4 py-2">
-                    {item.packageCount}
+                    {item.grossWeight}
                   </td>
                   <td className="border-b border-gray-200 px-4 py-2">
                     {item.netWeight}
                   </td>
                   <td className="border-b border-gray-200 px-4 py-2">
-                    {item.grossWeight}
+                    {item.packageCount}
+                  </td>
+                  <td className="border-b border-gray-200 px-4 py-2">
+                    {item.coneCount}
                   </td>
                 </tr>
               );
