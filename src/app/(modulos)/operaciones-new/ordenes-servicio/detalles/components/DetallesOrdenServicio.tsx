@@ -20,6 +20,8 @@ import {
   TableCell,
   TableBody,
   Typography,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Edit, Block, Settings, Add, Close, Search } from "@mui/icons-material";
 import { useParams, useRouter } from "next/navigation";
@@ -206,6 +208,9 @@ const DetallesOrdenServicio: React.FC = () => {
       setIsFabricDetailsDialogOpen(true);
     } catch (error) {
       console.error("Error al cargar detalles del tejido:", error);
+      setSnackbarMessage(error.response?.data?.detail || "Error al cargar detalles del tejido");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
 
@@ -219,6 +224,16 @@ const DetallesOrdenServicio: React.FC = () => {
     return supplier ? supplier.name : "Desconocido";
   }
 
+  // ================== New states for snackbar ==================
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+
+  // ================== New functions for snackbar ==================
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
   // ================== Guardar Cambios => PATCH ==================
   const handleSaveChanges = async () => {
     if (!orden) return;
@@ -230,12 +245,9 @@ const DetallesOrdenServicio: React.FC = () => {
         statusParamId: rootStatusParamId,
         supplierId: editedSupplierId,
         detail: editedDetails.map((d) => ({
-          // "fabricId" para el Patch
           fabricId: (d as any).fabricId || "", // forzamos a string
           quantityOrdered: d.quantityOrdered,
           price: d.price,
-          // statusParamId: d.statusParamId ?? 1028,
-          // (si tu API pide statusParamId en cada ítem)
           statusParamId: d.statusParamId ?? 1028,
         })),
       };
@@ -244,9 +256,16 @@ const DetallesOrdenServicio: React.FC = () => {
       const updated = await fetchServiceOrderById(orden.id);
       setOrden(updated);
       setIsEditDialogOpen(false);
+
+      // Mostrar snackbar de éxito
+      setSnackbarMessage("Orden de servicio actualizada con éxito.");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
     } catch (err) {
       console.error("Error al actualizar la OS:", err);
-      alert("Error al actualizar la orden de servicio.");
+      setSnackbarMessage("Error al actualizar la orden de servicio.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
 
@@ -264,9 +283,16 @@ const DetallesOrdenServicio: React.FC = () => {
       setIsEditable(false);
       setIsAnulable(false);
       setIsAnulateDialogOpen(false);
+
+      // Mostrar snackbar de éxito
+      setSnackbarMessage("Orden de servicio anulada con éxito.");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
     } catch (err) {
       console.error("Error al anular la OS:", err);
-      alert("Error al anular la orden de servicio.");
+      setSnackbarMessage("Error al anular la orden de servicio.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
 
@@ -295,9 +321,16 @@ const DetallesOrdenServicio: React.FC = () => {
       const updated = await fetchServiceOrderById(orden.id);
       setOrden(updated);
       setIsStatusDialogOpen(false);
+
+      // Mostrar snackbar de éxito
+      setSnackbarMessage("Estado de la orden de servicio cambiado con éxito.");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
     } catch (err) {
       console.error("Error al cambiar estado:", err);
-      alert("Error al cambiar estado de la orden de servicio.");
+      setSnackbarMessage("Error al cambiar estado de la orden de servicio.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
 
@@ -371,7 +404,7 @@ const DetallesOrdenServicio: React.FC = () => {
       {/* Encabezado: Título + Botones */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">
-          Detalles de la Orden de Servicio: {orden.id}
+          Detalle de la Orden de Servicio: {orden.id}
         </h1>
         <div className="flex gap-3">
           <Button variant="outlined" onClick={handleGoBack}>
@@ -449,7 +482,7 @@ const DetallesOrdenServicio: React.FC = () => {
 
       {/* Detalle de la Orden */}
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default">
-        <h2 className="text-xl font-semibold mb-4">Detalles de la Orden</h2>
+        <h2 className="text-xl font-semibold mb-4">Detalle de la Orden</h2>
         <table className="w-full table-auto border-collapse">
           <thead>
             <tr className="bg-blue-900 uppercase text-center text-white">
@@ -512,7 +545,7 @@ const DetallesOrdenServicio: React.FC = () => {
       >
         <DialogTitle>Editar Orden</DialogTitle>
         <DialogContent>
-          {/* Select de Proveedor */}
+          {/* Select de Proveedor 
           <div className="mb-4">
             <FormControl fullWidth>
               <InputLabel id="supplier-label">Proveedor</InputLabel>
@@ -529,19 +562,10 @@ const DetallesOrdenServicio: React.FC = () => {
                 ))}
               </Select>
             </FormControl>
-          </div>
+          </div>*/}
 
           <h3 className="text-lg font-semibold mb-2">Detalle</h3>
           <table className="w-full table-auto border-collapse">
-            <thead>
-              <tr className="bg-blue-900 text-white text-center">
-                <th className="px-4 py-2">Tejido</th>
-                <th className="px-4 py-2">Información</th>
-                <th className="px-4 py-2">Cantidad</th>
-                <th className="px-4 py-2">Precio</th>
-                <th className="px-4 py-2">Eliminar</th>
-              </tr>
-            </thead>
             <tbody>
               {editedDetails.map((item, idx) => (
                 <tr key={idx} className="text-center">
@@ -559,27 +583,27 @@ const DetallesOrdenServicio: React.FC = () => {
                       onClick={() => item.fabricId && handleOpenFabricDetailsDialog(item.fabricId)}
                       disabled={!item.fabricId}
                     >
-                      <Visibility />
+                      <Visibility color="primary" />
                     </IconButton>
                   </td>
                   <td className="border-b border-[#eee] px-2 py-1">
                     <TextField
-                      type="number"
-                      value={item.quantityOrdered}
-                      onChange={(e) =>
-                        handleDetailChange(idx, "quantityOrdered", parseInt(e.target.value, 10))
-                      }
-                      style={{ width: "70px" }}
+                      label="Cantidad"
+                      value={item.quantityOrdered || ""}
+                      onChange={(e) => handleDetailChange(idx, "quantityOrdered", Number(e.target.value) || 0)}
+                      fullWidth
+                      variant="outlined"
+                      size="small"
                     />
                   </td>
                   <td className="border-b border-[#eee] px-2 py-1">
                     <TextField
-                      type="number"
-                      value={item.price}
-                      onChange={(e) =>
-                        handleDetailChange(idx, "price", parseInt(e.target.value, 10))
-                      }
-                      style={{ width: "70px" }}
+                      label="Precio" 
+                      value={item.price || ""}
+                      onChange={(e) => handleDetailChange(idx, "price", Number(e.target.value) || 0)}
+                      fullWidth
+                      variant="outlined"
+                      size="small"
                     />
                   </td>
                   <td className="border-b border-[#eee] px-2 py-1">
@@ -619,17 +643,17 @@ onClick={handleCloseEditDialog}>Cancelar</Button>
         open={isFabricDialogOpen}
         onClose={handleCloseFabricDialog}
         fullScreen={isSmallScreen}
-          maxWidth="md"
-          PaperProps={{
-            sx: {
-              ...( !isSmallScreen && !isMediumScreen && {
-                marginLeft: "280px", 
-                maxWidth: "calc(100% - 280px)", 
-              }),
-              maxHeight: "calc(100% - 64px)",
-              overflowY: "auto",
-            },
-          }}
+        maxWidth="lg"
+        PaperProps={{
+          sx: {
+            ...(!isSmallScreen && !isMediumScreen && {
+              marginLeft: "280px",
+              maxWidth: "calc(100% - 280px)",
+            }),
+            maxHeight: "calc(100% - 64px)",
+            overflowY: "auto",
+          },
+        }}
       >
         <DialogTitle>
           Seleccionar Tejido
@@ -643,21 +667,21 @@ onClick={handleCloseEditDialog}>Cancelar</Button>
         </DialogTitle>
         <DialogContent>
           <div style={{ overflowX: "auto", border: "1px solid #ddd", borderRadius: "8px" }}>
-            <Table>
-              <TableHead>
-                <TableRow style={{ backgroundColor: "#f5f5f5" }}>
-                  <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>ID</TableCell>
-                  <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Descripción</TableCell>
-                  <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Información</TableCell>
-                  <TableCell style={{ fontWeight: "bold", textTransform: "uppercase" }}>Acciones</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+            <table className="w-full table-auto border-collapse">
+              <thead>
+                <tr className="bg-blue-900 uppercase text-center text-white">
+                  <th className="px-4 py-4 font-normal">ID</th>
+                  <th className="px-4 py-4 font-normal">Descripción</th>
+                  <th className="px-4 py-4 font-normal">Información</th>
+                  <th className="px-4 py-4 font-normal">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
                 {fabrics.map((fabric) => (
-                  <TableRow key={fabric.id} hover>
-                    <TableCell>{fabric.id}</TableCell>
-                    <TableCell>{fabric.description}</TableCell>
-                    <TableCell>
+                  <tr key={fabric.id} className="text-center text-black">
+                    <td className="border-b border-[#eee] px-4 py-4">{fabric.id}</td>
+                    <td className="border-b border-[#eee] px-4 py-4">{fabric.description}</td>
+                    <td className="border-b border-[#eee] px-4 py-4">
                       <IconButton
                         onClick={() => handleOpenFabricDetailsDialog(fabric.id)}
                         size="small"
@@ -665,8 +689,8 @@ onClick={handleCloseEditDialog}>Cancelar</Button>
                       >
                         <Visibility />
                       </IconButton>
-                    </TableCell>
-                    <TableCell>
+                    </td>
+                    <td className="border-b border-[#eee] px-4 py-4">
                       <Button
                         variant="contained"
                         style={{ backgroundColor: "#1976d2", color: "#fff" }}
@@ -675,16 +699,17 @@ onClick={handleCloseEditDialog}>Cancelar</Button>
                       >
                         Seleccionar
                       </Button>
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseFabricDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}
-          >Cerrar</Button>
+          <Button onClick={handleCloseFabricDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
+            Cerrar
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -772,7 +797,7 @@ onClick={handleCloseEditDialog}>Cancelar</Button>
       >
         <DialogTitle>
           <h1 className="text-lg font-semibold text-black mb-2">
-          Detalles del Tejido
+          Detalle del Tejido
           </h1>
           <IconButton
             aria-label="close"
@@ -956,6 +981,22 @@ onClick={handleCloseEditDialog}>Cancelar</Button>
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarSeverity}
+          sx={{ width: "100%", alignItems: "center" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
