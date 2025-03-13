@@ -71,6 +71,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
   const [ingresosSeleccionados, setIngresosSeleccionados] = useState<YarnPurchaseEntry[]>([]);
   const [cantidadRequerida, setCantidadRequerida] = useState(0);
   const [bultosRequerido, setBultosRequerido] = useState(0);
+  const [ingresosPorYarnId, setIngresosPorYarnId] = useState<{ [key: string]: any[] }>({});
 
 
   // TODO CON RESPECTO A ORDENES DE SERVICIO
@@ -149,6 +150,12 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
     setBultosRequerido(0);
     setIngresosSeleccionados([]);
   }, [selectedEntries]);
+
+  useEffect(() => {
+    setEntryFilterYarnId([]);
+    setIngresosPorYarnId({});
+    console.log("Ingresos por yarnId actualizados:", ingresosPorYarnId);
+  }, [ordenesServicio]);
   
 
   const handleRemoveEntry = (entryNumber: string) => {
@@ -193,26 +200,90 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
       console.error("Error al cargar los tipos de tejido:", error);
     }
   }
-
-  const groupedIngresos: { [key: string]: any[] } = {};
   
-  EntryFilterYarnId.forEach((ingreso) => {
-    const yarnId = ingreso.yarnId; // Acceder correctamente a yarnId
+  // EntryFilterYarnId.forEach((ingreso) => {
+  //   const yarnId = ingreso.yarnId; // Acceder correctamente a yarnId
 
-    if (!yarnId) return; // Evita agregar ingresos sin yarnId
+  //   if (!yarnId) return; // Evita agregar ingresos sin yarnId
 
-    if (!groupedIngresos[yarnId]) {
-      groupedIngresos[yarnId] = [];
-    }
+  //   if (!groupedIngresos[yarnId]) {
+  //     groupedIngresos[yarnId] = [];
+  //   }
+  //   console.log("INGRESO:", ingreso);
+  //   groupedIngresos[yarnId].push(ingreso);
+  // });
 
-    groupedIngresos[yarnId].push(ingreso);
-  });
+  // const entryNumbers = Object.values(groupedIngresos).flat().map((ingreso) => ingreso.ingressNumber);
+  // console.log("Entry numbers:", entryNumbers);
 
-  const entryNumbers = Object.values(groupedIngresos).flat().map((ingreso) => ingreso.entryNumber);
+  // const ingresosFiltrados = ingresos.filter((ingreso) =>
+  //   entryNumbers.includes(ingreso.entryNumber)
+  // );
 
-  const ingresosFiltrados = ingresos.filter((ingreso) =>
-    entryNumbers.includes(ingreso.entryNumber)
-  );
+  // console.log("Ingresos filtrados:", ingresosFiltrados);
+
+  // // 3. Agrupar los ingresos filtrados asegurando que solo sean del yarnId correspondiente
+  // const ingresosPorYarnId = ingresosFiltrados.reduce((acc, ingreso) => {
+  //   const yarnId = ingreso.detailHeavy?.[0]?.yarnId; // Extraer el YarnId correctamente
+  
+  //   if (!yarnId) return acc; // Si no tiene YarnId, lo ignoramos
+  
+  //   if (!acc[yarnId]) {
+  //     acc[yarnId] = [];
+  //   }
+  
+  //   acc[yarnId].push(ingreso);
+  //   return acc;
+  // }, {});
+  
+
+  // console.log("Ingresos por yarnId:", ingresosPorYarnId);
+
+  const handleOptimizeIngresos = () => {
+    const groupedIngresos = new Map();
+    const entryNumbers = new Set();
+  
+    // 1. Agrupar ingresos por yarnId
+    EntryFilterYarnId.forEach((ingreso) => {
+      const yarnId = ingreso.yarnId;
+      if (!yarnId) return;
+  
+      if (!groupedIngresos.has(yarnId)) {
+        groupedIngresos.set(yarnId, []);
+      }
+  
+      groupedIngresos.get(yarnId).push(ingreso);
+      entryNumbers.add(ingreso.ingressNumber);
+    });
+  
+    console.log("Entry numbers:", Array.from(entryNumbers));
+  
+    // 2. Filtrar ingresos de manera eficiente
+    const ingresosFiltrados = ingresos.filter((ingreso) =>
+      entryNumbers.has(ingreso.entryNumber)
+    );
+  
+    console.log("Ingresos filtrados:", ingresosFiltrados);
+  
+    // 3. Agrupar ingresos filtrados por yarnId
+    const nuevosIngresosPorYarnId: { [key: string]: any[] } = {};
+  
+    ingresosFiltrados.forEach((ingreso) => {
+      const yarnId = ingreso.detailHeavy?.[0]?.yarnId;
+      if (!yarnId) return;
+  
+      if (!nuevosIngresosPorYarnId[yarnId]) {
+        nuevosIngresosPorYarnId[yarnId] = [];
+      }
+  
+      nuevosIngresosPorYarnId[yarnId].push(ingreso);
+    });
+  
+    console.log("Ingresos por yarnId actualizados:", nuevosIngresosPorYarnId);
+  
+    // Actualizar el estado
+    setIngresosPorYarnId(nuevosIngresosPorYarnId);
+  };
 
   //FALTA COMPLETAR EL FLUJO NO TOCAR
 
@@ -489,10 +560,12 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
     
   
   const handleOpenIngresoDialog = () => 
-    {FilterIngresosbySupplier();
+    { FilterIngresosbySupplier();
+      handleOptimizeIngresos();
       sleepES5(100);
-    setIsIngresoDialogOpen(true);
+      setIsIngresoDialogOpen(true);
     };
+
   const handleCloseIngresoDialog = () => setIsIngresoDialogOpen(false);
 
   const handleOpenServiceDialog = () => 
@@ -914,7 +987,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
               </Select>
             </div>
             
-            {Object.keys(groupedIngresos).map((yarnId) => (
+            {Object.keys(ingresosPorYarnId).map((yarnId) => (
             <div key={yarnId} className="mb-6">
               <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>
                 Hilado: {yarnId}
@@ -932,43 +1005,42 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
                     </tr>
                   </thead>
                   <tbody>
-                  {ingresosFiltrados.map((ingreso, index) => {
-                    const alreadySelected = selectedEntries.some(
-                      (r) => r.entryNumber === ingreso.entryNumber
-                    );
-                    const detail = ingreso.detailHeavy?.[0] || {};
-                    
-                    return (
-                      <tr key={`${ingreso.entryNumber}-${index}`} className="text-center">
-                        <td className="border-b border-gray-300 px-4 py-5">
-                          {ingreso.entryNumber}
-                          <IconButton onClick={() => handleOpenYarnEntryInfoDialog(ingreso.entryNumber)}>
-                            <VisibilityIcon style={{ color: "#1976d2" }} />
-                          </IconButton>
-                        </td>
-                        <td className="border-b border-gray-300 px-4 py-5">{detail.grossWeight || "--"}</td>
-                        <td className="border-b border-gray-300 px-4 py-5">{detail.netWeight || "--"}</td>
-                        <td className="border-b border-gray-300 px-4 py-5">{detail.packagesLeft || "--"}</td>
-                        <td className="border-b border-gray-300 px-4 py-5">{detail.conesLeft || "--"}</td>
-                        <td className="border-b border-gray-300 px-4 py-5">
-                          {alreadySelected ? (
-                            <span className="text-gray-500">Seleccionado</span>
-                          ) : (
-                            <IconButton color="primary" onClick={() => loadIngresoDetails(ingreso)}>
-                              <Add />
-                            </IconButton>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                    {ingresosPorYarnId[yarnId].map((ingreso, index) => {
+                      const alreadySelected = selectedEntries.some(
+                        (r) => r.entryNumber === ingreso.entryNumber
+                      );
+                      const detail = ingreso.detailHeavy?.[0] || {}; // Accede correctamente a los detalles
 
+                      return (
+                        <tr key={`${ingreso.entryNumber}-${index}`} className="text-center">
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {ingreso.entryNumber}
+                            <IconButton onClick={() => handleOpenYarnEntryInfoDialog(ingreso.entryNumber)}>
+                              <VisibilityIcon style={{ color: "#1976d2" }} />
+                            </IconButton>
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">{detail.grossWeight || "--"}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">{detail.netWeight || "--"}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">{detail.packagesLeft || "--"}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">{detail.conesLeft || "--"}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {alreadySelected ? (
+                              <span className="text-gray-500">Seleccionado</span>
+                            ) : (
+                              <IconButton color="primary" onClick={() => loadIngresoDetails(ingreso)}>
+                                <Add />
+                              </IconButton>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
                 <TablePagination
                   rowsPerPageOptions={[10, 25, 50]}
                   component="div"
-                  count={groupedIngresos[yarnId].length}
+                  count={ingresosPorYarnId[yarnId].length} // Se usa ingresosPorYarnId en lugar de groupedIngresos
                   rowsPerPage={filasPorPagina}
                   page={pagina}
                   onPageChange={(_, newPage) => setPagina(newPage)}
@@ -977,6 +1049,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
               </div>
             </div>
           ))}
+
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseIngresoDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
