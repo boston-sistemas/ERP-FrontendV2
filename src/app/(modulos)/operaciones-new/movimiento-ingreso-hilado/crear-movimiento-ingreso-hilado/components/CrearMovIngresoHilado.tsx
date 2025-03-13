@@ -332,7 +332,7 @@ const CrearMovIngresoHilado: React.FC = () => {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 border border-gray-300 rounded-lg shadow-lg p-8 w-full max-w-lg">
+      <div className="bg-white dark:bg-gray-800 border border-gray-300 rounded-lg shadow-lg p-8 w-full max-w-4xl">
         <h2 className="text-xl font-bold mb-6 text-center" style={{ color: "#000" }}>
           Crear Mov. de Ingreso de Hilado
         </h2>
@@ -430,24 +430,6 @@ const CrearMovIngresoHilado: React.FC = () => {
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <TextField
-                      label="N° Bultos"
-                      value={detail.guidePackageCount || ""}
-                      onChange={(e) => handleDetailChange(index, "guidePackageCount", parseInt(e.target.value) || 0)}
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      disabled={!detail.isActive}
-                    />
-                    <TextField
-                      label="N° Conos"
-                      value={detail.guideConeCount || ""}
-                      onChange={(e) => handleDetailChange(index, "guideConeCount", parseInt(e.target.value) || 0)}
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      disabled={!detail.isActive}
-                    />
-                    <TextField
                       label="Peso Bruto"
                       value={detail.guideGrossWeight || ""}
                       onChange={(e) => handleDetailChange(index, "guideGrossWeight", parseFloat(e.target.value) || 0)}
@@ -460,6 +442,24 @@ const CrearMovIngresoHilado: React.FC = () => {
                       label="Peso Neto"
                       value={detail.guideNetWeight || ""}
                       onChange={(e) => handleDetailChange(index, "guideNetWeight", parseFloat(e.target.value) || 0)}
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      disabled={!detail.isActive}
+                    />
+                    <TextField
+                      label="N° Bultos"
+                      value={detail.guidePackageCount || ""}
+                      onChange={(e) => handleDetailChange(index, "guidePackageCount", parseInt(e.target.value) || 0)}
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      disabled={!detail.isActive}
+                    />
+                    <TextField
+                      label="N° Conos"
+                      value={detail.guideConeCount || ""}
+                      onChange={(e) => handleDetailChange(index, "guideConeCount", parseInt(e.target.value) || 0)}
                       fullWidth
                       variant="outlined"
                       size="small"
@@ -482,7 +482,7 @@ const CrearMovIngresoHilado: React.FC = () => {
                       <table className="table-auto w-full">
                         <thead>
                           <tr className="bg-blue-900 text-white text-sm">
-                            {["Grupo", "N° Bultos", "N° Conos", "Peso Bruto", "Peso Neto", "Acciones"].map((col, colIndex) => (
+                            {["Grupo", "Peso Bruto", "Peso Neto", "N° Bultos", "N° Conos", "Acciones"].map((col, colIndex) => (
                               <th key={colIndex} className="px-2 py-3 text-center">
                                 {col}
                               </th>
@@ -499,45 +499,44 @@ const CrearMovIngresoHilado: React.FC = () => {
                             >
                               <td className="px-2 py-3 text-center">{group.groupNumber}</td>
                               <td className="px-2 py-3 text-center">
+                                <TextField
+                                  label="Peso Bruto"
+                                  value={group.grossWeight || ""}
+                                  onChange={(e) => handleUpdateGroup(index, groupIndex, "grossWeight", parseFloat(e.target.value) || 0)}
+                                  fullWidth
+                                  variant="outlined"
+                                  size="small"
+                                />
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <TextField
+                                  label="Peso Neto"
+                                  value={group.netWeight || ""}
+                                  onChange={(e) => handleUpdateGroup(index, groupIndex, "netWeight", parseFloat(e.target.value) || 0)}
+                                  fullWidth
+                                  variant="outlined"
+                                  size="small"
+                                />
+                              </td>
+                              <td className="px-2 py-3 text-center">
                               <TextField
-                                type="number"
-                                size="small"
+                                label="N° Bultos"
+                                value={group.packageCount || ""}
+                                onChange={(e) => handleUpdateGroup(index, groupIndex, "packageCount", parseFloat(e.target.value) || 0)}
                                 fullWidth
-                                value={group.packageCount}
-                                InputProps={{ readOnly: true }} // Deshabilitar edición
+                                variant="outlined"
+                                size="small"
+                                disabled={true}
                               />
                               </td>
                               <td className="px-2 py-3 text-center">
                                 <TextField
-                                  type="number"
-                                  size="small"
+                                  label="N° Conos"
+                                  value={group.coneCount || ""}
+                                  onChange={(e) => handleUpdateGroup(index, groupIndex, "coneCount", parseFloat(e.target.value) || 0)}
                                   fullWidth
-                                  value={group.coneCount}
-                                  onChange={(e) =>
-                                    handleUpdateGroup(index, groupIndex, "coneCount", parseInt(e.target.value) || 0)
-                                  }
-                                />
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <TextField
-                                  type="number"
+                                  variant="outlined"
                                   size="small"
-                                  fullWidth
-                                  value={group.grossWeight}
-                                  onChange={(e) =>
-                                    handleUpdateGroup(index, groupIndex, "grossWeight", parseFloat(e.target.value) || 0)
-                                  }
-                                />
-                              </td>
-                              <td className="px-2 py-3 text-center">
-                                <TextField
-                                  type="number"
-                                  size="small"
-                                  fullWidth
-                                  value={group.netWeight}
-                                  onChange={(e) =>
-                                    handleUpdateGroup(index, groupIndex, "netWeight", parseFloat(e.target.value) || 0)
-                                  }
                                 />
                               </td>
                               <td className="px-2 py-3 text-center">
