@@ -468,7 +468,7 @@ const DetallesOrdenServicio: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            <tr className="text-center">
+            <tr className="text-center text-black">
               <td className="border-b border-[#eee] px-4 py-5">{orden.id}</td>
               <td className="border-b border-[#eee] px-4 py-5">
                 {getSupplierNameById(orden.supplierId, suppliers)}
@@ -495,7 +495,7 @@ const DetallesOrdenServicio: React.FC = () => {
           </thead>
           <tbody>
             {orden.detail.map((det, idx) => (
-              <tr key={idx} className="text-center">
+              <tr key={idx} className="text-center text-black">
                 {/* Si la API no trae .fabricId, mostramos .tissueId */}
                 <td className="border-b border-[#eee] px-4 py-5 flex items-center justify-center">
                   <span>{(det as any).fabricId || det.tissueId || "(sin id)"}</span>
@@ -568,7 +568,7 @@ const DetallesOrdenServicio: React.FC = () => {
           <table className="w-full table-auto border-collapse">
             <tbody>
               {editedDetails.map((item, idx) => (
-                <tr key={idx} className="text-center">
+                <tr key={idx} className="text-center text-black">
                   <td className="border-b border-[#eee] px-2 py-1">
                     <Button
                       variant="outlined"
