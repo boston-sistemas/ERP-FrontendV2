@@ -1,11 +1,13 @@
 ﻿import instance from "@/infrastructure/config/AxiosConfig";
-import { Supplier, WeavingServiceEntry } from "../../models/models";
+import { Fabric, Supplier, WeavingServiceEntry } from "../../models/models";
 
 export const fetchWeavingServiceEntries = async (
     period: number,
     includeAnnulled: boolean = false,
-    includeDetail: boolean = true,
     page: number = 1,
+    entryNumber?: string,
+    serviceOrderId?: string,
+    supplierIds?: string[],
     startDate?: string,
     endDate?: string
 ): Promise<WeavingServiceEntryResponse> => {
@@ -14,13 +16,20 @@ export const fetchWeavingServiceEntries = async (
             params: {
                 period,
                 includeAnnulled,
-                includeDetail,
                 page,
+                entryNumber,
+                serviceOrderId,
+                supplierIds,
                 startDate,
                 endDate
             }
         }
     );
+    return response.data;
+};
+
+export const fetchFabricById = async (fabricId: string): Promise<Fabric> => {
+    const response = await instance.get<Fabric>(`/operations/v1/fabrics/${fabricId}`);
     return response.data;
 };
 

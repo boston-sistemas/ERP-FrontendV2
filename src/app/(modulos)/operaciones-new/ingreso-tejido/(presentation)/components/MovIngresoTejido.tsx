@@ -17,8 +17,9 @@ import {
   Typography,
   Snackbar,
   Alert,
+  Menu,
 } from "@mui/material";
-import { Visibility, Add, Close, Search } from "@mui/icons-material";
+import { Visibility, Add, Close, Search, FilterList } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { WeavingServiceEntry } from "../../../models/models";
 import { fetchWeavingServiceEntries, fetchWeavingServiceEntryById, annulWeavingServiceEntry, checkWeavingServiceEntryIsUpdatable } from "../../services/IngresoTejidoService";
@@ -46,6 +47,7 @@ const MovIngresoTejido: React.FC = () => {
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState("");
     const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   
     useEffect(() => {
       const fetchData = async () => {
@@ -54,7 +56,6 @@ const MovIngresoTejido: React.FC = () => {
           const response = await fetchWeavingServiceEntries(
             period,
             includeInactive,
-            true,
             pagina,
             startDate || undefined,
             endDate || undefined
@@ -105,24 +106,20 @@ const MovIngresoTejido: React.FC = () => {
       setSnackbarOpen(true);
     };
   
+    const handleFilterClick = () => {
+      setAnchorEl(true);
+    };
+  
+    const handleFilterClose = () => {
+      setAnchorEl(null);
+    };
+  
     return (
       <div className="space-y-5">
         <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default sm:px-7.5 xl:pb-1">
           <div className="max-w-full overflow-x-auto">
             <div className="flex items-center justify-between gap-2 mb-4">
               <div className="flex items-center gap-2">
-                <div className="flex items-center border border-gray-300 rounded-md px-2">
-                  <Search />
-                  <TextField
-                    variant="standard"
-                    placeholder="Buscar..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    InputProps={{
-                      disableUnderline: true,
-                    }}
-                  />
-                </div>
                 <FormControlLabel
                   control={
                     <Switch
@@ -132,9 +129,10 @@ const MovIngresoTejido: React.FC = () => {
                     />
                   }
                   label="Mostrar inactivos"
+                  className="text-black"
                 />
                 <div className="flex items-center gap-2">
-                  <Typography variant="body2" className="font-semibold">
+                  <Typography variant="body2" className="font-semibold text-black">
                     Período:
                   </Typography>
                   <Select
@@ -143,10 +141,10 @@ const MovIngresoTejido: React.FC = () => {
                     displayEmpty
                     variant="outlined"
                     size="small"
-                    style={{ width: "120px", backgroundColor: "#fff" }}
+                    style={{ width: "120px", backgroundColor: "#fff", color: "#000" }}
                   >
                     {generateYearOptions(getCurrentYear()).map((year) => (
-                      <MenuItem key={year} value={year}>
+                      <MenuItem key={year} value={year} className="text-black">
                         {year}
                       </MenuItem>
                     ))}
@@ -162,6 +160,45 @@ const MovIngresoTejido: React.FC = () => {
                 >
                   CREAR
                 </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outlined"
+                  onClick={handleFilterClick}
+                  startIcon={<FilterList />}
+                >
+                  Filtrar por Fecha
+                </Button>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleFilterClose}
+                >
+                  <div className="p-4">
+                    <TextField
+                      label="Fecha Inicio"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      fullWidth
+                      className="text-black"
+                    />
+                    <TextField
+                      label="Fecha Fin"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      fullWidth
+                      className="mt-2 text-black"
+                    />
+                  </div>
+                </Menu>
               </div>
             </div>
   
@@ -189,13 +226,13 @@ const MovIngresoTejido: React.FC = () => {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-4">
+                    <td colSpan={7} className="text-center py-4 text-black">
                       Cargando datos...
                     </td>
                   </tr>
                 ) : filteredEntries.length > 0 ? (
                   filteredEntries.map((entry, index) => (
-                    <tr key={index} className="text-center">
+                    <tr key={index} className="text-center text-black">
                       <td className="border-b border-[#eee] px-4 py-5">
                         {entry.entryNumber}
                       </td>
@@ -212,7 +249,7 @@ const MovIngresoTejido: React.FC = () => {
                         {entry.supplierCode}
                       </td>
                       <td className="border-b border-[#eee] px-4 py-5">
-                        {entry.statusFlag}
+                        {entry.promecStatus.name}
                       </td>
                       <td className="border-b border-[#eee] px-4 py-5">
                         <IconButton
@@ -226,7 +263,7 @@ const MovIngresoTejido: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="text-center py-4">
+                    <td colSpan={7} className="text-center py-4 text-black">
                       No se encontraron resultados.
                     </td>
                   </tr>
@@ -247,6 +284,7 @@ const MovIngresoTejido: React.FC = () => {
               `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
             }
             rowsPerPageOptions={[10, 25, 50]}
+            className="text-black"
           />
         </div>
         
