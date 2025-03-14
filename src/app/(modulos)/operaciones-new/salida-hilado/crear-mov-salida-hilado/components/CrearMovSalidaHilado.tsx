@@ -1188,7 +1188,10 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
                     const detail = ingreso.detailHeavy?.[0] || {};
                     return (
                       <tr key={ingreso.entryNumber} className="text-center text-black border-b border-gray-300">
-                        <td className="border border-gray-300 px-4 py-2">{ingreso.entryNumber}</td>
+                        <td className="border border-gray-300 px-4 py-2">{ingreso.entryNumber} <IconButton 
+                        onClick={() => handleOpenYarnEntryInfoDialog(ingreso.entryNumber)}>
+                                    <VisibilityIcon style={{ color: "#1976d2" }} />
+                                  </IconButton></td>
                         <td className="border border-gray-300 px-4 py-2">{detail.grossWeight || "--"}</td>
                         <td className="border border-gray-300 px-4 py-2">{detail.netWeight || "--"}</td>
                         <td className="border border-gray-300 px-4 py-2">{detail.packagesLeft || "--"}</td>
