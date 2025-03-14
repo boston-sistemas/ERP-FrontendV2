@@ -78,7 +78,9 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
   const [ordenesServicio, setOrdenesServicio] = useState<ServiceOrder[]>([]); // Lista de órdenes de servicio
   const [dataOS, setDataOS] = useState<any>(null); // Detalles de la orden de servicio
   const [openFabricDialog, setOpenFabricDialog] = useState(false); // Estado del diálogo de información de tejido
+  const [openOSDetail, setOpenOSDetail] = useState(false); // Estado del diálogo de información de tejido
   const [openYarnDialog, setOpenYarnDialog] = useState(false); // Estado del diálogo de información de tejido
+  const [OSDetail, setOSDetail] = useState<any>(null); // Detalles de OS
   const [FabricInfo, setFabricInfo] = useState<any>(null); // Detalles de fibras
   const [typeFabric, setTypeFabric] = useState<FabricType[]>([]); // Tipos de fibras
   const [selectTypeFabric, setSelectedTypeFabric] = useState<string>(""); // Tipo de fibra seleccionado
@@ -128,6 +130,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
   useEffect(() => {
     // Cargar ingresos y órdenes de servicio cuando cambie el período
     FilterIngresosbySupplier();
+    FilterServicebySupplier();
   }, [period]);
 
   useEffect(() => {
@@ -138,8 +141,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
     const savedEntryNumber = localStorage.getItem("entryNumber");
     if (savedEntryNumber) {
       const parsedPayload = JSON.parse(savedEntryNumber);
-      loadIngresoDetails(parsedPayload); // Carga los detalles del ingreso
-      //setSelectedGroups(parsedPayload.groups || []); // Preselecciona los grupos
+      loadIngresoDetails(parsedPayload); // Carga los detalles del ingreso guardado
       localStorage.removeItem("entryNumber"); // Limpia el localStorage después de cargar
     }
   
@@ -277,6 +279,15 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
       } catch (error) {
         console.error("Error al cargar los datos del hilo:", error);
       }
+    };
+
+    const handleOpenOSDetails = async (orderId: string) => {
+      setOpenOSDetail(true);
+      const response = await fetchServiceOrderById(orderId);
+      setOSDetail({
+        ...response,
+        detail: response.detail || [],
+      });
     };
 
     const handleOpenYarnEntryInfoDialog = async (yarnEntryNumber: string) => {
@@ -487,6 +498,8 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
       sleepES5(100);
       setIsServiceDialogOpen(true);
     };
+  
+  const handleCloseOSDetail = () => setOpenOSDetail(false);
 
   const handleCloseServiceDialog = () => setIsServiceDialogOpen(false);
 
@@ -597,6 +610,30 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
       >
           <DialogTitle>Seleccionar Orden de Servicio</DialogTitle>
           <DialogContent>
+          <div className="mb-4">
+              <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>
+              Seleccionar periodo
+              </Typography>
+              <Select
+                labelId="period-label"
+                value={period}
+                onChange={(e) => {
+                  const selectedPeriod = Number(e.target.value);
+                  if ([2023, 2024, 2025].includes(selectedPeriod)) {
+                    setPeriod(selectedPeriod); // Solo actualiza si el período es válido
+                  } else {
+                    showSnackbar("Período no válido.", "error");
+                  }
+                }}
+                >
+                  {[2023, 2024, 2025].map((year) => (
+                    <MenuItem key={year} value={year}>
+                      {year}
+                    </MenuItem>
+                  ))}
+              </Select>
+            </div>
+            
             <div className="max-w-full overflow-x-auto">
               <table className="w-full table-auto">
                 <thead>
@@ -613,7 +650,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
                    pagina * filasPorPagina + filasPorPagina).map((orden) => (
                     <tr key={orden.id} className="text-center">
                       <td className="border-b border-gray-300 px-4 py-5">{orden.id}</td>
-                      <td className="border-b border-gray-300 px-4 py-5"><IconButton onClick={() => handleOpenFabricDialog(FabricInfo.id)}>
+                      <td className="border-b border-gray-300 px-4 py-5"><IconButton onClick={() => handleOpenOSDetails(orden.id)}>
                           <VisibilityIcon 
                           style={{ color: "#1976d2" }}
                           />
@@ -646,7 +683,46 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
           </DialogActions>
         </Dialog>
 
-        {/* Tabla de detalles de orden de servicio */}
+        {/* Diálogo para seleccionar órdenes de servicio */}
+        <Dialog
+        open={openOSDetail}
+        onClose={handleCloseOSDetail}
+        fullWidth
+        maxWidth="lg"
+        sx={{
+          "& .MuiDialog-paper": {
+            width: "30%",
+            marginLeft: "20%",
+          },
+        }}
+      >
+          <DialogContent>
+            <h3 className="text-lg font-semibold text-black mb-4">
+                Información de la Orden de Servicio
+            </h3>
+            <div className="max-w-full overflow-x-auto">
+            {OSDetail ? (
+                <div className="mb-4 text-black">
+                  <p className="mb-2"><strong>Fabric ID:</strong> {OSDetail.detail[0]?.fabricId} </p>
+                  <p className="mb-2"><strong>Cantidad Ordenada:</strong> {OSDetail.detail[0]?.quantityOrdered} </p>
+                  <p className="mb-2"><strong>Cantidad Enviada:</strong> {OSDetail.detail[0]?.quantitySupplied} </p>
+                  <p className="mb-2"><strong>Precio:</strong> {OSDetail.detail[0]?.price} </p>
+                  <p className="mb-2"><strong>Detalles:</strong> {OSDetail.detail[0]?.detailNote} </p>
+                  <p className="mb-2"><strong>Estado:</strong> {OSDetail.detail[0]?.status} </p>
+                </div>
+              ) : (
+                <p>Cargando información...</p>
+              )}
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseOSDetail} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
+              Cancelar
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Tabla de detalles de tejido */}
         {dataOS && (
           <div className="max-w-full overflow-x-auto">
             <h2 className="text-lg font-semibold mb-2">Detalles de la Orden de Servicio</h2>

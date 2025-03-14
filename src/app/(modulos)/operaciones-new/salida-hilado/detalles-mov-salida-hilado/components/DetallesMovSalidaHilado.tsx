@@ -313,7 +313,7 @@ const DetallesMovSalidaHilado: React.FC = () => {
 
   const handleOpenServiceOrderDialog = async () => {
     try {
-      const resp = await fetchServiceOrders(50, 0, false);
+      const resp = await fetchServiceOrders(period, false, false);
       setServiceOrders(resp.serviceOrders || []);
       setIsServiceOrderDialogOpen(true);
     } catch (e) {
@@ -369,9 +369,20 @@ const DetallesMovSalidaHilado: React.FC = () => {
             <span>
               <Button
                 variant="contained"
-                color="primary"
                 disabled={!isEditable}
                 onClick={handleEdit}
+                sx={{
+                  backgroundColor: "#1976d2 !important", // Azul fijo, evita sobreescrituras
+                  color: "white", // Texto blanco
+                  boxShadow: "none", // Elimina sombras por defecto
+                  "&:hover": {
+                    backgroundColor: "#1259a3", // Azul más oscuro al pasar el mouse
+                  },
+                  "&:disabled": {
+                    backgroundColor: "#90caf9", // Azul claro cuando está deshabilitado
+                    color: "#ffffff",
+                  },
+                }}
               >
                 Editar
               </Button>
@@ -381,9 +392,20 @@ const DetallesMovSalidaHilado: React.FC = () => {
             <span>
               <Button
                 variant="contained"
-                color="error"
                 disabled={!isAnulable}
                 onClick={handleOpenAnulateDialog}
+                sx={{
+                  backgroundColor: "#FF0000 !important", // Azul fijo, evita sobreescrituras
+                  color: "white", // Texto blanco
+                  boxShadow: "none", // Elimina sombras por defecto
+                  "&:hover": {
+                    backgroundColor: "#1259a3", // Azul más oscuro al pasar el mouse
+                  },
+                  "&:disabled": {
+                    backgroundColor: "#90caf9", // Azul claro cuando está deshabilitado
+                    color: "#ffffff",
+                  },
+                }}
               >
                 Anular
               </Button>
@@ -488,22 +510,21 @@ const DetallesMovSalidaHilado: React.FC = () => {
         open={isEditDialogOpen}
         onClose={handleCloseEditDialog}
         fullWidth
-        maxWidth="md"
+        maxWidth="lg"
+        sx={{
+          "& .MuiDialog-paper": {
+            width: "70%",
+            marginLeft: "20%",
+          },
+        }}
       >
         <DialogTitle>
           Editar Movimiento de Salida
-          <IconButton
-            aria-label="close"
-            onClick={handleCloseEditDialog}
-            sx={{ position: "absolute", right: 8, top: 8 }}
-          >
-            <Close />
-          </IconButton>
         </DialogTitle>
 
         <DialogContent>
-          <div className="mt-2 space-y-3">
-            {/* SELECT Proveedor */}
+          <div className="mt-4 space-y-4">
+            {/* Proveedor */}
             <FormControl fullWidth>
               <InputLabel id="supplier-label">Proveedor</InputLabel>
               <Select
@@ -520,7 +541,7 @@ const DetallesMovSalidaHilado: React.FC = () => {
               </Select>
             </FormControl>
 
-            {/* SELECT Dirección */}
+            {/* Dirección (solo si hay proveedor seleccionado) */}
             {selectedSupplierObj && (
               <FormControl fullWidth>
                 <InputLabel id="address-label">Dirección</InputLabel>
@@ -541,13 +562,14 @@ const DetallesMovSalidaHilado: React.FC = () => {
               </FormControl>
             )}
 
-            {/* SELECT Orden de Servicio */}
-            <div className="flex items-center gap-2">
+            {/* Orden de Servicio (OS) */}
+            <div className="grid grid-cols-3 gap-4 items-center">
               <TextField
                 label="Orden de Servicio (ID)"
                 value={editServiceOrderId}
                 onChange={(e) => setEditServiceOrderId(e.target.value)}
                 fullWidth
+                className="col-span-2"
               />
               <Button
                 variant="outlined"
@@ -558,13 +580,14 @@ const DetallesMovSalidaHilado: React.FC = () => {
               </Button>
             </div>
 
-            {/* NOTA DEL DOCUMENTO */}
+            {/* Nota del Documento */}
             <TextField
               label="Nota del Documento"
               value={editDocumentNote}
               onChange={(e) => setEditDocumentNote(e.target.value)}
               fullWidth
               multiline
+              rows={3}
             />
 
             <Typography variant="subtitle1" className="font-semibold mt-4">
@@ -671,6 +694,12 @@ const DetallesMovSalidaHilado: React.FC = () => {
         onClose={handleCloseServiceOrderDialog}
         fullWidth
         maxWidth="lg"
+        sx={{
+          "& .MuiDialog-paper": {
+            width: "70%",
+            marginLeft: "20%",
+          },
+        }}
       >
         <DialogTitle>
           Seleccionar Orden de Servicio
@@ -683,37 +712,36 @@ const DetallesMovSalidaHilado: React.FC = () => {
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          {/* Tabla con serviceOrders */}
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Cliente</TableCell>
-                  <TableCell>Fecha</TableCell>
-                  <TableCell>Acción</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+          {/* Tabla con desplazamiento si es necesario */}
+          <div className="max-w-full overflow-x-auto">
+            <table className="w-full table-auto border-collapse">
+              <thead className="bg-blue-900 text-white">
+                <tr>
+                  <th className="px-4 py-4 text-center">ID</th>
+                  <th className="px-4 py-4 text-center">Cliente</th>
+                  <th className="px-4 py-4 text-center">Fecha</th>
+                  <th className="px-4 py-4 text-center">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
                 {serviceOrders.map((so) => (
-                  <TableRow key={so.id}>
-                    <TableCell>{so.id}</TableCell>
-                    <TableCell>{so.supplierId}</TableCell>
-                    <TableCell>{so.issueDate}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="contained"
-                        onClick={() => {
-                          handleSelectServiceOrder(so.id);
-                        }}
+                  <tr key={so.id} className="text-center text-black hover:bg-gray-100 text-gray-900">
+                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{so.id}</td>
+                    <td className="border-b border-gray-300 px-4 py-5 mb-2"></td>
+                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{so.supplierId}</td>
+                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{so.issueDate}</td>
+                    <td className="border-b border-gray-300 px-4 py-5 mb-2">
+                      <button
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md transition-all"
+                        onClick={() => handleSelectServiceOrder(so.id)}
                       >
                         Seleccionar
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                      </button>
+                    </td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
         </DialogContent>
         <DialogActions>
@@ -727,6 +755,12 @@ const DetallesMovSalidaHilado: React.FC = () => {
         onClose={handleClosePurchaseEntryDialog}
         fullWidth
         maxWidth="lg"
+        sx={{
+          "& .MuiDialog-paper": {
+            width: "70%",
+            marginLeft: "20%",
+          },
+        }}
       >
         <DialogTitle>
           Seleccionar Movimiento de Ingreso
@@ -739,34 +773,35 @@ const DetallesMovSalidaHilado: React.FC = () => {
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>EntryNumber</TableCell>
-                  <TableCell>Proveedor</TableCell>
-                  <TableCell>Fecha</TableCell>
-                  <TableCell>Acción</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+          {/* Contenedor con desplazamiento si es necesario */}
+          <div className="max-w-full overflow-x-auto">
+            <table className="w-full table-auto border-collapse">
+              <thead className="bg-blue-900 text-white">
+                <tr>
+                  <th className="px-4 py-4 text-center">Entry Number</th>
+                  <th className="px-4 py-4 text-center">Proveedor</th>
+                  <th className="px-4 py-4 text-center">Fecha</th>
+                  <th className="px-4 py-4 text-center">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
                 {purchaseEntries.map((entry) => (
-                  <TableRow key={entry.entryNumber}>
-                    <TableCell>{entry.entryNumber}</TableCell>
-                    <TableCell>{entry.supplierCode}</TableCell>
-                    <TableCell>{entry.creationDate}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="contained"
+                  <tr key={entry.entryNumber} className="text-center text-black hover:bg-gray-100 text-gray-900">
+                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{entry.entryNumber}</td>
+                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{entry.supplierCode}</td>
+                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{entry.creationDate}</td>
+                    <td className="border-b border-gray-300 px-4 py-5 mb-2">
+                      <button
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md transition-all"
                         onClick={() => handleSelectPurchaseEntry(entry.entryNumber)}
                       >
                         Seleccionar
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                      </button>
+                    </td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
         </DialogContent>
         <DialogActions>
