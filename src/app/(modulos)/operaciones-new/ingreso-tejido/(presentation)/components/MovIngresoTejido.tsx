@@ -38,17 +38,15 @@ const MovIngresoTejido: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [includeInactive, setIncludeInactive] = useState(false);
-    const [period, setPeriod] = useState(() => {
-      const currentYear = getCurrentYear();
-      return currentYear;
-    });
-    const [startDate, setStartDate] = useState<string | undefined>(undefined);
-    const [endDate, setEndDate] = useState<string | undefined>(undefined);
+    const [period, setPeriod] = useState(getCurrentYear());
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState("");
     const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    const [showDeleted, setShowDeleted] = useState(false);
   
     useEffect(() => {
       const fetchData = async () => {
@@ -56,8 +54,11 @@ const MovIngresoTejido: React.FC = () => {
         try {
           const response = await fetchWeavingServiceEntries(
             period,
-            includeInactive,
+            showDeleted,
             pagina,
+            undefined,
+            undefined,
+            undefined,
             startDate || undefined,
             endDate || undefined
           );
@@ -75,7 +76,7 @@ const MovIngresoTejido: React.FC = () => {
       };
   
       fetchData();
-    }, [pagina, includeInactive, period, startDate, endDate]);
+    }, [pagina, showDeleted, period, startDate, endDate]);
   
     const handleCreateEntry = () => {
       router.push("/operaciones-new/ingreso-tejido/crear-mov-ingreso-tejido");
@@ -110,102 +111,100 @@ const MovIngresoTejido: React.FC = () => {
       setSnackbarOpen(true);
     };
   
-    const handleFilterClick = () => {
-      setAnchorEl(true);
+    const handleAdvancedSearchClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      setAnchorEl(event.currentTarget);
     };
   
-    const handleFilterClose = () => {
+    const handleAdvancedSearchClose = () => {
       setAnchorEl(null);
+    };
+  
+    const handleApplyFilter = () => {
+      // Lógica para aplicar el filtro
+      handleAdvancedSearchClose();
     };
   
     return (
       <div className="space-y-5">
         <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default sm:px-7.5 xl:pb-1">
           <div className="max-w-full overflow-x-auto">
-            <div className="flex items-center justify-between gap-2 mb-4">
-              <div className="flex items-center gap-2">
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={includeInactive}
-                      onChange={(e) => setIncludeInactive(e.target.checked)}
-                      color="primary"
-                    />
-                  }
-                  label="Mostrar inactivos"
-                  className="text-black"
-                />
-                <div className="flex items-center gap-2">
-                  <Typography variant="body2" className="font-semibold text-black">
-                    Período:
-                  </Typography>
-                  <Select
-                    value={period}
-                    onChange={(e) => setPeriod(Number(e.target.value))}
-                    displayEmpty
-                    variant="outlined"
-                    size="small"
-                    style={{ width: "120px", backgroundColor: "#fff", color: "#000" }}
-                  >
-                    {generateYearOptions(getCurrentYear()).map((year) => (
-                      <MenuItem key={year} value={year} className="text-black">
-                        {year}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  startIcon={<Add />}
-                  variant="contained"
-                  style={{ backgroundColor: "#1976d2", color: "#fff" }}
-                  onClick={handleCreateEntry}
-                >
-                  CREAR
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outlined"
-                  onClick={handleFilterClick}
-                  startIcon={<FilterList />}
-                >
-                  Filtrar por Fecha
-                </Button>
-                <Menu
-                  anchorEl={anchorEl}
-                  open={Boolean(anchorEl)}
-                  onClose={handleFilterClose}
-                >
-                  <div className="p-4">
-                    <TextField
-                      label="Fecha Inicio"
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
-                      fullWidth
-                      className="text-black"
-                    />
-                    <TextField
-                      label="Fecha Fin"
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
-                      fullWidth
-                      className="mt-2 text-black"
-                    />
-                  </div>
-                </Menu>
-              </div>
+            <div className="flex items-center justify-start gap-2 mb-4">
+              <Button
+                startIcon={<FilterList />}
+                variant="outlined"
+                onClick={handleAdvancedSearchClick}
+              >
+                Filtrar por fecha
+              </Button>
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={showDeleted}
+                    onChange={(e) => setShowDeleted(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label="Mostrar anulados"
+              />
+
+              <Typography variant="body2" className="font-semibold">
+                Período:
+              </Typography>
+              <Select
+                value={period}
+                onChange={(e) => setPeriod(Number(e.target.value))}
+                displayEmpty
+                variant="outlined"
+                size="small"
+                style={{ width: "120px", backgroundColor: "#fff" }}
+              >
+                {generateYearOptions(getCurrentYear()).map((year) => (
+                  <MenuItem key={year} value={year}>
+                    {year}
+                  </MenuItem>
+                ))}
+              </Select>
+
+              <Button
+                startIcon={<Add />}
+                variant="contained"
+                style={{ backgroundColor: "#1976d2", color: "#fff", marginLeft: 'auto' }}
+                onClick={() => router.push('/operaciones-new/ingreso-tejido/crear-mov-ingreso-tejido')}
+              >
+                CREAR
+              </Button>
             </div>
-  
+
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleAdvancedSearchClose}
+            >
+              <div className="p-4 space-y-2" style={{ maxWidth: "300px" }}>
+                <TextField
+                  label="Fecha Inicio"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  fullWidth
+                />
+                <TextField
+                  label="Fecha Fin"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  fullWidth
+                />
+              </div>
+            </Menu>
+
             <table className="w-full h-full border-collapse table-auto">
               <thead>
                 <tr className="bg-blue-900 uppercase text-center">
