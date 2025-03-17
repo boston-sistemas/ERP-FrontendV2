@@ -102,10 +102,10 @@ const DetallesMovSalidaHilado: React.FC = () => {
   // (NUEVO) Campo para serviceOrderId
   const [editServiceOrderId, setEditServiceOrderId] = useState("");
 
-  // 8) Para “Seleccionar Movimiento de Ingreso”
+  // 8) Para "Seleccionar Movimiento de Ingreso"
   const [purchaseEntries, setPurchaseEntries] = useState<any[]>([]);
 
-  // (NUEVO) Para “Seleccionar Orden de Servicio”
+  // (NUEVO) Para "Seleccionar Orden de Servicio"
 
   // ==========================================
   // useEffect: cargar suppliers + dispatch detail
@@ -360,7 +360,7 @@ const DetallesMovSalidaHilado: React.FC = () => {
 
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default sm:px-7.5 xl:pb-1">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 text-black">
         <Typography variant="h5" className="font-semibold">
           Detalle del Movimiento de Salida
         </Typography>
@@ -372,14 +372,18 @@ const DetallesMovSalidaHilado: React.FC = () => {
                 disabled={!isEditable}
                 onClick={handleEdit}
                 sx={{
-                  backgroundColor: "#1976d2 !important", // Azul fijo, evita sobreescrituras
-                  color: "white", // Texto blanco
-                  boxShadow: "none", // Elimina sombras por defecto
+                  backgroundColor: dispatchDetail.promecStatus?.statusId.toUpperCase() === "A" 
+                    ? "#9e9e9e !important"  // Gris cuando está anulado
+                    : "#1976d2 !important", // Azul normal
+                  color: "white",
+                  boxShadow: "none",
                   "&:hover": {
-                    backgroundColor: "#1259a3", // Azul más oscuro al pasar el mouse
+                    backgroundColor: dispatchDetail.promecStatus?.statusId.toUpperCase() === "A"
+                      ? "#757575"  // Gris más oscuro al hover cuando está anulado
+                      : "#1259a3", // Azul más oscuro al hover normal
                   },
                   "&:disabled": {
-                    backgroundColor: "#90caf9", // Azul claro cuando está deshabilitado
+                    backgroundColor: "#90caf9",
                     color: "#ffffff",
                   },
                 }}
@@ -395,14 +399,18 @@ const DetallesMovSalidaHilado: React.FC = () => {
                 disabled={!isAnulable}
                 onClick={handleOpenAnulateDialog}
                 sx={{
-                  backgroundColor: "#FF0000 !important", // Azul fijo, evita sobreescrituras
-                  color: "white", // Texto blanco
-                  boxShadow: "none", // Elimina sombras por defecto
+                  backgroundColor: dispatchDetail.promecStatus?.statusId.toUpperCase() === "A" 
+                    ? "#9e9e9e !important"  // Gris cuando está anulado
+                    : "#FF0000 !important", // Rojo normal
+                  color: "white",
+                  boxShadow: "none",
                   "&:hover": {
-                    backgroundColor: "#1259a3", // Azul más oscuro al pasar el mouse
+                    backgroundColor: dispatchDetail.promecStatus?.statusId.toUpperCase() === "A"
+                      ? "#757575"  // Gris más oscuro al hover cuando está anulado
+                      : "#d32f2f", // Rojo más oscuro al hover normal
                   },
                   "&:disabled": {
-                    backgroundColor: "#90caf9", // Azul claro cuando está deshabilitado
+                    backgroundColor: "#90caf9",
                     color: "#ffffff",
                   },
                 }}
@@ -414,7 +422,7 @@ const DetallesMovSalidaHilado: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-black">
         <div>
           <Typography>
             <strong>Número de Salida:</strong> {dispatchDetail.exitNumber}
@@ -443,20 +451,20 @@ const DetallesMovSalidaHilado: React.FC = () => {
         </div>
       </div>
 
-      <Typography className="mb-2">
+      <Typography className="mb-2 text-black">
         <strong>Nota del Documento:</strong>{" "}
         {dispatchDetail.documentNote || "No existe Nota de documento"}
       </Typography>
 
-      <Typography variant="h6" className="font-semibold mb-2">
-        Detalle de Ítems
+      <Typography variant="h6" className="font-semibold mb-2 text-black">
+        Detalle de items
       </Typography>
-      <div className="overflow-x-auto mb-4">
+      <div className="overflow-x-auto mb-4 text-black">
         <table className="w-full border-collapse table-auto">
           <thead>
             <tr className="bg-blue-900 text-white text-center">
+              <th className="px-4 py-3 font-normal">Item</th>
               <th className="px-4 py-3 font-normal">Hilado</th>
-              <th className="px-4 py-3 font-normal">Ítem Número</th>
               <th className="px-4 py-3 font-normal">Peso Bruto</th>
               <th className="px-4 py-3 font-normal">Peso Neto</th>
               <th className="px-4 py-3 font-normal">Bultos</th>
@@ -469,10 +477,10 @@ const DetallesMovSalidaHilado: React.FC = () => {
               return (
                 <tr key={idx} className="text-center">
                   <td className="border-b border-gray-200 px-4 py-2">
-                    {possibleYarnId}
+                    {item.itemNumber}
                   </td>
                   <td className="border-b border-gray-200 px-4 py-2">
-                    {item.itemNumber}
+                    {possibleYarnId}
                   </td>
                   <td className="border-b border-gray-200 px-4 py-2">
                     {item.grossWeight}
@@ -504,7 +512,7 @@ const DetallesMovSalidaHilado: React.FC = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-
+      
       {/* Diálogo para Editar */}
       <Dialog
         open={isEditDialogOpen}
@@ -524,14 +532,13 @@ const DetallesMovSalidaHilado: React.FC = () => {
 
         <DialogContent>
           <div className="mt-4 space-y-4">
-            {/* Proveedor */}
-            <FormControl fullWidth>
+            {/* Proveedor (readonly) */}
+            <FormControl fullWidth disabled>
               <InputLabel id="supplier-label">Proveedor</InputLabel>
               <Select
                 labelId="supplier-label"
                 value={editSupplierCode}
                 label="Proveedor"
-                onChange={(e) => setEditSupplierCode(e.target.value as string)}
               >
                 {suppliers.map((sup) => (
                   <MenuItem key={sup.code} value={sup.code}>
@@ -541,7 +548,7 @@ const DetallesMovSalidaHilado: React.FC = () => {
               </Select>
             </FormControl>
 
-            {/* Dirección (solo si hay proveedor seleccionado) */}
+            {/* Dirección (editable si hay proveedor seleccionado) */}
             {selectedSupplierObj && (
               <FormControl fullWidth>
                 <InputLabel id="address-label">Dirección</InputLabel>
@@ -562,23 +569,13 @@ const DetallesMovSalidaHilado: React.FC = () => {
               </FormControl>
             )}
 
-            {/* Orden de Servicio (OS) */}
-            <div className="grid grid-cols-3 gap-4 items-center">
-              <TextField
-                label="Orden de Servicio (ID)"
-                value={editServiceOrderId}
-                onChange={(e) => setEditServiceOrderId(e.target.value)}
-                fullWidth
-                className="col-span-2"
-              />
-              <Button
-                variant="outlined"
-                onClick={() => handleOpenServiceOrderDialog()}
-                startIcon={<Search />}
-              >
-                Seleccionar OS
-              </Button>
-            </div>
+            {/* Orden de Servicio (OS) (readonly) - sin botón de selección */}
+            <TextField
+              label="Orden de Servicio (ID)"
+              value={editServiceOrderId}
+              fullWidth
+              disabled
+            />
 
             {/* Nota del Documento */}
             <TextField
@@ -682,7 +679,18 @@ const DetallesMovSalidaHilado: React.FC = () => {
 
         <DialogActions>
           <Button onClick={handleCloseEditDialog}>Cancelar</Button>
-          <Button variant="contained" color="primary" onClick={handleSaveChanges}>
+          <Button 
+            variant="contained" 
+            onClick={handleSaveChanges}
+            sx={{
+              backgroundColor: "#1976d2 !important", // Azul por defecto
+              color: "white",
+              boxShadow: "none",
+              "&:hover": {
+                backgroundColor: "#1259a3 !important", // Azul más oscuro al hover
+              },
+            }}
+          >
             Guardar Cambios
           </Button>
         </DialogActions>

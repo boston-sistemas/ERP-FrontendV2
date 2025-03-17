@@ -8,7 +8,7 @@ export const fetchYarnDispatches = async (
     include_inactive: boolean,
     ): Promise<YarnDispatchResponse> => {
     const response = await instance.get<YarnDispatchResponse>(
-        `/operations/v1/yarn-weaving-dispatches/?period=${period}&limit=${limit}&offset=${offset}&include_inactive=${include_inactive}`
+        `/operations/v1/yarn-weaving-dispatches/?period=${period}&limit=${limit}&offset=${offset}&includeAnnulled=${include_inactive}`
     );
     console.log(response.data);
     return response.data;

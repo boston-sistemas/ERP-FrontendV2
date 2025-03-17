@@ -48,11 +48,14 @@ import {
   fetchYarnbyId,
 } from "../../../hilados/services/hiladoService";
 import { createYarnDispatch } from "../../services/movSalidaHiladoService";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEntryResponse, Fabric, FabricType } from "../../../models/models";
 
   const ERROR_COLOR = "#d32f2f";
 
   const CrearMovSalidaHilado: React.FC = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   // PROVEEDOR Y DIRECCION
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [selectedSupplier, setSelectedSupplier] = useState<string>("");
@@ -335,48 +338,58 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
       conosAsignados: number;
     }
 
-    const handleDistribuir = () => {
+    const handleDistribuir = (targetYarnId: string) => {
       let pesoRestante = cantidadRequerida;
-      let nuevaSeleccion: YarnPurchaseEntry[] = [];
-  
-      // Ordenamos los ingresos disponibles de mayor a menor peso neto
-      const ingresosOrdenados = selectedEntries.flatMap(entry => entry.detailHeavy).sort((a, b) => b.netWeight - a.netWeight);
-  
+      let nuevaSeleccion: YarnPurchaseEntry[] = [...ingresosSeleccionados];
+
+      // Filtrar entradas por yarnId y ordenar
+      const ingresosOrdenados = selectedEntries
+        .filter(entry => entry.yarnId === targetYarnId)
+        .flatMap(entry => entry.detailHeavy)
+        .sort((a, b) => b.netWeight - a.netWeight);
+
+      // Eliminar asignaciones previas para este yarnId
+      nuevaSeleccion = nuevaSeleccion.filter(ingreso => ingreso.yarnId !== targetYarnId);
+
       for (let ingreso of ingresosOrdenados) {
         if (pesoRestante <= 0) break;
         let asignado = Math.min(pesoRestante, ingreso.netWeight);
         pesoRestante -= asignado;
-  
+
         nuevaSeleccion.push({
           ...ingreso,
           AssignedWeight: asignado,
-          packageCount: ingreso.packageCount, // Editable
-          coneCount: ingreso.coneCount, // Editable
+          packageCount: ingreso.packageCount,
+          coneCount: ingreso.coneCount,
         });
       }
-  
+
       if (pesoRestante > 0) {
         showSnackbar("Error: No hay suficiente peso disponible.", "error");
-        setIngresosSeleccionados([]);
+        setIngresosSeleccionados(nuevaSeleccion.filter(ingreso => ingreso.yarnId !== targetYarnId));
       } else {
         setIngresosSeleccionados(nuevaSeleccion);
-        console.log("Ingresos seleccionados:", nuevaSeleccion);
       }
     };
 
-    const handleDistribuirBultos = () => {
+    const handleDistribuirBultos = (targetYarnId: string) => {
       let bultosRestantes = bultosRequerido;
-      let nuevaSeleccion: YarnPurchaseEntry[] = [];
-      let pesoTotalCalculado = 0; 
+      let nuevaSeleccion: YarnPurchaseEntry[] = [...ingresosSeleccionados];
+      let pesoTotalCalculado = 0;
 
-      // Ordenar ingresos de mayor a menor según los paquetes disponibles
-      const ingresosOrdenados = selectedEntries.flatMap(entry => entry.detailHeavy).sort((a, b) => b.packagesLeft - a.packagesLeft);
-      console.log("Ingresos ordenados por bultos:", ingresosOrdenados);
-  
+      // Filtrar y ordenar por yarnId
+      const ingresosOrdenados = selectedEntries
+        .filter(entry => entry.yarnId === targetYarnId)
+        .flatMap(entry => entry.detailHeavy)
+        .sort((a, b) => b.packagesLeft - a.packagesLeft);
+
+      // Eliminar asignaciones previas para este yarnId
+      nuevaSeleccion = nuevaSeleccion.filter(ingreso => ingreso.yarnId !== targetYarnId);
+
       for (let ingreso of ingresosOrdenados) {
         if (bultosRestantes <= 0) break;
-        let pesoPorPaquete = ingreso.unitNetWeightForPackage || 0; // Asegurar que tenemos peso unitario
-        let paquetesDisponibles = ingreso.packagesLeft || 0; // Paquetes restantes en el lote
+        let pesoPorPaquete = ingreso.unitNetWeightForPackage || 0;
+        let paquetesDisponibles = ingreso.packagesLeft || 0;
 
         let paquetesAsignados = Math.min(paquetesDisponibles, bultosRestantes);
         let pesoAsignado = paquetesAsignados * pesoPorPaquete;
@@ -387,23 +400,20 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
 
         nuevaSeleccion.push({
           ...ingreso,
-          AssignedWeight: pesoAsignado, // Peso total asignado
-          packageCount: paquetesAsignados, // Bultos asignados
-          coneCount: conosNecesarios, // No cambiamos conos
+          AssignedWeight: pesoAsignado,
+          packageCount: paquetesAsignados,
+          coneCount: conosNecesarios,
         });
-
       }
-  
+
       if (bultosRestantes > 0) {
         showSnackbar("Error: No hay suficientes bultos disponibles.", "error");
-        setIngresosSeleccionados([]);
+        setIngresosSeleccionados(nuevaSeleccion.filter(ingreso => ingreso.yarnId !== targetYarnId));
       } else {
         setIngresosSeleccionados(nuevaSeleccion);
-        console.log("Ingresos seleccionados:", nuevaSeleccion);
-        console.log("Peso total calculado:", pesoTotalCalculado);
       }
     };
-  
+
     const handleEditarIngreso = (index: number, campo: keyof YarnPurchaseEntry, valor: number) => {
       const copia = [...ingresosSeleccionados];
       copia[index] = { ...copia[index], [campo]: valor };
@@ -479,6 +489,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
         setselectedEntries([]);
         setIngresosSeleccionados([]);
         setDataOS(null);
+        router.push(`/operaciones-new/salida-hilado/detalles-mov-salida-hilado/${response.exitNumber}`);
       } catch (error) {
         console.error("Error al guardar el movimiento de salida:", error);
         showSnackbar("Hubo un error al intentar guardar el movimiento de salida.", "error");
@@ -683,7 +694,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
           </DialogActions>
         </Dialog>
 
-        {/* Diálogo para seleccionar órdenes de servicio */}
+        {/* Diálogo de detalles de órdenes de servicio */}
         <Dialog
         open={openOSDetail}
         onClose={handleCloseOSDetail}
@@ -708,7 +719,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
                   <p className="mb-2"><strong>Cantidad Enviada:</strong> {OSDetail.detail[0]?.quantitySupplied} </p>
                   <p className="mb-2"><strong>Precio:</strong> {OSDetail.detail[0]?.price} </p>
                   <p className="mb-2"><strong>Detalles:</strong> {OSDetail.detail[0]?.detailNote} </p>
-                  <p className="mb-2"><strong>Estado:</strong> {OSDetail.detail[0]?.status} </p>
+                  <p className="mb-2"><strong>Estado:</strong> {OSDetail.detail[0]?.status?.value || 'No definido'} </p>
                 </div>
               ) : (
                 <p>Cargando información...</p>
@@ -1168,10 +1179,21 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
           </Dialog>
 
 
-        {/* Tabla de ingresos seleccionados */}
-        {selectedEntries.length > 0 && (
+
+        {/* Sección por cada YarnId */}
+        {Object.entries(selectedEntries.reduce((acc, entry) => {
+          const yarnId = entry.yarnId || 'sin-hilado';
+          if (!acc[yarnId]) {
+            acc[yarnId] = [];
+          }
+          acc[yarnId].push(entry);
+          return acc;
+        }, {} as Record<string, typeof selectedEntries>)).map(([yarnId, entries]) => (
+          <div key={yarnId} className="mb-8 p-4 border rounded-lg shadow-sm">
+            <h3 className="text-xl font-semibold mb-4">Hilado: {yarnId}</h3>
+            
+            {/* Tabla de ingresos seleccionados para este YarnId */}
             <div className="max-w-full overflow-x-auto mb-6">
-              <h2 className="text-lg font-semibold mb-3">Ingresos Seleccionados</h2>
               <table className="w-full border-collapse border border-gray-300">
                 <thead>
                   <tr className="bg-blue-900 uppercase text-center text-white">
@@ -1184,20 +1206,22 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedEntries.map((ingreso, index) => {
+                  {entries.map((ingreso) => {
                     const detail = ingreso.detailHeavy?.[0] || {};
                     return (
                       <tr key={ingreso.entryNumber} className="text-center text-black border-b border-gray-300">
-                        <td className="border border-gray-300 px-4 py-2">{ingreso.entryNumber} <IconButton 
-                        onClick={() => handleOpenYarnEntryInfoDialog(ingreso.entryNumber)}>
-                                    <VisibilityIcon style={{ color: "#1976d2" }} />
-                                  </IconButton></td>
+                        <td className="border border-gray-300 px-4 py-2">
+                          {ingreso.entryNumber}
+                          <IconButton onClick={() => handleOpenYarnEntryInfoDialog(ingreso.entryNumber)}>
+                            <VisibilityIcon style={{ color: "#1976d2" }} />
+                          </IconButton>
+                        </td>
                         <td className="border border-gray-300 px-4 py-2">{detail.grossWeight || "--"}</td>
                         <td className="border border-gray-300 px-4 py-2">{detail.netWeight || "--"}</td>
                         <td className="border border-gray-300 px-4 py-2">{detail.packagesLeft || "--"}</td>
                         <td className="border border-gray-300 px-4 py-2">{detail.conesLeft || "--"}</td>
                         <td className="border border-gray-300 px-4 py-2">
-                          <IconButton color="#FF0000" onClick={() => handleRemoveEntry(ingreso.entryNumber)}>
+                          <IconButton color="error" onClick={() => handleRemoveEntry(ingreso.entryNumber)}>
                             <DeleteForever />
                           </IconButton>
                         </td>
@@ -1207,212 +1231,113 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
                 </tbody>
               </table>
             </div>
-        )}
-          
-        {/* Tabla de detalles de ingreso */}
-        {dataIngreso && selectedEntries.length > 0 && (
-            <div className="max-w-full overflow-x-auto mb-6">
-              <h2 className="text-lg font-semibold mb-3">Detalles del ultimo movimiento de ingreso seleccionado:</h2>
-              <table className="w-full border-collapse border border-gray-300">
-                <thead>
-                  <tr className="bg-blue-900 uppercase text-center text-white">
-                    <th className="border border-gray-300 px-4 py-2">#</th>
-                    <th className="border border-gray-300 px-4 py-2">Hilado</th>
-                    <th className="border border-gray-300 px-4 py-2">Peso Bruto</th>
-                    <th className="border border-gray-300 px-4 py-2">Peso Neto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dataIngreso.detail.map((item: any, index: number) =>
-                    item.detailHeavy.map((group: any, groupIndex: number) => (
-                      <tr key={`${index}-${groupIndex}`} className="text-center border-b border-gray-300">
-                        <td className="border border-gray-300 px-4 py-2">{index + 1}</td>
-                        <td className="border border-gray-300 px-4 py-2">{item.yarnId}</td>
-                        <td className="border border-gray-300 px-4 py-2">{group.grossWeight}</td>
-                        <td className="border border-gray-300 px-4 py-2">{group.netWeight}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
 
-      {selectedEntries.length > 0 && (
-        <Stack direction="row" spacing={3} justifyContent="center" alignItems="center">
-          {/* Input de Cantidad Requerida (kg) */}
-          <TextField
-            label="Cantidad Requerida (kg)"
-            type="number"
-            value={cantidadRequerida}
-            onChange={(e) => setCantidadRequerida(parseFloat(e.target.value) || 0)}
-            variant="outlined"
-            sx={{
-              width: "20%",
-              minWidth: "180px",
-              "& input": {
-                appearance: "textfield",
-              },
-              "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
-                appearance: "none",
-                margin: 0,
-              },
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "8px",
-                boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.1)",
-              },
-            }}
-          />
+            {/* Controles de distribución para este YarnId */}
+            <Stack direction="row" spacing={3} justifyContent="center" alignItems="center" className="mb-6">
+              <TextField
+                label="Cantidad Requerida (kg)"
+                type="number"
+                value={cantidadRequerida}
+                onChange={(e) => setCantidadRequerida(parseFloat(e.target.value) || 0)}
+                variant="outlined"
+                sx={{
+                  width: "20%",
+                  minWidth: "180px",
+                  "& input": { appearance: "textfield" },
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "8px",
+                    boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.1)",
+                  },
+                }}
+              />
+              <Button
+                onClick={() => handleDistribuir(yarnId)}
+                variant="contained"
+                sx={{
+                  backgroundColor: "#1976D2 !important",
+                  color: "white !important",
+                  fontWeight: "bold",
+                  padding: "10px 20px",
+                  borderRadius: "8px",
+                }}
+              >
+                Distribuir
+              </Button>
 
-          {/* Botón para distribuir por peso */}
-          <Button
-            onClick={handleDistribuir}
-            variant="contained"
-            sx={{
-              backgroundColor: "#1976D2 !important",
-              color: "white !important",
-              fontWeight: "bold",
-              textTransform: "uppercase",
-              padding: "10px 20px",
-              borderRadius: "8px",
-              boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.2)",
-              "&:hover": {
-                backgroundColor: "#1565C0 !important",
-              },
-            }}
-          >
-            Distribuir
-          </Button>
+              <TextField
+                label="Cantidad de Bultos"
+                type="number"
+                value={bultosRequerido}
+                onChange={(e) => setBultosRequerido(parseFloat(e.target.value) || 0)}
+                variant="outlined"
+                sx={{
+                  width: "20%",
+                  minWidth: "180px",
+                  "& input": { appearance: "textfield" },
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "8px",
+                    boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.1)",
+                  },
+                }}
+              />
+              <Button
+                onClick={() => handleDistribuirBultos(yarnId)}
+                variant="contained"
+                sx={{
+                  backgroundColor: "#1976D2 !important",
+                  color: "white !important",
+                  fontWeight: "bold",
+                  padding: "10px 20px",
+                  borderRadius: "8px",
+                }}
+              >
+                Distribuir por Bultos
+              </Button>
+            </Stack>
 
-          {/* Input de Bultos Requeridos */}
-          <TextField
-            label="Cantidad de Bultos"
-            type="number"
-            value={bultosRequerido}
-            onChange={(e) => setBultosRequerido(parseFloat(e.target.value) || 0)}
-            variant="outlined"
-            sx={{
-              width: "20%",
-              minWidth: "180px",
-              "& input": {
-                appearance: "textfield",
-              },
-              "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
-                appearance: "none",
-                margin: 0,
-              },
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "8px",
-                boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.1)",
-              },
-            }}
-          />
-
-          {/* Botón para distribuir por bultos */}
-          <Button
-            onClick={handleDistribuirBultos}
-            variant="contained"
-            sx={{
-              backgroundColor: "#1976D2 !important",
-              color: "white !important",
-              fontWeight: "bold",
-              textTransform: "uppercase",
-              padding: "10px 20px",
-              borderRadius: "8px",
-              boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.2)",
-              "&:hover": {
-                backgroundColor: "#1565C0 !important",
-              },
-            }}
-          >
-            Distribuir
-          </Button>
-        </Stack>
-      )}
-
-
-        
-    {selectedEntries.length > 0 && (
-      <Grid 
-        container 
-        spacing={2} 
-        sx={{ marginTop: 2 }} 
-        justifyContent="center" // Centra las tarjetas horizontalmente
-      >
-        {ingresosSeleccionados.map((ingreso, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index} sx={{ display: "flex", justifyContent: "center" }}>
-            <Card 
-              sx={{ 
-                borderRadius: "12px", 
-                boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
-                maxWidth: "320px", // Evita que las tarjetas sean demasiado anchas
-                width: "100%" // Se ajusta al tamaño del contenedor
-              }}
-            >
-              <CardContent>
-                <Typography variant="h6" fontWeight="bold">
-                  Hilado: {ingreso.yarnId}
-                </Typography>
-                <Typography variant="body1" color="textSecondary">
-                  Peso Asignado: <strong>{ingreso.AssignedWeight} kg</strong>
-                </Typography>
-
-                {/* Contenedor para inputs alineados */}
-                <Grid container spacing={1} sx={{ marginTop: 1 }}>
-                  <Grid item xs={6}>
-                    <TextField
-                      label="Paquetes"
-                      type="number"
-                      value={ingreso.packageCount}
-                      onChange={(e) => handleEditarIngreso(index, "packageCount", parseInt(e.target.value) || 0)}
-                      fullWidth
-                      variant="outlined"
-                      sx={{
-                        "& input": {
-                          appearance: "textfield",
-                        },
-                        "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
-                          appearance: "none",
-                          margin: 0,
-                        },
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: "8px",
-                        },
-                      }}
-                    />
+            {/* Tarjetas de asignación para este YarnId */}
+            <Grid container spacing={2} justifyContent="center">
+              {ingresosSeleccionados
+                .filter(ingreso => ingreso.yarnId === yarnId)
+                .map((ingreso, index) => (
+                  <Grid item xs={12} sm={6} md={4} key={index}>
+                    <Card sx={{ borderRadius: "12px", boxShadow: "0px 4px 10px rgba(0,0,0,0.1)" }}>
+                      <CardContent>
+                        <Typography variant="h6" fontWeight="bold">
+                          Hilado: {ingreso.yarnId}
+                        </Typography>
+                        <Typography variant="body1" color="textSecondary">
+                          Peso Asignado: <strong>{ingreso.AssignedWeight} kg</strong>
+                        </Typography>
+                        <Grid container spacing={1} sx={{ marginTop: 1 }}>
+                          <Grid item xs={6}>
+                            <TextField
+                              label="Paquetes"
+                              type="number"
+                              value={ingreso.packageCount}
+                              onChange={(e) => handleEditarIngreso(index, "packageCount", parseInt(e.target.value) || 0)}
+                              fullWidth
+                              variant="outlined"
+                            />
+                          </Grid>
+                          <Grid item xs={6}>
+                            <TextField
+                              label="Conos"
+                              type="number"
+                              value={ingreso.coneCount}
+                              onChange={(e) => handleEditarIngreso(index, "coneCount", parseInt(e.target.value) || 0)}
+                              fullWidth
+                              variant="outlined"
+                            />
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                    </Card>
                   </Grid>
-
-                  <Grid item xs={6}>
-                    <TextField
-                      label="Conos"
-                      type="number"
-                      value={ingreso.coneCount}
-                      onChange={(e) => handleEditarIngreso(index, "coneCount", parseInt(e.target.value) || 0)}
-                      fullWidth
-                      variant="outlined"
-                      sx={{
-                        "& input": {
-                          appearance: "textfield",
-                        },
-                        "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
-                          appearance: "none",
-                          margin: 0,
-                        },
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: "8px",
-                        },
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
+                ))}
+            </Grid>
+          </div>
         ))}
-      </Grid>
-    )}
-
-    
 
       {/* Botón para guardar la salida */}
       {ingresosSeleccionados.length > 0 && dataOS && (
