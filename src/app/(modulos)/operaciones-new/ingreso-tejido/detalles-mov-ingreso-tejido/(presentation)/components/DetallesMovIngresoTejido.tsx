@@ -29,8 +29,12 @@ import {
   annulWeavingServiceEntry,
   checkWeavingServiceEntryIsUpdatable,
   fetchFabricById,
+  fetchSuppliersT,
+  fetchSuppliersTintoreria
 } from "../../../services/IngresoTejidoService";
-import { WeavingServiceEntry, DetailCard } from "@/app/(modulos)/operaciones-new/models/models";
+import { fetchServiceOrderById } from "@/app/(modulos)/operaciones-new/ordenes-servicio/services/ordenesServicioService";
+import { fetchSuppliersHil } from "@/app/(modulos)/operaciones-new/movimiento-ingreso-hilado/services/movIngresoHiladoService";
+import { WeavingServiceEntry, DetailCard, Fabric, Supplier } from "@/app/(modulos)/operaciones-new/models/models";
 
 const ERROR_COLOR = "#d32f2f"; // Example color for error
 
@@ -49,6 +53,12 @@ const DetallesMovIngresoTejido: React.FC = () => {
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
   const [isFabricDialogOpen, setIsFabricDialogOpen] = useState(false);
   const [selectedFabric, setSelectedFabric] = useState<Fabric | null>(null);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [hiladoSuppliers, setHiladoSuppliers] = useState<Supplier[]>([]);
+  const [tintoreriaSuppliers, setTintoreriaSuppliers] = useState<Supplier[]>([]);
+  const [openOSDetail, setOpenOSDetail] = useState(false);
+  const [OSDetail, setOSDetail] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<number | null>(null);
 
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -76,6 +86,18 @@ const DetallesMovIngresoTejido: React.FC = () => {
       try {
         const entry = await fetchWeavingServiceEntryById(entryNumber, period);
         setDetalle(entry);
+        const firstItemNumber = entry.detail?.[0]?.itemNumber;
+        setSelectedItem(firstItemNumber || null);
+        console.log('First Item Number:', firstItemNumber);
+
+        const supplierList = await fetchSuppliersT();
+        setSuppliers(supplierList);
+
+        const hiladoList = await fetchSuppliersHil();
+        setHiladoSuppliers(hiladoList.suppliers || []);
+
+        const tintoreriaList = await fetchSuppliersTintoreria();
+        setTintoreriaSuppliers(tintoreriaList || []);
 
         const updatableResponse = await checkWeavingServiceEntryIsUpdatable(
           entryNumber,
@@ -93,7 +115,7 @@ const DetallesMovIngresoTejido: React.FC = () => {
   }, [entryNumber, period]);
 
   const handleEdit = () => {
-    if (detalle) {
+    if (isEditable && detalle) {
       router.push(
         `/operaciones-new/ingreso-tejido/editar-mov-ingreso-tejido/${detalle.entryNumber}`
       );
@@ -101,7 +123,7 @@ const DetallesMovIngresoTejido: React.FC = () => {
   };
 
   const handleAnnul = async () => {
-    if (detalle) {
+    if (isAnulable && detalle) {
       try {
         await annulWeavingServiceEntry(detalle.entryNumber, period);
         showSnackbar(`Movimiento de ingreso N° ${detalle.entryNumber} anulado con éxito.`, "success");
@@ -137,6 +159,30 @@ const DetallesMovIngresoTejido: React.FC = () => {
     setSelectedFabric(null);
   };
 
+  const getSupplierName = (suppliers: Supplier[], code: string) => {
+    return suppliers.find(s => s.code === code)?.name;
+  };
+
+  const handleOpenOSDetail = async (orderId: string) => {
+    try {
+      const orderDetail = await fetchServiceOrderById(orderId);
+      setOSDetail(orderDetail);
+      setOpenOSDetail(true);
+    } catch (error) {
+      showSnackbar("Error al cargar los detalles de la orden de servicio.", "error");
+    }
+  };
+
+  const handleCloseOSDetail = () => {
+    setOpenOSDetail(false);
+    setOSDetail(null);
+  };
+
+  const handleItemClick = (itemNumber: number) => {
+    console.log('Clicked Item:', itemNumber, 'Current Selected:', selectedItem);
+    setSelectedItem(itemNumber);
+  };
+
   if (!detalle) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -154,10 +200,10 @@ const DetallesMovIngresoTejido: React.FC = () => {
               <strong>N°:</strong> {detalle.entryNumber}
             </Typography>
             <Typography style={{ color: "black" }}>
-              <strong>Proveedor:</strong> {detalle.supplierCode}
+              <strong>Proveedor:</strong> {getSupplierName(suppliers, detalle?.supplierCode)}
             </Typography>
             <Typography style={{ color: "black" }}>
-              <strong>O/C N°:</strong> {detalle.supplierPoCorrelative} {detalle.supplierPoSeries || "N/A"}
+              <strong>Guia - Factura:</strong> {detalle.supplierPoCorrelative} - {detalle.supplierPoSeries || "N/A"}
             </Typography>
           </div>
           <div>
@@ -175,7 +221,7 @@ const DetallesMovIngresoTejido: React.FC = () => {
               startIcon={<Edit />}
               variant="contained"
               style={{ backgroundColor: isEditable ? "#0288d1" : "#b0b0b0", color: "#fff", marginRight: "10px" }}
-              onClick={isEditable ? handleEdit : undefined}
+              onClick={handleEdit}
               disabled={!isEditable}
             >
               Editar
@@ -188,7 +234,7 @@ const DetallesMovIngresoTejido: React.FC = () => {
               startIcon={<Block />}
               variant="contained"
               style={{ backgroundColor: isAnulable ? "#d32f2f" : "#b0b0b0", color: "#fff" }}
-              onClick={isAnulable ? handleAnnul : undefined}
+              onClick={handleAnnul}
               disabled={!isAnulable}
             >
               Anular
@@ -210,63 +256,82 @@ const DetallesMovIngresoTejido: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {detalle.detail?.map((item, index) => (
-              <tr key={index} className="text-center text-black">
-                <td className="border-b border-gray-300 px-4 py-5">{item.itemNumber}</td>
-                <td className="border-b border-gray-300 px-4 py-5">
-                  {item.fabridId}
-                  <IconButton onClick={() => handleOpenFabricDetails(item.fabridId)}>
-                    <Visibility color="primary"/>
-                  </IconButton>
-                </td>
-                <td className="border-b border-gray-300 px-4 py-5">{item.guideNetWeight}</td>
-                <td className="border-b border-gray-300 px-4 py-5">
-                  {item.serviceOrderId}
-                  <IconButton>
-                    <Visibility color="primary"/>
-                  </IconButton>
-                </td>
-              </tr>
-            ))}
+            {detalle.detail?.map((item, index) => {
+              console.log('Rendering Item:', item.itemNumber, 'Selected:', selectedItem);
+              return (
+                <tr
+                  key={index}
+                  onClick={() => handleItemClick(item.itemNumber)}
+                  style={{ 
+                    backgroundColor: selectedItem === item.itemNumber ? '#afb8c9' : 'transparent',
+                    cursor: 'pointer'
+                  }}
+                  className="text-center text-black hover:bg-gray-800"
+                >
+                  <td className="border-b border-gray-300 px-4 py-5">{item.itemNumber}</td>
+                  <td className="border-b border-gray-300 px-4 py-5">
+                    {item.fabridId}
+                    <IconButton onClick={() => handleOpenFabricDetails(item.fabridId)}>
+                      <Visibility color="primary"/>
+                    </IconButton>
+                  </td>
+                  <td className="border-b border-gray-300 px-4 py-5">{item.guideNetWeight}</td>
+                  <td className="border-b border-gray-300 px-4 py-5">
+                    {item.serviceOrderId}
+                    <IconButton onClick={() => handleOpenOSDetail(item.serviceOrderId)}>
+                      <Visibility color="primary"/>
+                    </IconButton>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      {/* Nueva tabla para detailCard */}
-      <div className="max-w-full overflow-x-auto mt-5">
-        <table className="w-full table-auto border-collapse">
-          <thead className="bg-blue-900">
-            <tr>
-              {["ID", "Tejido", "Peso Neto", "Proveedor Hilado", "Tipo Tarjeta", "Estado", "Proveedor Tintorería", "Color Tintorería"].map((col, index) => (
-                <th key={index} className="px-4 py-4 text-center font-normal text-white">
-                  {col}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {detalle.detail?.flatMap((item) =>
-              item.detailCard.map((card, index) => (
-                <tr key={index} className="text-center text-black">
-                  <td className="border-b border-gray-300 px-4 py-5">{card.id}</td>
-                  <td className="border-b border-gray-300 px-4 py-5">
-                    {card.productId}
-                    <IconButton onClick={() => handleOpenFabricDetails(card.productId)}>
-                      <Visibility color="primary"/>
-                    </IconButton>
-                  </td>
-                  <td className="border-b border-gray-300 px-4 py-5">{card.netWeight}</td>
-                  <td className="border-b border-gray-300 px-4 py-5">{card.yarnSupplierId}</td>
-                  <td className="border-b border-gray-300 px-4 py-5">{card.cardType}</td>
-                  <td className="border-b border-gray-300 px-4 py-5">{card.statusFlag}</td>
-                  <td className="border-b border-gray-300 px-4 py-5">{card.tintSupplierId}</td>
-                  <td className="border-b border-gray-300 px-4 py-5">{card.tintColorId}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {detalle.detail?.map((item, index) => (
+        selectedItem === item.itemNumber && (
+          <div key={index} className="mb-8">
+            <h3 className="text-lg font-semibold text-black mb-2">
+              Tejido {item.itemNumber}: {item.fabridId}
+            </h3>
+            <div className="max-w-full overflow-x-auto">
+              <div style={{ maxHeight: '400px', overflow: 'auto' }}>
+                <table className="w-full table-auto border-collapse">
+                  <thead className="bg-blue-900 sticky top-0 z-10">
+                    <tr>
+                      {["ID", "Tejido", "Peso Neto", "Proveedor Hilado", "Tipo Tarjeta", "Estado", "Proveedor Tintorería", "Color Tintorería"].map((col, index) => (
+                        <th key={index} className="px-4 py-4 text-center font-normal text-white">
+                          {col}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {item.detailCard.map((card, cardIndex) => {
+                      const hiladoSupplierName = card.yarnSupplierId.split(',').map(id => getSupplierName(hiladoSuppliers, id.trim())).join(', ');
+                      const tintoreriaSupplierName = getSupplierName(tintoreriaSuppliers, card.tintSupplierId);
+
+                      return (
+                        <tr key={cardIndex} className="text-center text-black">
+                          <td className="border-b border-gray-300 px-4 py-5">{card.id}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">{card.productId}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">{card.netWeight}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">{hiladoSupplierName}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">{card.cardType}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">{card.statusFlag}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">{tintoreriaSupplierName}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">{card.tintColorId}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )
+      ))}
 
       <div className="flex justify-end mt-5">
         <Button
@@ -362,6 +427,45 @@ const DetallesMovIngresoTejido: React.FC = () => {
             style={{ backgroundColor: ERROR_COLOR, color: "#fff" }}
           >
             Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Diálogo de detalles de órdenes de servicio */}
+      <Dialog
+        open={openOSDetail}
+        onClose={handleCloseOSDetail}
+        fullWidth
+        maxWidth="lg"
+        sx={{
+          "& .MuiDialog-paper": {
+            width: "30%",
+            marginLeft: "20%",
+          },
+        }}
+      >
+        <DialogContent>
+          <h3 className="text-lg font-semibold text-black mb-4">
+            Información de la Orden de Servicio
+          </h3>
+          <div className="max-w-full overflow-x-auto">
+            {OSDetail ? (
+              <div className="mb-4 text-black">
+                <p className="mb-2"><strong>Fabric ID:</strong> {OSDetail.detail[0]?.fabricId} </p>
+                <p className="mb-2"><strong>Cantidad Ordenada:</strong> {OSDetail.detail[0]?.quantityOrdered} </p>
+                <p className="mb-2"><strong>Cantidad Enviada:</strong> {OSDetail.detail[0]?.quantitySupplied} </p>
+                <p className="mb-2"><strong>Precio:</strong> {OSDetail.detail[0]?.price} </p>
+                <p className="mb-2"><strong>Detalles:</strong> {OSDetail.detail[0]?.detailNote} </p>
+                <p className="mb-2"><strong>Estado:</strong> {OSDetail.detail[0]?.status?.value || 'No definido'} </p>
+              </div>
+            ) : (
+              <p>Cargando información...</p>
+            )}
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseOSDetail} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
+            Cancelar
           </Button>
         </DialogActions>
       </Dialog>

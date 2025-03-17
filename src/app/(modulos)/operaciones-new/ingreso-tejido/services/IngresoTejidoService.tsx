@@ -133,15 +133,23 @@ export const updateWeavingServiceEntry = async (
 };
 
 export const fetchSuppliersT = async (
-    limit = 10,
-    offset = 0,
-    includeInactive = false
+    includeInactives = false,
+    includeOtherAddresses = true,
+    page = 1,
   ): Promise<Supplier[]> => {
     const response = await instance.get<{ suppliers: Supplier[] }>(
-      `/operations/v1/suppliers/004`,
+      `/operations/v1/suppliers/003`,
       {
-        params: { limit, offset, include_inactive: includeInactive },
+        params: { include_inactives: includeInactives, page, include_other_addresses: includeOtherAddresses },
       }
     );
     return response.data.suppliers; // Devuelve solo el array de suppliers
   };
+
+
+export const fetchSuppliersTintoreria = async (): Promise<Supplier[]> => {
+    const response = await instance.get<{ suppliers: Supplier[] }>(
+        `/operations/v1/suppliers/004?includeInactives=false&page=1&includeOtherAddresses=true`
+    );
+    return response.data.suppliers;
+};

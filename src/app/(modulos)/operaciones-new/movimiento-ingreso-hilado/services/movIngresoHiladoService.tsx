@@ -88,7 +88,7 @@ export const fetchYarnPurchaseEntryDetails = async (
   };
 
   export const fetchSuppliersHil = async () => {
-    const response = await instance.get(`operations/v1/suppliers/hil?limit=100&offset=0&include_annulled=false`);
+    const response = await instance.get(`operations/v1/suppliers/HIL?includeInactives=false&page=1&includeOtherAddresses=true`);
     return response.data;
   }
 
