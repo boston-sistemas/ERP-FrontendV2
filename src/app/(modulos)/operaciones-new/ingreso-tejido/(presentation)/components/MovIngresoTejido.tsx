@@ -21,8 +21,8 @@ import {
 } from "@mui/material";
 import { Visibility, Add, Close, Search, FilterList } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-import { WeavingServiceEntry } from "../../../models/models";
-import { fetchWeavingServiceEntries, fetchWeavingServiceEntryById, annulWeavingServiceEntry, checkWeavingServiceEntryIsUpdatable } from "../../services/IngresoTejidoService";
+import { WeavingServiceEntry, Supplier } from "../../../models/models";
+import { fetchWeavingServiceEntries, fetchWeavingServiceEntryById, annulWeavingServiceEntry, checkWeavingServiceEntryIsUpdatable, fetchSuppliersT } from "../../services/IngresoTejidoService";
 
 const getCurrentYear = () => new Date().getFullYear();
 const generateYearOptions = (currentYear: number) => {
@@ -48,6 +48,7 @@ const MovIngresoTejido: React.FC = () => {
     const [snackbarMessage, setSnackbarMessage] = useState("");
     const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   
     useEffect(() => {
       const fetchData = async () => {
@@ -62,6 +63,9 @@ const MovIngresoTejido: React.FC = () => {
           );
           setEntries(response.weavingServiceEntries || []);
           setTotalItems(response.total);
+
+          const supplierList = await fetchSuppliersT();
+          setSuppliers(supplierList);
         } catch (error) {
           console.error("Error al cargar los datos:", error);
           showSnackbar("Error al cargar los datos", "error");
@@ -231,36 +235,39 @@ const MovIngresoTejido: React.FC = () => {
                     </td>
                   </tr>
                 ) : filteredEntries.length > 0 ? (
-                  filteredEntries.map((entry, index) => (
-                    <tr key={index} className="text-center text-black">
-                      <td className="border-b border-[#eee] px-4 py-5">
-                        {entry.entryNumber}
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5">
-                        {entry.period}
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5">
-                        {entry.creationDate}
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5">
-                        {entry.creationTime}
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5">
-                        {entry.supplierCode}
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5">
-                        {entry.promecStatus.name}
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5">
-                        <IconButton
-                          color="primary"
-                          onClick={() => handleViewDetails(entry.entryNumber, entry.period)}
-                        >
-                          <Visibility />
-                        </IconButton>
-                      </td>
-                    </tr>
-                  ))
+                  filteredEntries.map((entry, index) => {
+                    const supplierName = suppliers.find(s => s.code === entry.supplierCode)?.name || "Desconocido";
+                    return (
+                      <tr key={index} className="text-center text-black">
+                        <td className="border-b border-[#eee] px-4 py-5">
+                          {entry.entryNumber}
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5">
+                          {entry.period}
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5">
+                          {entry.creationDate}
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5">
+                          {entry.creationTime}
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5">
+                          {supplierName}
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5">
+                          {entry.promecStatus.name}
+                        </td>
+                        <td className="border-b border-[#eee] px-4 py-5">
+                          <IconButton
+                            color="primary"
+                            onClick={() => handleViewDetails(entry.entryNumber, entry.period)}
+                          >
+                            <Visibility />
+                          </IconButton>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={7} className="text-center py-4 text-black">
