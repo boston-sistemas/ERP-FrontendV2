@@ -11,6 +11,7 @@ import {
 import {
   fetchYarnPurchaseEntries,
   fetchYarnPurchaseEntryDetails,
+  fetchFabricSearchId,
 } from "../../../movimiento-ingreso-hilado/services/movIngresoHiladoService";
 import { fetchSuppliers } from "../../../ordenes-servicio/services/ordenesServicioService";
 import {
@@ -47,9 +48,11 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  TablePagination,
 } from "@mui/material";
 import MuiAlert, { AlertProps } from "@mui/material/Alert";
 import { Close, Search, Add } from "@mui/icons-material";
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
   props,
@@ -106,6 +109,12 @@ const DetallesMovSalidaHilado: React.FC = () => {
   const [purchaseEntries, setPurchaseEntries] = useState<any[]>([]);
 
   // (NUEVO) Para "Seleccionar Orden de Servicio"
+
+  // Agregar este nuevo estado junto a los otros estados
+  const [purchaseEntryPeriod, setPurchaseEntryPeriod] = useState<number>(period); // Inicializado con el period actual
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [pagina, setPagina] = useState(0);
+  const [filasPorPagina, setFilasPorPagina] = useState(10);
 
   // ==========================================
   // useEffect: cargar suppliers + dispatch detail
@@ -174,21 +183,66 @@ const DetallesMovSalidaHilado: React.FC = () => {
   // ==============================
   // Editar
   // ==============================
-  const handleEdit = () => {
+  const showSnackbar = (message: string, severity: "success" | "error") => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setOpenSnackbar(true);
+  };
+
+  const [ingresos, setIngresos] = useState<any[]>([]);
+  const [FabricInfo, setFabricInfo] = useState<any>(null);
+  const [YarnsIds, setYarnsIds] = useState<string[]>([]);
+  const [NameYarnsIds, setNameYarnsIds] = useState<string[]>([]);
+
+  const handleEdit = async () => {
     if (!dispatchDetail) return;
     if (!isEditable) {
       setSnackbarMessage("No se puede editar este movimiento.");
       setSnackbarSeverity("error");
       return;
     }
-    // Llenamos los estados
-    setEditSupplierCode(dispatchDetail.supplierCode || "");
-    setEditNroDir(dispatchDetail.nrodir || "000");
-    setEditDocumentNote(dispatchDetail.documentNote || "");
-    setEditDetail(dispatchDetail.detail || []);
-    setEditServiceOrderId(dispatchDetail.serviceOrderId || "");
 
-    setIsEditDialogOpen(true);
+    try {
+      setIsLoading(true);
+
+      // 1. Cargar los ingresos primero
+      const ingresosResponse = await fetchYarnPurchaseEntries(purchaseEntryPeriod, 50, 0, false);
+      if (ingresosResponse?.yarnPurchaseEntries) {
+        setIngresos(ingresosResponse.yarnPurchaseEntries);
+      }
+
+      // 2. Cargar información del tejido si hay detalles
+      if (dispatchDetail.detail && dispatchDetail.detail.length > 0) {
+        const fabricInfos = await fetchFabricSearchId(dispatchDetail.detail[0].fabricId);
+        if (fabricInfos) {
+          setFabricInfo(fabricInfos);
+          
+          // 3. Procesar los IDs de hilados inmediatamente después de obtener fabricInfo
+          if (fabricInfos.recipe) {
+            const yarnIds = fabricInfos.recipe.map((item: any) => item.yarn.id);
+            const yarnNames = fabricInfos.recipe.map((item: any) => item.yarn.description);
+            setYarnsIds(yarnIds);
+            setNameYarnsIds(yarnNames);
+          }
+        }
+      }
+
+      // 4. Llenar los estados básicos del formulario
+      setEditSupplierCode(dispatchDetail.supplierCode || "");
+      setEditNroDir(dispatchDetail.nrodir || "000");
+      setEditDocumentNote(dispatchDetail.documentNote || "");
+      setEditDetail(dispatchDetail.detail || []);
+      setEditServiceOrderId(dispatchDetail.serviceOrderId || "");
+
+      // 5. Abrir el diálogo
+      setIsEditDialogOpen(true);
+
+    } catch (error) {
+      console.error('Error al cargar datos:', error);
+      showSnackbar("Error al cargar los datos. Por favor, inténtelo de nuevo.", "error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // ==============================
@@ -260,18 +314,52 @@ const DetallesMovSalidaHilado: React.FC = () => {
     setIsAnulateDialogOpen(false);
   };
 
-  // ==============================
-  // Ingreso (opcional)
+    // ==============================
+  // Movimiento de Ingreso
   // ==============================
   const [isPurchaseEntryDialogOpen, setIsPurchaseEntryDialogOpen] = useState(false);
 
   const handleOpenPurchaseEntryDialog = async () => {
     try {
-      const resp = await fetchYarnPurchaseEntries(period, 10, 0, false);
-      setPurchaseEntries(resp.yarnPurchaseEntries || []);
+      setIsLoading(true);
+
+      // 1. Cargar los ingresos si no están cargados
+      if (ingresos.length === 0) {
+        const ingresosResponse = await fetchYarnPurchaseEntries(purchaseEntryPeriod, 50, 0, false);
+        if (ingresosResponse?.yarnPurchaseEntries) {
+          setIngresos(ingresosResponse.yarnPurchaseEntries);
+        }
+      }
+
+      // 2. Cargar información del tejido si no está cargada
+      if (!FabricInfo && dispatchDetail?.detail?.[0]?.fabricId) {
+        const fabricInfos = await fetchFabricSearchId(dispatchDetail.detail[0].fabricId);
+        if (fabricInfos) {
+          setFabricInfo(fabricInfos);
+          
+          // 3. Procesar los IDs de hilados
+          if (fabricInfos.recipe) {
+            const yarnIds = fabricInfos.recipe.map((item: any) => item.yarn.id);
+            const yarnNames = fabricInfos.recipe.map((item: any) => item.yarn.description);
+            setYarnsIds(yarnIds);
+            setNameYarnsIds(yarnNames);
+          }
+        }
+      }
+
+      // Logs para depuración
+      console.log("ingresos", ingresos);
+      console.log("FabricInfo", FabricInfo);
+      console.log("YarnsIds", YarnsIds);
+      console.log("NameYarnsIds", NameYarnsIds);
+
+      // 4. Abrir el diálogo
       setIsPurchaseEntryDialogOpen(true);
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error("Error al preparar el diálogo:", error);
+      showSnackbar("Error al cargar los datos", "error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -770,46 +858,149 @@ const DetallesMovSalidaHilado: React.FC = () => {
           },
         }}
       >
-        <DialogTitle>
-          Seleccionar Movimiento de Ingreso
-          <IconButton
-            aria-label="close"
-            onClick={handleClosePurchaseEntryDialog}
-            sx={{ position: "absolute", right: 8, top: 8 }}
-          >
-            <Close />
-          </IconButton>
-        </DialogTitle>
+        <DialogTitle>Seleccionar Movimiento de Ingreso</DialogTitle>
         <DialogContent>
-          {/* Contenedor con desplazamiento si es necesario */}
+          <div className="mb-4">
+            <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>
+              Seleccionar periodo
+            </Typography>
+            <Select
+              labelId="purchase-period-label"
+              value={purchaseEntryPeriod}
+              onChange={(e) => {
+                const selectedPeriod = Number(e.target.value);
+                if ([2023, 2024, 2025].includes(selectedPeriod)) {
+                  setPurchaseEntryPeriod(selectedPeriod);
+                  // Recargar los datos con el nuevo período
+                  fetchYarnPurchaseEntries(selectedPeriod, 10, 0, false)
+                    .then(resp => setPurchaseEntries(resp.yarnPurchaseEntries || []))
+                    .catch(e => console.error(e));
+                } else {
+                  setSnackbarMessage("Período no válido.");
+                  setSnackbarSeverity("error");
+                }
+              }}
+            >
+              {[2023, 2024, 2025].map((year) => (
+                <MenuItem key={year} value={year}>
+                  {year}
+                </MenuItem>
+              ))}
+            </Select>
+          </div>
           <div className="max-w-full overflow-x-auto">
-            <table className="w-full table-auto border-collapse">
-              <thead className="bg-blue-900 text-white">
-                <tr>
-                  <th className="px-4 py-4 text-center">Entry Number</th>
-                  <th className="px-4 py-4 text-center">Proveedor</th>
-                  <th className="px-4 py-4 text-center">Fecha</th>
-                  <th className="px-4 py-4 text-center">Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {purchaseEntries.map((entry) => (
-                  <tr key={entry.entryNumber} className="text-center text-black hover:bg-gray-100 text-gray-900">
-                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{entry.entryNumber}</td>
-                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{entry.supplierCode}</td>
-                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{entry.creationDate}</td>
-                    <td className="border-b border-gray-300 px-4 py-5 mb-2">
-                      <button
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md transition-all"
-                        onClick={() => handleSelectPurchaseEntry(entry.entryNumber)}
-                      >
-                        Seleccionar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {console.log('=== Debugging Render ===')},
+            {console.log('YarnsIds:', YarnsIds)},
+            {console.log('NameYarnsIds:', NameYarnsIds)},
+            {console.log('Ingresos:', ingresos)},
+             {Array.isArray(YarnsIds) && YarnsIds.length > 0 ? (
+              YarnsIds.map((yarnId, index) => {
+                console.log(`\n=== Processing YarnId: ${yarnId} ===`);
+                const yarnName = NameYarnsIds[index] || `ID: ${yarnId}`;
+                console.log('YarnName:', yarnName);
+                
+                // Filtra los ingresos correspondientes a este yarnId
+                const ingresosFiltrados = ingresos.filter((ingreso) => {
+                  console.log(`Checking ingreso:`, ingreso);
+                  // Verifica en todos los detalles si alguno coincide con el yarnId
+                  const hasMatchingYarn = ingreso.detail?.some(detail => {
+                    console.log(`Checking detail yarnId: ${detail.yarnId} against ${yarnId}`);
+                    return detail.yarnId === yarnId;
+                  });
+                  return hasMatchingYarn;
+                });
+
+                console.log(`Ingresos filtrados para ${yarnId}:`, ingresosFiltrados);
+
+                // Si no hay ingresos, no mostrar la tabla para este yarnId
+                if (ingresosFiltrados.length === 0) {
+                  console.log(`No hay ingresos para el hilado ${yarnId}`);
+                  return null;
+                }
+
+                return (
+                  <div key={yarnId} className="mb-8">
+                    <h2 className="text-lg font-bold my-4 text-black">
+                      Hilado: {yarnName}
+                    </h2>
+
+                    <table className="w-full table-auto">
+                      <thead>
+                        <tr className="bg-blue-900 text-white">
+                          <th className="px-4 py-4 font-normal">Número</th>
+                          <th className="px-4 py-4 font-normal">Peso Bruto</th>
+                          <th className="px-4 py-4 font-normal">Peso Neto</th>
+                          <th className="px-4 py-4 font-normal">Paquetes</th>
+                          <th className="px-4 py-4 font-normal">Conos</th>
+                          <th className="px-4 py-4 font-normal">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ingresosFiltrados.map((ingreso) => {
+                          console.log(`\nProcesando ingreso ${ingreso.entryNumber}`);
+                          
+                          const alreadySelected = editDetail.some(
+                            (detail) => detail.entryNumber === ingreso.entryNumber
+                          );
+                          console.log('¿Ya está seleccionado?:', alreadySelected);
+
+                          // Encuentra el detalle específico para este yarnId
+                          const matchingDetail = ingreso.detail?.find(d => d.yarnId === yarnId);
+                          console.log('Detalle encontrado:', matchingDetail);
+
+                          // Obtén el primer detailHeavy (o un objeto vacío si no existe)
+                          const heavyDetail = matchingDetail?.detailHeavy?.[0] || {};
+                          console.log('Heavy Detail:', heavyDetail);
+
+                          return (
+                            <tr key={ingreso.entryNumber} className="text-center">
+                              <td className="border-b border-gray-300 px-4 py-5">
+                                {ingreso.entryNumber}
+                              </td>
+                              <td className="border-b border-gray-300 px-4 py-5">
+                                {heavyDetail.grossWeight?.toFixed(2) || "--"}
+                              </td>
+                              <td className="border-b border-gray-300 px-4 py-5">
+                                {heavyDetail.netWeight?.toFixed(2) || "--"}
+                              </td>
+                              <td className="border-b border-gray-300 px-4 py-5">
+                                {heavyDetail.packageCount || "--"}
+                              </td>
+                              <td className="border-b border-gray-300 px-4 py-5">
+                                {heavyDetail.coneCount || "--"}
+                              </td>
+                              <td className="border-b border-gray-300 px-4 py-5">
+                                {alreadySelected ? (
+                                  <span className="text-gray-500">Seleccionado</span>
+                                ) : (
+                                  <Button
+                                    variant="contained"
+                                    onClick={() => handleSelectPurchaseEntry(ingreso.entryNumber)}
+                                    sx={{
+                                      backgroundColor: "#1976d2",
+                                      "&:hover": {
+                                        backgroundColor: "#1259a3",
+                                      },
+                                    }}
+                                  >
+                                    Seleccionar
+                                  </Button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })
+            ) : (
+              <Typography className="text-center py-4 text-black">
+                {console.log('No hay hilados disponibles'),
+                 'No hay hilados disponibles para mostrar'}
+              </Typography>
+            )}
           </div>
         </DialogContent>
         <DialogActions>
@@ -839,7 +1030,18 @@ const DetallesMovSalidaHilado: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseAnulateDialog}>Cancelar</Button>
-          <Button variant="contained" color="error" onClick={handleAnulate}>
+          <Button 
+            variant="contained" 
+            onClick={handleAnulate}
+            sx={{
+              backgroundColor: "#FF0000 !important", // Rojo por defecto
+              color: "white",
+              boxShadow: "none",
+              "&:hover": {
+                backgroundColor: "#d32f2f !important", // Rojo más oscuro al hover
+              },
+            }}
+          >
             Anular
           </Button>
         </DialogActions>
