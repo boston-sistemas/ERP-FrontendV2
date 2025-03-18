@@ -1374,6 +1374,22 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
           </Alert>
         </Snackbar>
       </div>
+      <div className="mt-4 mb-4">
+        <Button
+          variant="outlined"
+          onClick={() => router.push("/operaciones-new/salida-hilado")}
+          sx={{
+            borderColor: "#64748b",
+            color: "#64748b",
+            '&:hover': {
+              borderColor: "#475569",
+              backgroundColor: "#f1f5f9",
+            }
+          }}
+        >
+          Volver
+        </Button>
+      </div>
     </div>
   );
 };
