@@ -10,6 +10,7 @@ import {
 } from "../../services/movSalidaHiladoService";
 import {
   fetchYarnPurchaseEntries,
+  fetchYarnIncomeEntries,
   fetchYarnPurchaseEntryDetails,
   fetchFabricSearchId,
 } from "../../../movimiento-ingreso-hilado/services/movIngresoHiladoService";
@@ -206,7 +207,11 @@ const DetallesMovSalidaHilado: React.FC = () => {
       setIsLoading(true);
 
       // 1. Cargar los ingresos primero
-      const ingresosResponse = await fetchYarnPurchaseEntries(purchaseEntryPeriod, 50, 0, false);
+      const ingresosResponse = await fetchYarnIncomeEntries(
+        purchaseEntryPeriod,
+        dispatchDetail?.serviceOrderId || ""
+      );
+      console.log("ingresosResponse", ingresosResponse);
       if (ingresosResponse?.yarnPurchaseEntries) {
         setIngresos(ingresosResponse.yarnPurchaseEntries);
       }
@@ -322,38 +327,6 @@ const DetallesMovSalidaHilado: React.FC = () => {
   const handleOpenPurchaseEntryDialog = async () => {
     try {
       setIsLoading(true);
-
-      // 1. Cargar los ingresos si no están cargados
-      if (ingresos.length === 0) {
-        const ingresosResponse = await fetchYarnPurchaseEntries(purchaseEntryPeriod, 50, 0, false);
-        if (ingresosResponse?.yarnPurchaseEntries) {
-          setIngresos(ingresosResponse.yarnPurchaseEntries);
-        }
-      }
-
-      // 2. Cargar información del tejido si no está cargada
-      if (!FabricInfo && dispatchDetail?.detail?.[0]?.fabricId) {
-        const fabricInfos = await fetchFabricSearchId(dispatchDetail.detail[0].fabricId);
-        if (fabricInfos) {
-          setFabricInfo(fabricInfos);
-          
-          // 3. Procesar los IDs de hilados
-          if (fabricInfos.recipe) {
-            const yarnIds = fabricInfos.recipe.map((item: any) => item.yarn.id);
-            const yarnNames = fabricInfos.recipe.map((item: any) => item.yarn.description);
-            setYarnsIds(yarnIds);
-            setNameYarnsIds(yarnNames);
-          }
-        }
-      }
-
-      // Logs para depuración
-      console.log("ingresos", ingresos);
-      console.log("FabricInfo", FabricInfo);
-      console.log("YarnsIds", YarnsIds);
-      console.log("NameYarnsIds", NameYarnsIds);
-
-      // 4. Abrir el diálogo
       setIsPurchaseEntryDialogOpen(true);
     } catch (error) {
       console.error("Error al preparar el diálogo:", error);
@@ -889,32 +862,17 @@ const DetallesMovSalidaHilado: React.FC = () => {
             </Select>
           </div>
           <div className="max-w-full overflow-x-auto">
-            {console.log('=== Debugging Render ===')},
-            {console.log('YarnsIds:', YarnsIds)},
-            {console.log('NameYarnsIds:', NameYarnsIds)},
-            {console.log('Ingresos:', ingresos)},
              {Array.isArray(YarnsIds) && YarnsIds.length > 0 ? (
               YarnsIds.map((yarnId, index) => {
-                console.log(`\n=== Processing YarnId: ${yarnId} ===`);
                 const yarnName = NameYarnsIds[index] || `ID: ${yarnId}`;
-                console.log('YarnName:', yarnName);
                 
                 // Filtra los ingresos correspondientes a este yarnId
                 const ingresosFiltrados = ingresos.filter((ingreso) => {
-                  console.log(`Checking ingreso:`, ingreso);
-                  // Verifica en todos los detalles si alguno coincide con el yarnId
-                  const hasMatchingYarn = ingreso.detail?.some(detail => {
-                    console.log(`Checking detail yarnId: ${detail.yarnId} against ${yarnId}`);
-                    return detail.yarnId === yarnId;
-                  });
-                  return hasMatchingYarn;
+                  return ingreso.yarnId === yarnId;
                 });
-
-                console.log(`Ingresos filtrados para ${yarnId}:`, ingresosFiltrados);
 
                 // Si no hay ingresos, no mostrar la tabla para este yarnId
                 if (ingresosFiltrados.length === 0) {
-                  console.log(`No hay ingresos para el hilado ${yarnId}`);
                   return null;
                 }
 
@@ -937,37 +895,31 @@ const DetallesMovSalidaHilado: React.FC = () => {
                       </thead>
                       <tbody>
                         {ingresosFiltrados.map((ingreso) => {
-                          console.log(`\nProcesando ingreso ${ingreso.entryNumber}`);
-                          
                           const alreadySelected = editDetail.some(
                             (detail) => detail.entryNumber === ingreso.entryNumber
                           );
-                          console.log('¿Ya está seleccionado?:', alreadySelected);
 
-                          // Encuentra el detalle específico para este yarnId
-                          const matchingDetail = ingreso.detail?.find(d => d.yarnId === yarnId);
-                          console.log('Detalle encontrado:', matchingDetail);
-
-                          // Obtén el primer detailHeavy (o un objeto vacío si no existe)
-                          const heavyDetail = matchingDetail?.detailHeavy?.[0] || {};
-                          console.log('Heavy Detail:', heavyDetail);
-
+                          // Accede directamente a detailHeavy ya que está en el nivel principal
+                          const detailHeavy = ingreso.detailHeavy && ingreso.detailHeavy.length > 0 
+                            ? ingreso.detailHeavy[0] 
+                            : {};
+                          
                           return (
                             <tr key={ingreso.entryNumber} className="text-center">
                               <td className="border-b border-gray-300 px-4 py-5">
                                 {ingreso.entryNumber}
                               </td>
                               <td className="border-b border-gray-300 px-4 py-5">
-                                {heavyDetail.grossWeight?.toFixed(2) || "--"}
+                                {detailHeavy.grossWeight?.toFixed(2) || "--"}
                               </td>
                               <td className="border-b border-gray-300 px-4 py-5">
-                                {heavyDetail.netWeight?.toFixed(2) || "--"}
+                                {detailHeavy.netWeight?.toFixed(2) || "--"}
                               </td>
                               <td className="border-b border-gray-300 px-4 py-5">
-                                {heavyDetail.packageCount || "--"}
+                                {detailHeavy.packageCount || "--"}
                               </td>
                               <td className="border-b border-gray-300 px-4 py-5">
-                                {heavyDetail.coneCount || "--"}
+                                {detailHeavy.coneCount || "--"}
                               </td>
                               <td className="border-b border-gray-300 px-4 py-5">
                                 {alreadySelected ? (
@@ -977,9 +929,11 @@ const DetallesMovSalidaHilado: React.FC = () => {
                                     variant="contained"
                                     onClick={() => handleSelectPurchaseEntry(ingreso.entryNumber)}
                                     sx={{
-                                      backgroundColor: "#1976d2",
+                                      backgroundColor: "#1976d2 !important",
+                                      color: "white",
+                                      boxShadow: "none",
                                       "&:hover": {
-                                        backgroundColor: "#1259a3",
+                                        backgroundColor: "#1259a3 !important",
                                       },
                                     }}
                                   >
@@ -997,8 +951,7 @@ const DetallesMovSalidaHilado: React.FC = () => {
               })
             ) : (
               <Typography className="text-center py-4 text-black">
-                {console.log('No hay hilados disponibles'),
-                 'No hay hilados disponibles para mostrar'}
+                No hay hilados disponibles para mostrar
               </Typography>
             )}
           </div>
