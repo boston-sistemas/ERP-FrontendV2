@@ -87,7 +87,6 @@ export const updateYarnDispatch = async (
   exitNumber: string,
   period: number,
   payload: {
-    supplierCode: string;
     documentNote: string | null;
     nrodir: string;
     detail: Array<{
@@ -98,8 +97,9 @@ export const updateYarnDispatch = async (
       entryPeriod: number;
       coneCount: number;
       packageCount: number;
-      grossWeight: number;
       netWeight: number;
+      grossWeight: number;
+      fabricId: string;
     }>;
   }
 ): Promise<void> => {

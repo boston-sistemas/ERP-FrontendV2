@@ -256,26 +256,29 @@ const DetallesMovSalidaHilado: React.FC = () => {
   const handleSaveChanges = async () => {
     if (!dispatchDetail) return;
     try {
-      // OJO: Corrige entryGroupNumber/entryItemNumber para que sean numéricos
       const finalDetail = editDetail.map((d) => ({
         itemNumber: d.itemNumber ?? 1,
         entryNumber: d.entryNumber || "",
-        entryGroupNumber: d.entryGroupNumber ?? 1, // <-- no null
-        entryItemNumber: d.entryItemNumber ?? 1,    // <-- no null
+        entryGroupNumber: d.entryGroupNumber ?? 1,
+        entryItemNumber: d.entryItemNumber ?? 1,
         entryPeriod: d.entryPeriod ?? period,
-        coneCount: d.coneCount ?? 0,
-        packageCount: d.packageCount ?? 0,
-        grossWeight: d.grossWeight ?? 0,
-        netWeight: d.netWeight ?? 0,
+        coneCount: Math.max(1, d.coneCount ?? 1),
+        packageCount: Math.max(1, d.packageCount ?? 1),
+        netWeight: Math.max(0, d.netWeight ?? 0),
+        grossWeight: Math.max(0, d.grossWeight ?? 0),
+        fabricId: (d as any).fabricId || ""
       }));
 
-      await updateYarnDispatch(exitNumber as string, period, {
-        supplierCode: editSupplierCode,
-        documentNote: editDocumentNote,
-        nrodir: editNroDir,
-        serviceOrderId: editServiceOrderId, // <-- se envía en el payload
-        detail: finalDetail,
-      });
+      const payload = {
+        documentNote: editDocumentNote || "",
+        nrodir: editNroDir || "000",
+        detail: finalDetail
+      };
+
+      console.log("Enviando payload:", JSON.stringify(payload, null, 2));
+
+      const response = await updateYarnDispatch(exitNumber as string, period, payload);
+      console.log("Respuesta del backend:", response);
 
       setSnackbarMessage("Cambios guardados exitosamente.");
       setSnackbarSeverity("success");
@@ -323,10 +326,12 @@ const DetallesMovSalidaHilado: React.FC = () => {
   // Movimiento de Ingreso
   // ==============================
   const [isPurchaseEntryDialogOpen, setIsPurchaseEntryDialogOpen] = useState(false);
+  const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
 
   const handleOpenPurchaseEntryDialog = async () => {
     try {
       setIsLoading(true);
+      setSelectedEntries(new Set(editDetail.map(d => d.entryNumber)));
       setIsPurchaseEntryDialogOpen(true);
     } catch (error) {
       console.error("Error al preparar el diálogo:", error);
@@ -336,17 +341,19 @@ const DetallesMovSalidaHilado: React.FC = () => {
     }
   };
 
-  const handleClosePurchaseEntryDialog = () => setIsPurchaseEntryDialogOpen(false);
+  const handleClosePurchaseEntryDialog = () => {
+    setIsPurchaseEntryDialogOpen(false);
+    setSelectedEntries(new Set());
+  };
 
   const handleSelectPurchaseEntry = async (entryNumber: string) => {
-    handleClosePurchaseEntryDialog();
     try {
       const detailsResp = await fetchYarnPurchaseEntryDetails(entryNumber, period);
       if (detailsResp.detail?.length) {
-        const newDetail: YarnDispatchDetail[] = [];
+        const newDetails: YarnDispatchDetail[] = [];
         detailsResp.detail.forEach((d) => {
           d.detailHeavy.forEach((g) => {
-            newDetail.push({
+            newDetails.push({
               itemNumber: d.itemNumber ?? 1,
               entryNumber: detailsResp.entryNumber,
               entryGroupNumber: g.groupNumber ?? 1,
@@ -356,14 +363,41 @@ const DetallesMovSalidaHilado: React.FC = () => {
               packageCount: g.packageCount ?? 0,
               grossWeight: g.grossWeight ?? 0,
               netWeight: g.netWeight ?? 0,
+              yarnId: d.yarnId // Asegúrate de incluir el yarnId
             });
           });
         });
-        setEditDetail(newDetail);
+
+        // Si ya está seleccionado, lo quitamos
+        if (selectedEntries.has(entryNumber)) {
+          setSelectedEntries(prev => {
+            const next = new Set(prev);
+            next.delete(entryNumber);
+            return next;
+          });
+          setEditDetail(prev => prev.filter(d => d.entryNumber !== entryNumber));
+        } else {
+          // Si no está seleccionado, lo agregamos
+          setSelectedEntries(prev => {
+            const next = new Set(prev);
+            next.add(entryNumber);
+            return next;
+          });
+          setEditDetail(prev => [...prev, ...newDetails]);
+        }
       }
     } catch (err) {
       console.error(err);
+      showSnackbar("Error al cargar los detalles del ingreso", "error");
     }
+  };
+
+  const handleDetailChange = (index: number, field: string, value: number) => {
+    setEditDetail(prev => {
+      const next = [...prev];
+      (next[index] as any)[field] = value;
+      return next;
+    });
   };
 
   // ==============================
@@ -582,19 +616,30 @@ const DetallesMovSalidaHilado: React.FC = () => {
         maxWidth="lg"
         sx={{
           "& .MuiDialog-paper": {
-            width: "70%",
+            width: "80%",
+            maxWidth: "1200px",
             marginLeft: "20%",
+            borderRadius: "12px",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
           },
         }}
       >
-        <DialogTitle>
-          Editar Movimiento de Salida
+        <DialogTitle sx={{
+          borderBottom: "1px solid #e5e7eb",
+          padding: "24px 32px",
+          backgroundColor: "#f8fafc",
+          borderTopLeftRadius: "12px",
+          borderTopRightRadius: "12px",
+        }}>
+          <Typography variant="h5" component="h2" sx={{ fontWeight: 600, color: "#1e293b" }}>
+            Editar Movimiento de Salida
+          </Typography>
         </DialogTitle>
 
-        <DialogContent>
-          <div className="mt-4 space-y-4">
+        <DialogContent sx={{ padding: "32px", backgroundColor: "#ffffff" }}>
+          <div className="space-y-6">
             {/* Proveedor (readonly) */}
-            <FormControl fullWidth disabled>
+            <FormControl fullWidth disabled sx={{ "& .MuiInputBase-root": { backgroundColor: "#f8fafc" } }}>
               <InputLabel id="supplier-label">Proveedor</InputLabel>
               <Select
                 labelId="supplier-label"
@@ -611,7 +656,7 @@ const DetallesMovSalidaHilado: React.FC = () => {
 
             {/* Dirección (editable si hay proveedor seleccionado) */}
             {selectedSupplierObj && (
-              <FormControl fullWidth>
+              <FormControl fullWidth sx={{ "& .MuiOutlinedInput-root": { "&:hover fieldset": { borderColor: "#2563eb" } } }}>
                 <InputLabel id="address-label">Dirección</InputLabel>
                 <Select
                   labelId="address-label"
@@ -630,12 +675,20 @@ const DetallesMovSalidaHilado: React.FC = () => {
               </FormControl>
             )}
 
-            {/* Orden de Servicio (OS) (readonly) - sin botón de selección */}
+            {/* Orden de Servicio (OS) (readonly) */}
             <TextField
               label="Orden de Servicio (ID)"
               value={editServiceOrderId}
               fullWidth
               disabled
+              sx={{ 
+                "& .MuiInputBase-root": { 
+                  backgroundColor: "#f8fafc",
+                  "&.Mui-disabled": {
+                    backgroundColor: "#f1f5f9"
+                  }
+                }
+              }}
             />
 
             {/* Nota del Documento */}
@@ -646,110 +699,244 @@ const DetallesMovSalidaHilado: React.FC = () => {
               fullWidth
               multiline
               rows={3}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  "&:hover fieldset": {
+                    borderColor: "#2563eb"
+                  }
+                }
+              }}
             />
 
-            <Typography variant="subtitle1" className="font-semibold mt-4">
-              Detalle
-            </Typography>
-            <div className="overflow-x-auto">
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Ítem</TableCell>
-                    <TableCell>Conos</TableCell>
-                    <TableCell>Bultos</TableCell>
-                    <TableCell>Peso Neto</TableCell>
-                    <TableCell>Peso Bruto</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {editDetail.map((d, i) => (
-                    <TableRow key={i}>
-                      <TableCell>{d.itemNumber ?? 1}</TableCell>
-                      <TableCell>
-                        <TextField
-                          type="number"
-                          value={d.coneCount}
-                          onChange={(e) =>
-                            handleDetailChange(
-                              i,
-                              "coneCount",
-                              parseInt(e.target.value) || 0
-                            )
-                          }
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <TextField
-                          type="number"
-                          value={d.packageCount}
-                          onChange={(e) =>
-                            handleDetailChange(
-                              i,
-                              "packageCount",
-                              parseInt(e.target.value) || 0
-                            )
-                          }
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <TextField
-                          type="number"
-                          value={d.netWeight}
-                          onChange={(e) =>
-                            handleDetailChange(
-                              i,
-                              "netWeight",
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <TextField
-                          type="number"
-                          value={d.grossWeight}
-                          onChange={(e) =>
-                            handleDetailChange(
-                              i,
-                              "grossWeight",
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
-                          size="small"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <div className="mt-8">
+              <Typography variant="h6" sx={{ 
+                color: "#1e293b",
+                fontWeight: 600,
+                marginBottom: "16px",
+                borderBottom: "2px solid #e2e8f0",
+                paddingBottom: "8px"
+              }}>
+                Detalle de Hilados
+              </Typography>
+              <div className="overflow-x-auto">
+                {editDetail.length > 0 ? (
+                  <div className="space-y-8">
+                    {Array.from(new Set(editDetail.map(d => (d as any).yarnId || 'Sin Hilado'))).map((yarnId, idx) => {
+                      const itemsForYarn = editDetail.filter(d => (d as any).yarnId === yarnId);
+                      return (
+                        <div key={idx} className="border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                          <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white px-6 py-4">
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                              Hilado: {yarnId}
+                            </Typography>
+                          </div>
+                          <Table size="small" sx={{ 
+                            "& .MuiTableCell-head": { 
+                              backgroundColor: "#f8fafc",
+                              fontWeight: 600,
+                              color: "#475569"
+                            }
+                          }}>
+                            <TableHead>
+                              <TableRow>
+                                <TableCell sx={{ padding: "16px" }}>N° Ingreso</TableCell>
+                                <TableCell sx={{ padding: "16px" }}>Conos</TableCell>
+                                <TableCell sx={{ padding: "16px" }}>Bultos</TableCell>
+                                <TableCell sx={{ padding: "16px" }}>Peso Neto</TableCell>
+                                <TableCell sx={{ padding: "16px" }}>Peso Bruto</TableCell>
+                                <TableCell sx={{ padding: "16px", textAlign: "center" }}>Acciones</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {itemsForYarn.map((d, i) => (
+                                <TableRow key={`${idx}-${i}`} sx={{ 
+                                  "&:hover": { 
+                                    backgroundColor: "#f8fafc"
+                                  }
+                                }}>
+                                  <TableCell sx={{ padding: "16px" }}>{d.entryNumber}</TableCell>
+                                  <TableCell sx={{ padding: "16px" }}>
+                                    <TextField
+                                      type="number"
+                                      value={d.coneCount}
+                                      onChange={(e) =>
+                                        handleDetailChange(
+                                          editDetail.indexOf(d),
+                                          "coneCount",
+                                          parseInt(e.target.value) || 0
+                                        )
+                                      }
+                                      size="small"
+                                      inputProps={{ min: 0 }}
+                                      sx={{ 
+                                        width: '120px',
+                                        "& .MuiOutlinedInput-root": {
+                                          "&:hover fieldset": {
+                                            borderColor: "#2563eb"
+                                          }
+                                        }
+                                      }}
+                                    />
+                                  </TableCell>
+                                  <TableCell sx={{ padding: "16px" }}>
+                                    <TextField
+                                      type="number"
+                                      value={d.packageCount}
+                                      onChange={(e) =>
+                                        handleDetailChange(
+                                          editDetail.indexOf(d),
+                                          "packageCount",
+                                          parseInt(e.target.value) || 0
+                                        )
+                                      }
+                                      size="small"
+                                      inputProps={{ min: 0 }}
+                                      sx={{ 
+                                        width: '120px',
+                                        "& .MuiOutlinedInput-root": {
+                                          "&:hover fieldset": {
+                                            borderColor: "#2563eb"
+                                          }
+                                        }
+                                      }}
+                                    />
+                                  </TableCell>
+                                  <TableCell sx={{ padding: "16px" }}>
+                                    <TextField
+                                      type="number"
+                                      value={d.netWeight}
+                                      onChange={(e) =>
+                                        handleDetailChange(
+                                          editDetail.indexOf(d),
+                                          "netWeight",
+                                          parseFloat(e.target.value) || 0
+                                        )
+                                      }
+                                      size="small"
+                                      inputProps={{ min: 0, step: "0.01" }}
+                                      sx={{ 
+                                        width: '120px',
+                                        "& .MuiOutlinedInput-root": {
+                                          "&:hover fieldset": {
+                                            borderColor: "#2563eb"
+                                          }
+                                        }
+                                      }}
+                                    />
+                                  </TableCell>
+                                  <TableCell sx={{ padding: "16px" }}>
+                                    <TextField
+                                      type="number"
+                                      value={d.grossWeight}
+                                      onChange={(e) =>
+                                        handleDetailChange(
+                                          editDetail.indexOf(d),
+                                          "grossWeight",
+                                          parseFloat(e.target.value) || 0
+                                        )
+                                      }
+                                      size="small"
+                                      inputProps={{ min: 0, step: "0.01" }}
+                                      sx={{ 
+                                        width: '120px',
+                                        "& .MuiOutlinedInput-root": {
+                                          "&:hover fieldset": {
+                                            borderColor: "#2563eb"
+                                          }
+                                        }
+                                      }}
+                                    />
+                                  </TableCell>
+                                  <TableCell sx={{ padding: "16px", textAlign: "center" }}>
+                                    <IconButton
+                                      onClick={() => {
+                                        setSelectedEntries(prev => {
+                                          const next = new Set(prev);
+                                          next.delete(d.entryNumber);
+                                          return next;
+                                        });
+                                        setEditDetail(prev => prev.filter(item => item.entryNumber !== d.entryNumber));
+                                      }}
+                                      size="small"
+                                      sx={{
+                                        color: '#dc2626',
+                                        transition: 'all 0.2s',
+                                        '&:hover': {
+                                          backgroundColor: 'rgba(220, 38, 38, 0.08)',
+                                          transform: 'scale(1.1)'
+                                        },
+                                      }}
+                                    >
+                                      <Close />
+                                    </IconButton>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 px-4 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50">
+                    <Typography sx={{ color: "#64748b", marginBottom: "8px" }}>
+                      No hay ítems disponibles
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                      Utilice "Seleccionar Ingreso" para agregar ítems
+                    </Typography>
+                  </div>
+                )}
+              </div>
             </div>
 
             <Button
               variant="outlined"
               onClick={handleOpenPurchaseEntryDialog}
               startIcon={<Search />}
+              sx={{
+                marginTop: "24px",
+                borderColor: "#2563eb",
+                color: "#2563eb",
+                '&:hover': {
+                  borderColor: "#1d4ed8",
+                  backgroundColor: "rgba(37, 99, 235, 0.04)"
+                }
+              }}
             >
               Seleccionar Ingreso (opcional)
             </Button>
           </div>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={handleCloseEditDialog}>Cancelar</Button>
+        <DialogActions sx={{ 
+          padding: "24px 32px",
+          borderTop: "1px solid #e5e7eb",
+          backgroundColor: "#f8fafc"
+        }}>
+          <Button 
+            onClick={handleCloseEditDialog}
+            sx={{
+              color: "#64748b",
+              '&:hover': {
+                backgroundColor: "#f1f5f9"
+              }
+            }}
+          >
+            Cancelar
+          </Button>
           <Button 
             variant="contained" 
             onClick={handleSaveChanges}
             sx={{
-              backgroundColor: "#1976d2 !important", // Azul por defecto
+              backgroundColor: "#2563eb !important",
               color: "white",
-              boxShadow: "none",
-              "&:hover": {
-                backgroundColor: "#1259a3 !important", // Azul más oscuro al hover
-              },
+              boxShadow: "0 2px 4px rgba(37, 99, 235, 0.1)",
+              '&:hover': {
+                backgroundColor: "#1d4ed8 !important",
+                boxShadow: "0 4px 6px rgba(37, 99, 235, 0.2)"
+              }
             }}
           >
             Guardar Cambios
@@ -765,8 +952,11 @@ const DetallesMovSalidaHilado: React.FC = () => {
         maxWidth="lg"
         sx={{
           "& .MuiDialog-paper": {
-            width: "70%",
-            marginLeft: "20%",
+            width: "80%",
+            maxWidth: "1200px",
+            margin: "32px auto",
+            borderRadius: "12px",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
           },
         }}
       >
@@ -831,7 +1021,12 @@ const DetallesMovSalidaHilado: React.FC = () => {
           },
         }}
       >
-        <DialogTitle>Seleccionar Movimiento de Ingreso</DialogTitle>
+        <DialogTitle className="flex justify-between items-center">
+          <Typography variant="h6">Seleccionar Movimientos de Ingreso</Typography>
+          <IconButton onClick={handleClosePurchaseEntryDialog}>
+            <Close />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
           <div className="mb-4">
             <Typography variant="subtitle1" className="font-semibold mb-2" style={{ color: "#000" }}>
@@ -844,7 +1039,6 @@ const DetallesMovSalidaHilado: React.FC = () => {
                 const selectedPeriod = Number(e.target.value);
                 if ([2023, 2024, 2025].includes(selectedPeriod)) {
                   setPurchaseEntryPeriod(selectedPeriod);
-                  // Recargar los datos con el nuevo período
                   fetchYarnPurchaseEntries(selectedPeriod, 10, 0, false)
                     .then(resp => setPurchaseEntries(resp.yarnPurchaseEntries || []))
                     .catch(e => console.error(e));
@@ -862,84 +1056,63 @@ const DetallesMovSalidaHilado: React.FC = () => {
             </Select>
           </div>
           <div className="max-w-full overflow-x-auto">
-             {Array.isArray(YarnsIds) && YarnsIds.length > 0 ? (
+            {Array.isArray(YarnsIds) && YarnsIds.length > 0 ? (
               YarnsIds.map((yarnId, index) => {
                 const yarnName = NameYarnsIds[index] || `ID: ${yarnId}`;
-                
-                // Filtra los ingresos correspondientes a este yarnId
-                const ingresosFiltrados = ingresos.filter((ingreso) => {
-                  return ingreso.yarnId === yarnId;
-                });
+                const ingresosFiltrados = ingresos.filter((ingreso) => ingreso.yarnId === yarnId);
 
-                // Si no hay ingresos, no mostrar la tabla para este yarnId
-                if (ingresosFiltrados.length === 0) {
-                  return null;
-                }
+                if (ingresosFiltrados.length === 0) return null;
 
                 return (
                   <div key={yarnId} className="mb-8">
-                    <h2 className="text-lg font-bold my-4 text-black">
-                      Hilado: {yarnName}
-                    </h2>
+                    <div className="bg-blue-900 text-white px-4 py-2 rounded-t-lg">
+                      <Typography variant="h6" className="font-semibold">
+                        Hilado: {yarnName}
+                      </Typography>
+                    </div>
 
-                    <table className="w-full table-auto">
+                    <table className="w-full table-auto border-collapse">
                       <thead>
-                        <tr className="bg-blue-900 text-white">
-                          <th className="px-4 py-4 font-normal">Número</th>
-                          <th className="px-4 py-4 font-normal">Peso Bruto</th>
-                          <th className="px-4 py-4 font-normal">Peso Neto</th>
-                          <th className="px-4 py-4 font-normal">Paquetes</th>
-                          <th className="px-4 py-4 font-normal">Conos</th>
-                          <th className="px-4 py-4 font-normal">Acciones</th>
+                        <tr className="bg-gray-50">
+                          <th className="px-4 py-3 font-medium text-left">Número</th>
+                          <th className="px-4 py-3 font-medium text-right">Peso Bruto</th>
+                          <th className="px-4 py-3 font-medium text-right">Peso Neto</th>
+                          <th className="px-4 py-3 font-medium text-right">Paquetes</th>
+                          <th className="px-4 py-3 font-medium text-right">Conos</th>
+                          <th className="px-4 py-3 font-medium text-center">Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
                         {ingresosFiltrados.map((ingreso) => {
-                          const alreadySelected = editDetail.some(
-                            (detail) => detail.entryNumber === ingreso.entryNumber
-                          );
-
-                          // Accede directamente a detailHeavy ya que está en el nivel principal
-                          const detailHeavy = ingreso.detailHeavy && ingreso.detailHeavy.length > 0 
-                            ? ingreso.detailHeavy[0] 
-                            : {};
+                          const isSelected = selectedEntries.has(ingreso.entryNumber);
+                          const detailHeavy = ingreso.detailHeavy?.[0] || {};
                           
                           return (
-                            <tr key={ingreso.entryNumber} className="text-center">
-                              <td className="border-b border-gray-300 px-4 py-5">
-                                {ingreso.entryNumber}
-                              </td>
-                              <td className="border-b border-gray-300 px-4 py-5">
-                                {detailHeavy.grossWeight?.toFixed(2) || "--"}
-                              </td>
-                              <td className="border-b border-gray-300 px-4 py-5">
-                                {detailHeavy.netWeight?.toFixed(2) || "--"}
-                              </td>
-                              <td className="border-b border-gray-300 px-4 py-5">
-                                {detailHeavy.packageCount || "--"}
-                              </td>
-                              <td className="border-b border-gray-300 px-4 py-5">
-                                {detailHeavy.coneCount || "--"}
-                              </td>
-                              <td className="border-b border-gray-300 px-4 py-5">
-                                {alreadySelected ? (
-                                  <span className="text-gray-500">Seleccionado</span>
-                                ) : (
-                                  <Button
-                                    variant="contained"
-                                    onClick={() => handleSelectPurchaseEntry(ingreso.entryNumber)}
-                                    sx={{
-                                      backgroundColor: "#1976d2 !important",
-                                      color: "white",
-                                      boxShadow: "none",
-                                      "&:hover": {
-                                        backgroundColor: "#1259a3 !important",
-                                      },
-                                    }}
-                                  >
-                                    Seleccionar
-                                  </Button>
-                                )}
+                            <tr 
+                              key={ingreso.entryNumber} 
+                              className={`border-b hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}
+                            >
+                              <td className="px-4 py-3 text-left">{ingreso.entryNumber}</td>
+                              <td className="px-4 py-3 text-right">{detailHeavy.grossWeight?.toFixed(2) || "--"}</td>
+                              <td className="px-4 py-3 text-right">{detailHeavy.netWeight?.toFixed(2) || "--"}</td>
+                              <td className="px-4 py-3 text-right">{detailHeavy.packageCount || "--"}</td>
+                              <td className="px-4 py-3 text-right">{detailHeavy.coneCount || "--"}</td>
+                              <td className="px-4 py-3 text-center">
+                                <Button
+                                  variant={isSelected ? "outlined" : "contained"}
+                                  onClick={() => handleSelectPurchaseEntry(ingreso.entryNumber)}
+                                  sx={{
+                                    backgroundColor: isSelected ? "transparent !important" : "#1976d2 !important",
+                                    color: isSelected ? "#1976d2" : "white",
+                                    borderColor: "#1976d2",
+                                    "&:hover": {
+                                      backgroundColor: isSelected ? "#f8fafc !important" : "#1259a3 !important",
+                                      borderColor: "#1976d2",
+                                    },
+                                  }}
+                                >
+                                  {isSelected ? "Deseleccionar" : "Seleccionar"}
+                                </Button>
                               </td>
                             </tr>
                           );
@@ -950,7 +1123,7 @@ const DetallesMovSalidaHilado: React.FC = () => {
                 );
               })
             ) : (
-              <Typography className="text-center py-4 text-black">
+              <Typography className="text-center py-4 text-gray-500">
                 No hay hilados disponibles para mostrar
               </Typography>
             )}
@@ -1004,3 +1177,4 @@ const DetallesMovSalidaHilado: React.FC = () => {
 };
 
 export default DetallesMovSalidaHilado;
+
