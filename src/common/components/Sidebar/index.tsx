@@ -17,8 +17,8 @@ const operacionesItems = [
     nombre: "Fibras",
     path: "/operaciones-new/fibras",
     icon: (
-      <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18">
-        <path d="M8 1C5.24 1 3 3.24 3 6c0 2.76 2.24 5 5 5s5-2.24 5-5c0-2.76-2.24-5-5-5zm0 9C4.69 10 2 7.31 2 4s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/>
+      <svg className="fill-current" width="20" height="20" viewBox="0 0 24 24">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     )
   },
@@ -26,17 +26,17 @@ const operacionesItems = [
     nombre: "Hilados",
     path: "/operaciones-new/hilados",
     icon: (
-      <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18">
-        <path d="M16 2H2v2h14v-2zm-1 5H3v2h12V7zm-2 5H5v2h8v-2z"/>
+      <svg className="fill-current" width="20" height="20" viewBox="0 0 24 24">
+        <path d="M4 5a1 1 0 011-1h14a1 1 0 110 2H5a1 1 0 01-1-1zm0 7a1 1 0 011-1h14a1 1 0 110 2H5a1 1 0 01-1-1zm0 7a1 1 0 011-1h14a1 1 0 110 2H5a1 1 0 01-1-1z"/>
       </svg>
     )
   },
   {
-    nombre: "Ingreso de Hilado según O/C",
+    nombre: "Ingreso de Hilado por O/C",
     path: "/operaciones-new/movimiento-ingreso-hilado",
     icon: (
-      <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18">
-        <path d="M9 1L4 6h3v10h4V6h3L9 1z"/>
+      <svg className="fill-current" width="20" height="20" viewBox="0 0 24 24">
+        <path d="M11 2a1 1 0 012 0v7.5h3.5a1 1 0 01.7 1.7l-5.5 5.5a1 1 0 01-1.4 0l-5.5-5.5a1 1 0 01.7-1.7H9V2z"/>
       </svg>
     )
   },
@@ -44,8 +44,8 @@ const operacionesItems = [
     nombre: "Salida de hilado a servicio de Tejeduría",
     path: "/operaciones-new/salida-hilado",
     icon: (
-      <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18">
-        <path d="M9 17l5-5h-3V2H7v10H4l5 5z"/>
+      <svg className="fill-current" width="20" height="20" viewBox="0 0 24 24">
+        <path d="M11 14.5V7a1 1 0 112 0v7.5h3.5a1 1 0 01.7 1.7l-5.5 5.5a1 1 0 01-1.4 0l-5.5-5.5a1 1 0 01.7-1.7H9z"/>
       </svg>
     )
   },
@@ -53,8 +53,8 @@ const operacionesItems = [
     nombre: "Tejidos",
     path: "/operaciones-new/tejidos",
     icon: (
-      <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18">
-        <path d="M3 3v12h12V3H3zm11 11H4V4h10v10z"/>
+      <svg className="fill-current" width="20" height="20" viewBox="0 0 24 24">
+        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-8-2h2v-4h4v-2h-4V7h-2v4H7v2h4v4z"/>
       </svg>
     )
   },
@@ -62,8 +62,17 @@ const operacionesItems = [
     nombre: "Ingreso de tejido por O/S",
     path: "/operaciones-new/ingreso-tejido",
     icon: (
-      <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18">
-        <path d="M15 3H3v12h12V3zm-1 11H4V4h10v10z M7 7h4v4H7z"/>
+      <svg className="fill-current" width="20" height="20" viewBox="0 0 24 24">
+        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-8-2h2V7h-2v10z M7 13h10v-2H7v2z"/>
+      </svg>
+    )
+  },
+  {
+    nombre: "Ordenes de servicio",
+    path: "/operaciones-new/ordenes-servicio",
+    icon: (
+      <svg className="fill-current" width="20" height="20" viewBox="0 0 24 24">
+        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM9.5 12.5v1.5h5v-1.5h-5zm0 3v1.5h5v-1.5h-5z"/>
       </svg>
     )
   }
@@ -107,45 +116,50 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       ref={sidebar}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`fixed left-0 top-0 z-9999 flex h-screen flex-col overflow-y-hidden bg-blue-900 duration-300 ease-linear dark:bg-boxdark lg:static ${
+      className={`fixed left-0 top-0 z-9999 flex h-screen flex-col overflow-y-hidden bg-blue-900 shadow-xl transition-all duration-500 ease-in-out dark:bg-boxdark lg:static ${
         isHovered ? 'w-72.5' : 'w-20'
       } ${
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       }`}
     >
       {/* <!-- SIDEBAR HEADER --> */}
-      <div className={`flex items-center justify-between gap-2 px-6 py-5.5 lg:py-6.5 ${
-        isHovered ? 'pl-8' : 'pl-2'
-      }`}>
-        {isHovered ? (
-          <Link href="/">
-            <Image
-              width={176}
-              height={32}
-              src={"/images/boston/logo-boston-color.png"}
-              alt="Logo"
-              priority
-            />
-          </Link>
-        ) : (
-          <Link href="/">
-            <Image
-              width={32}
-              height={32}
-              src={"/images/boston/icono-boston.ico"}
-              alt="Logo"
-              priority
-              className="full"
-            />
-          </Link>
-        )}
+      <div 
+        className={`flex items-center justify-between gap-2 px-6 py-5.5 lg:py-6.5 transition-all duration-500 ease-in-out ${
+          isHovered ? 'pl-8' : 'pl-2'
+        }`}
+      >
+        <div className="transition-transform duration-500 ease-in-out transform">
+          {isHovered ? (
+            <Link href="/">
+              <Image
+                width={176}
+                height={32}
+                src={"/images/boston/logo-boston-color.png"}
+                alt="Logo"
+                priority
+                className="transition-opacity duration-500 ease-in-out"
+              />
+            </Link>
+          ) : (
+            <Link href="/">
+              <Image
+                width={32}
+                height={32}
+                src={"/images/boston/icono-boston.ico"}
+                alt="Logo"
+                priority
+                className="transition-all duration-500 ease-in-out hover:scale-110"
+              />
+            </Link>
+          )}
+        </div>
 
         <button
           ref={trigger}
           onClick={() => setSidebarOpen(!sidebarOpen)}
           aria-controls="sidebar"
           aria-expanded={sidebarOpen}
-          className="block lg:hidden"
+          className="block lg:hidden transition-transform duration-300 ease-in-out hover:scale-110"
         >
           <svg
             className="fill-current"
@@ -163,26 +177,36 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         </button>
       </div>
 
-      <div className="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
-        <nav className={`mt-5 py-4 ${isHovered ? 'px-4 lg:px-6' : 'px-2'}`}>
+      <div className="no-scrollbar flex flex-col overflow-y-auto duration-500 ease-in-out">
+        <nav className={`mt-5 py-4 transition-all duration-500 ease-in-out ${isHovered ? 'px-4 lg:px-6' : 'px-2'}`}>
           <div>
             {isHovered && (
-              <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
-                OPERACIONES
+              <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2 uppercase tracking-wider transition-all duration-500 ease-in-out">
+                Operaciones
               </h3>
             )}
 
-            <ul className="mb-6 flex flex-col gap-1.5">
+            <ul className="mb-6 flex flex-col gap-2">
               {operacionesItems.map((item) => (
                 <li key={item.path}>
                   <Link
                     href={item.path}
-                    className={`group relative flex items-center gap-2.5 rounded-sm px-4 py-2 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-blue-950 ${
-                      pathname === item.path && "bg-blue-950"
+                    className={`group relative flex items-center gap-2.5 rounded-lg px-4 py-2.5 font-medium transition-all duration-300 ease-in-out
+                    ${pathname === item.path 
+                      ? "bg-blue-800 text-bodydark1" 
+                      : "text-bodydark2 hover:bg-blue-800/50 hover:text-bodydark1"
                     }`}
                   >
-                    {item.icon}
-                    {isHovered && <span>{item.nombre}</span>}
+                    <span className={`transition-transform duration-300 ease-in-out ${
+                      !isHovered ? 'transform scale-90' : ''
+                    }`}>
+                      {item.icon}
+                    </span>
+                    <span className={`whitespace-nowrap transition-all duration-500 ease-in-out ${
+                      isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                    }`}>
+                      {item.nombre}
+                    </span>
                   </Link>
                 </li>
               ))}
