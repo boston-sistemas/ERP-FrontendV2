@@ -19,6 +19,7 @@ import {
   fetchServiceOrders,
   fetchServiceOrderById,
 } from "../../../ordenes-servicio/services/ordenesServicioService";
+import { fetchYarnbyId } from "../../../hilados/services/hiladoService";
 
 import {
   Supplier,
@@ -132,6 +133,8 @@ const DetallesMovSalidaHilado: React.FC = () => {
     loadSuppliers();
   }, []);
 
+  const [yarnsInfo, setYarnsInfo] = useState<{ [key: string]: any }>({});
+
   useEffect(() => {
     const fetchData = async () => {
       if (!exitNumber || Array.isArray(exitNumber)) {
@@ -143,6 +146,16 @@ const DetallesMovSalidaHilado: React.FC = () => {
       try {
         const data = await fetchYarnDispatchByNumber(exitNumber, period);
         setDispatchDetail(data);
+
+        // Obtener información de los hilados
+        const uniqueYarnIds = new Set(data.detail.map((item: any) => item.yarnId).filter(Boolean));
+        const yarnPromises = Array.from(uniqueYarnIds).map(yarnId => fetchYarnbyId(yarnId));
+        const yarnsData = await Promise.all(yarnPromises);
+        const yarnsMap = yarnsData.reduce((acc, yarn) => {
+          acc[yarn.id] = yarn;
+          return acc;
+        }, {});
+        setYarnsInfo(yarnsMap);
 
         // Prellenar serviceOrderId si ya existe
         if (data.serviceOrderId) {
@@ -570,13 +583,14 @@ const DetallesMovSalidaHilado: React.FC = () => {
             <tbody>
               {dispatchDetail.detail.map((item, idx) => {
                 const possibleYarnId = (item as any).yarnId || "—";
+                const yarnInfo = yarnsInfo[possibleYarnId];
                 return (
                   <tr key={idx} className="text-center">
                     <td className="border-b border-gray-200 px-4 py-2">
                       {item.itemNumber}
                     </td>
                     <td className="border-b border-gray-200 px-4 py-2">
-                      {possibleYarnId}
+                      {yarnInfo ? yarnInfo.description : possibleYarnId}
                     </td>
                     <td className="border-b border-gray-200 px-4 py-2">
                       {item.grossWeight}

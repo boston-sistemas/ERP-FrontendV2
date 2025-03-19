@@ -116,15 +116,15 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       ref={sidebar}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`fixed left-0 top-0 z-9999 flex h-screen flex-col overflow-y-hidden bg-blue-900 shadow-xl transition-all duration-500 ease-in-out dark:bg-boxdark lg:static ${
-        isHovered ? 'w-72.5' : 'w-20'
+      className={`fixed left-0 top-0 z-9999 flex h-screen flex-col overflow-y-hidden bg-blue-900 shadow-2xl backdrop-blur-sm transition-all duration-500 ease-in-out dark:bg-boxdark lg:static ${
+        isHovered ? 'w-72.5 border-r border-blue-800' : 'w-20'
       } ${
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       }`}
     >
       {/* <!-- SIDEBAR HEADER --> */}
       <div 
-        className={`flex items-center justify-between gap-2 px-6 py-5.5 lg:py-6.5 transition-all duration-500 ease-in-out ${
+        className={`flex items-center justify-between gap-2 px-6 py-5.5 lg:py-6.5 transition-all duration-500 ease-in-out border-b border-blue-800/40 ${
           isHovered ? 'pl-8' : 'pl-2'
         }`}
       >
@@ -186,24 +186,24 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               </h3>
             )}
 
-            <ul className="mb-6 flex flex-col gap-2">
+            <ul className="mb-6 flex flex-col gap-1.5">
               {operacionesItems.map((item) => (
                 <li key={item.path}>
                   <Link
                     href={item.path}
-                    className={`group relative flex items-center gap-2.5 rounded-lg px-4 py-2.5 font-medium transition-all duration-300 ease-in-out
+                    className={`group relative flex items-center min-h-[44px] gap-2.5 rounded-lg px-4 py-2 font-medium transition-all duration-300 ease-in-out
                     ${pathname === item.path 
-                      ? "bg-blue-800 text-bodydark1" 
-                      : "text-bodydark2 hover:bg-blue-800/50 hover:text-bodydark1"
+                      ? "bg-blue-800/90 text-white shadow-lg" 
+                      : "text-bodydark2 hover:bg-blue-800/40 hover:text-white"
                     }`}
                   >
-                    <span className={`transition-transform duration-300 ease-in-out ${
+                    <span className={`transition-all duration-300 ease-in-out flex-shrink-0 ${
                       !isHovered ? 'transform scale-90' : ''
-                    }`}>
+                    } ${pathname === item.path ? 'drop-shadow-md' : ''}`}>
                       {item.icon}
                     </span>
-                    <span className={`whitespace-nowrap transition-all duration-500 ease-in-out ${
-                      isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                    <span className={`transition-all duration-500 ease-in-out leading-tight ${
+                      isHovered ? 'opacity-100 translate-x-0 w-52 line-clamp-2' : 'opacity-0 -translate-x-4 w-0'
                     }`}>
                       {item.nombre}
                     </span>

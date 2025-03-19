@@ -54,6 +54,19 @@ import NoteIcon from '@mui/icons-material/Note';
 
   const ERROR_COLOR = "#d32f2f";
 
+  interface FabricRecipe {
+    yarn: {
+      id: string;
+      description: string;
+    };
+  }
+
+  interface FabricInfo {
+    id: string;
+    description: string;
+    recipe: FabricRecipe[];
+  }
+
   const CrearMovSalidaHilado: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -74,8 +87,8 @@ import NoteIcon from '@mui/icons-material/Note';
   const [ingresosSeleccionados, setIngresosSeleccionados] = useState<YarnPurchaseEntry[]>([]);
   const [cantidadRequerida, setCantidadRequerida] = useState(0);
   const [bultosRequerido, setBultosRequerido] = useState(0);
-  const [YarnsIds, setYarnsIds] = useState(0);
-  const [NameYarnsIds, setNameYarnsIds] = useState(0);
+  const [YarnsIds, setYarnsIds] = useState<string[]>([]);
+  const [NameYarnsIds, setNameYarnsIds] = useState<string[]>([]);
 
 
   // TODO CON RESPECTO A ORDENES DE SERVICIO
@@ -85,7 +98,7 @@ import NoteIcon from '@mui/icons-material/Note';
   const [openOSDetail, setOpenOSDetail] = useState(false); // Estado del diálogo de información de tejido
   const [openYarnDialog, setOpenYarnDialog] = useState(false); // Estado del diálogo de información de tejido
   const [OSDetail, setOSDetail] = useState<any>(null); // Detalles de OS
-  const [FabricInfo, setFabricInfo] = useState<any>(null); // Detalles de fibras
+  const [FabricInfo, setFabricInfo] = useState<FabricInfo[]>([]);
   const [typeFabric, setTypeFabric] = useState<FabricType[]>([]); // Tipos de fibras
   const [selectTypeFabric, setSelectedTypeFabric] = useState<string>(""); // Tipo de fibra seleccionado
   const [selectInfoFabric, setSelectedInfoFabric] = useState<Fabric | null>(null); // Información del tejido seleccionado
@@ -186,11 +199,27 @@ import NoteIcon from '@mui/icons-material/Note';
     }
   };
 
+  const loadFabricInfo = async (details: any[]) => { // Carga la información del tejido
+    try {
+      const fabricPromises = details.map(detail => fetchFabricSearchId(detail.fabricId));
+      const fabricInfos = await Promise.all(fabricPromises);
+      setFabricInfo(fabricInfos);
+    } catch (error) {
+      console.error("Error al cargar la información del tejido:", error);
+    }
+  };
+
   const FilterYarnId = async () => {
-    const response = FabricInfo.recipe.map((item) => item.yarn.id);
-    const response_2 = FabricInfo.recipe.map((item) => item.yarn.description);
-    setYarnsIds(response);
-    setNameYarnsIds(response_2);
+    // Obtener todos los IDs de hilos de todos los tejidos
+    const yarnIds = FabricInfo.flatMap(fabric => fabric.recipe.map(item => item.yarn.id));
+    const yarnNames = FabricInfo.flatMap(fabric => fabric.recipe.map(item => item.yarn.description));
+    
+    // Eliminar duplicados
+    const uniqueYarnIds = Array.from(new Set(yarnIds));
+    const uniqueYarnNames = Array.from(new Set(yarnNames));
+    
+    setYarnsIds(uniqueYarnIds);
+    setNameYarnsIds(uniqueYarnNames);
   }
   
 
@@ -248,15 +277,6 @@ import NoteIcon from '@mui/icons-material/Note';
 
   const supplier = suppliers.find((sup) => sup.code === selectedSupplier);
 
-  const loadFabricInfo = async (details: any) => { // Carga la información del tejido
-    try {
-      const fabricInfos = await fetchFabricSearchId(details[0].fabricId);
-      setFabricInfo(fabricInfos);
-    } catch (error) {
-      console.error("Error al cargar la información del tejido:", error);
-    };
-  };
-
   const handleSelectServiceOrder = async (orderId: string) => {
     try {
       const serviceOrderDetails = await fetchServiceOrderById(orderId);
@@ -264,6 +284,7 @@ import NoteIcon from '@mui/icons-material/Note';
         ...serviceOrderDetails,
         detail: serviceOrderDetails.detail || [], // Asegura que haya un array de detalles
       });
+      console.log("Detalles de la orden de servicio:", serviceOrderDetails.detail);
       loadFabricInfo(serviceOrderDetails.detail); // Carga la información del tejido
       sleepES5(120); // Espera 75ms antes de cargar la información
       setIsServiceDialogOpen(false); // Cierra el diálogo después de seleccionar
@@ -273,18 +294,18 @@ import NoteIcon from '@mui/icons-material/Note';
     }
   };
 
-   const handleOpenFabricDialog = async (FabricId: number) => {
+   const handleOpenFabricDialog = async (fabricId: number) => {
     setOpenFabricDialog(true);
     setSelectedInfoFabric(null);
-      try {
-        const data = await fetchFabricSearchId(FabricId);
-        setSelectedInfoFabric(data);
-        console.log("Información del tejido:", data);
-        setSelectedInfoFabricRecipe(data.recipe);
-      } catch (error) {
-        console.error("Error al cargar los datos del hilo:", error);
-      }
-    };
+    try {
+      const data = await fetchFabricSearchId(fabricId);
+      setSelectedInfoFabric(data);
+      console.log("Información del tejido:", data);
+      setSelectedInfoFabricRecipe(data.recipe);
+    } catch (error) {
+      console.error("Error al cargar los datos del tejido:", error);
+    }
+  };
 
     const handleOpenOSDetails = async (orderId: string) => {
       setOpenOSDetail(true);
@@ -453,15 +474,19 @@ import NoteIcon from '@mui/icons-material/Note';
 
       const detail = ingresosSeleccionados.map(g => ({
         itemNumber: g.itemNumber,
-        entryNumber: g.ingressNumber, // Asegurar que sea el correcto
-        entryGroupNumber: g.groupNumber, // Si aplica
-        entryItemNumber: g.itemNumber, // Confirmar si este campo es correcto
-        entryPeriod: g.period || 0, // Asegurar que no sea undefined
+        entryNumber: g.ingressNumber,
+        entryGroupNumber: g.groupNumber,
+        entryItemNumber: g.itemNumber,
+        entryPeriod: g.period || 0,
         coneCount: g.coneCount || 0,
         packageCount: g.packageCount || 0,
         netWeight: g.AssignedWeight || 0,
         grossWeight: g.AssignedWeight || 0,
-        fabricId: FabricInfo.id,
+        fabricId: FabricInfo.find(fabric => 
+          fabric.recipe.some((recipe: any) => 
+            recipe.yarn.id === g.yarnId
+          )
+        )?.id || FabricInfo[0]?.id,
       }));
 
       console.log("Detalle generado correctamente:", detail);
@@ -739,36 +764,38 @@ import NoteIcon from '@mui/icons-material/Note';
         {dataOS && (
           <div className="max-w-full overflow-x-auto">
             <h2 className="text-lg font-semibold mb-2">Detalles de la Orden de Servicio</h2>
-            {dataOS.detail.map((item: any, index: number) => (
-              <React.Fragment key={index}>
-                <table className="w-full table-auto mb-4">
-                  <thead>
-                    <tr className="bg-blue-900 uppercase text-center text-white">
-                      <th className="px-4 py-4 font-normal">Tejido</th>
-                      <th className="px-4 py-4 font-normal">Precio</th>
-                      <th className="px-4 py-4 font-normal">Cantidad Ordenada</th>
-                      <th className="px-4 py-4 font-normal">Cantidad Suministrada</th>
-                      <th className="px-4 py-4 font-normal">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  <tr className="text-center text-black">
-                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{FabricInfo.description}
-                    <IconButton onClick={() => handleOpenFabricDialog(FabricInfo.id)}>  {/*Botón para ver la información del tejido*/}
-                          <VisibilityIcon 
-                          style={{ color: "#1976d2" }}
-                          />
-                        </IconButton>
-                    </td>
-                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.price}</td>
-                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.quantityOrdered}</td>
-                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.quantitySupplied || 0}</td>
-                    <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.status?.value || "Pendiente"}</td>
-                  </tr>
-                  </tbody>
-                </table>
-              </React.Fragment>
-            ))}
+            {dataOS.detail.map((item: any, index: number) => {
+              const fabricInfo = FabricInfo[index];
+              return (
+                <React.Fragment key={index}>
+                  <table className="w-full table-auto mb-4">
+                    <thead>
+                      <tr className="bg-blue-900 uppercase text-center text-white">
+                        <th className="px-4 py-4 font-normal">Tejido</th>
+                        <th className="px-4 py-4 font-normal">Precio</th>
+                        <th className="px-4 py-4 font-normal">Cantidad Ordenada</th>
+                        <th className="px-4 py-4 font-normal">Cantidad Suministrada</th>
+                        <th className="px-4 py-4 font-normal">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="text-center text-black">
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">
+                          {fabricInfo?.description || 'Cargando...'}
+                          <IconButton onClick={() => handleOpenFabricDialog(fabricInfo?.id)}>
+                            <VisibilityIcon style={{ color: "#1976d2" }} />
+                          </IconButton>
+                        </td>
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.price}</td>
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.quantityOrdered}</td>
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.quantitySupplied || 0}</td>
+                        <td className="border-b border-gray-300 px-4 py-5 mb-2">{item.status?.value || "Pendiente"}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </React.Fragment>
+              );
+            })}
           </div>
         )}
 
