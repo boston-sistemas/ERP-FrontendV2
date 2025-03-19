@@ -244,7 +244,7 @@ import NoteIcon from '@mui/icons-material/Note';
   const FilterIngresosbySupplier = async () => {
     try {
       if (!ordenesServicio || ordenesServicio.length === 0) {
-        return; // Salimos de la función si no hay órdenes de servicio
+        return;
       }
       const response = await fetchYarnIncomeEntries(period,ordenesServicio[0].id);
       setIngresos(response.yarnPurchaseEntries || []);
@@ -642,7 +642,6 @@ import NoteIcon from '@mui/icons-material/Note';
         sx={{
           "& .MuiDialog-paper": {
             width: "70%",
-            marginLeft: "20%",
           },
         }}
       >
@@ -730,7 +729,6 @@ import NoteIcon from '@mui/icons-material/Note';
         sx={{
           "& .MuiDialog-paper": {
             width: "30%",
-            marginLeft: "20%",
           },
         }}
       >
@@ -807,7 +805,6 @@ import NoteIcon from '@mui/icons-material/Note';
             PaperProps={{
               sx: {
                 ...( !isSmallScreen && !isMediumScreen && {
-                  marginLeft: "280px", 
                   maxWidth: "calc(100% - 280px)", 
                 }),
                 maxHeight: "calc(100% - 64px)",
@@ -883,8 +880,7 @@ import NoteIcon from '@mui/icons-material/Note';
             maxWidth="md"
             PaperProps={{
               sx: {
-                ...( !isSmallScreen && !isMediumScreen && {
-                  marginLeft: "280px", 
+                ...( !isSmallScreen && !isMediumScreen && { 
                   maxWidth: "calc(100% - 280px)", 
                 }),
                 maxHeight: "calc(100% - 64px)",
@@ -898,8 +894,7 @@ import NoteIcon from '@mui/icons-material/Note';
               </h3>
               {selectInfoYarn ? (
                 <div className="mb-4 text-black">
-                  <p className="mb-2"><strong>ID:</strong> {selectInfoYarn.id} </p>
-                  <p className="mb-2"><strong>Descripción:</strong> {selectInfoYarn.purchaseDescription} </p>
+                  <p className="mb-2"><strong>Nombre:</strong> {selectInfoYarn.purchaseDescription} </p>
                   <p className="mb-2"><strong>Color:</strong> {selectInfoYarn.color?.name || "Sin color"} </p>
                   <p className="mb-2"><strong>Recuento de Hilos:</strong> {selectInfoYarn.yarnCount?.value || "---"} </p>
                   <p className="mb-2"><strong>Acabado de Hilado:</strong> {selectInfoYarn.spinningMethod?.value || "---"} </p>
@@ -991,8 +986,7 @@ import NoteIcon from '@mui/icons-material/Note';
             maxWidth="lg"
             sx={{
               "& .MuiDialog-paper": {
-                width: "70%", // Incrementa el ancho
-                marginLeft: "20%", // Ajusta el margen para mantenerlo centrado en el espacio restante
+                width: "70%",
               },
             }}
           >
@@ -1124,7 +1118,6 @@ import NoteIcon from '@mui/icons-material/Note';
             PaperProps={{
               sx: {
                 ...( !isSmallScreen && !isMediumScreen && {
-                  marginLeft: "280px", 
                   maxWidth: "calc(100% - 280px)", 
                 }),
                 maxHeight: "calc(100% - 64px)",
@@ -1154,7 +1147,7 @@ import NoteIcon from '@mui/icons-material/Note';
                 <thead>
                   <tr className="bg-blue-900 text-white">
                     <th className="px-4 py-4 font-normal">Ítem</th>
-                    <th className="px-4 py-4 font-normal">ID Hilo</th>
+                    <th className="px-4 py-4 font-normal">Nombre de Hilado</th>
                     <th className="px-4 py-4 font-normal">Lote de proveedor</th>
                     <th className="px-4 py-4 font-normal">Peso Bruto</th>
                     <th className="px-4 py-4 font-normal">Peso Neto</th>
@@ -1168,11 +1161,12 @@ import NoteIcon from '@mui/icons-material/Note';
                       (r) => r.yarnId === ingreso.yarnId
                     );
                     const detail = ingreso.detailHeavy?.[0] || {};
+                    const yarnName = NameYarnsIds[YarnsIds.indexOf(ingreso.yarnId)] || ingreso.yarnId;
                     return (
-                        <tr key={index} className="text-center">
+                      <tr key={index} className="text-center">
                         <td className="border-b border-gray-300 px-4 py-5">{ingreso.itemNumber}</td>
                         <td className="border-b border-gray-300 px-4 py-5">
-                          {ingreso.yarnId}
+                          {yarnName}
                         </td>
                         <td className="border-b border-gray-300 px-4 py-5">
                           {ingreso.supplierBatch}
@@ -1212,14 +1206,16 @@ import NoteIcon from '@mui/icons-material/Note';
         {/* Sección por cada YarnId */}
         {Object.entries(selectedEntries.reduce((acc, entry) => {
           const yarnId = entry.yarnId || 'sin-hilado';
+          const yarnName = NameYarnsIds[YarnsIds.indexOf(yarnId)] || yarnId;
           if (!acc[yarnId]) {
-            acc[yarnId] = [];
+            acc[yarnId] = { entries: [], name: yarnName };
           }
-          acc[yarnId].push(entry);
+          acc[yarnId].entries.push(entry);
           return acc;
-        }, {} as Record<string, typeof selectedEntries>)).map(([yarnId, entries]) => (
+        }, {} as Record<string, { entries: typeof selectedEntries, name: string }>))
+        .map(([yarnId, { entries, name }]) => (
           <div key={yarnId} className="mb-8 p-4 border rounded-lg shadow-sm">
-            <h3 className="text-xl font-semibold mb-4">Hilado: {yarnId}</h3>
+            <h3 className="text-xl font-semibold mb-4">Hilado: {name}</h3>
             
             {/* Tabla de ingresos seleccionados para este YarnId */}
             <div className="max-w-full overflow-x-auto mb-6">
@@ -1333,7 +1329,7 @@ import NoteIcon from '@mui/icons-material/Note';
                     <Card sx={{ borderRadius: "12px", boxShadow: "0px 4px 10px rgba(0,0,0,0.1)" }}>
                       <CardContent>
                         <Typography variant="h6" fontWeight="bold">
-                          Hilado: {ingreso.yarnId}
+                          Hilado: {NameYarnsIds[YarnsIds.indexOf(ingreso.yarnId)] || ingreso.yarnId}
                         </Typography>
                         <Typography variant="body1" color="textSecondary">
                           Peso Asignado: <strong>{ingreso.AssignedWeight} kg</strong>

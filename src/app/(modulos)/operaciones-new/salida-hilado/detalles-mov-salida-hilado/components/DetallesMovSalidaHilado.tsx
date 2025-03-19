@@ -633,7 +633,7 @@ const DetallesMovSalidaHilado: React.FC = () => {
             "& .MuiDialog-paper": {
               width: "80%",
               maxWidth: "1200px",
-              marginLeft: "20%",
+              marginLeft: "40px ",
               borderRadius: "12px",
               boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
             },
@@ -742,7 +742,7 @@ const DetallesMovSalidaHilado: React.FC = () => {
                           <div key={idx} className="border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                             <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white px-6 py-4">
                               <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                Hilado: {yarnId}
+                                Hilado: {yarnsInfo[yarnId]?.description || yarnId}
                               </Typography>
                             </div>
                             <Table size="small" sx={{ 
@@ -933,9 +933,10 @@ const DetallesMovSalidaHilado: React.FC = () => {
             <Button 
               onClick={handleCloseEditDialog}
               sx={{
-                color: "#64748b",
+                color: "#ffffff",
+                backgroundColor: "#dc2626 !important", // rojo
                 '&:hover': {
-                  backgroundColor: "#f1f5f9"
+                  backgroundColor: "#b91c1c !important" // rojo más oscuro
                 }
               }}
             >
@@ -1032,7 +1033,7 @@ const DetallesMovSalidaHilado: React.FC = () => {
           sx={{
             "& .MuiDialog-paper": {
               width: "70%",
-              marginLeft: "20%",
+              marginLeft: "40px",
             },
           }}
         >
