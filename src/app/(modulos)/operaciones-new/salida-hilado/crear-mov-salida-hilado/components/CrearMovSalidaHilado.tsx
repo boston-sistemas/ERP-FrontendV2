@@ -50,6 +50,7 @@ import {
 import { createYarnDispatch } from "../../services/movSalidaHiladoService";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurchaseEntryResponse, Fabric, FabricType } from "../../../models/models";
+import NoteIcon from '@mui/icons-material/Note';
 
   const ERROR_COLOR = "#d32f2f";
 
@@ -103,6 +104,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
   const [snackbarMessage, setSnackbarMessage] = useState<string>("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [documentNote, setDocumentNote] = useState<string>("");
   
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbarMessage(message);
@@ -472,7 +474,7 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
     
       const payload: YarnDispatch = {
         supplierCode: supplier.code,
-        documentNote: null, // Ajustar según necesidad
+        documentNote: documentNote || null,
         nrodir: selectedAddress,
         serviceOrderId: dataOS.id,
         detail,
@@ -1339,9 +1341,57 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
           </div>
         ))}
 
-      {/* Botón para guardar la salida */}
+      {/* Campo para notas del documento */}
       {ingresosSeleccionados.length > 0 && dataOS && (
-        <Stack alignItems="center" marginTop={2}>
+        <Stack spacing={2} alignItems="center" marginTop={4}>
+          <Card 
+            sx={{ 
+              width: "80%", 
+              maxWidth: "800px",
+              borderRadius: "12px",
+              boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
+              background: "linear-gradient(to right, #ffffff, #f8f9fa)",
+              border: "1px solid #e0e0e0"
+            }}
+          >
+            <CardContent>
+              <Stack spacing={2}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <NoteIcon sx={{ color: "#1976d2", fontSize: 24 }} />
+                  <Typography variant="h6" sx={{ color: "#1976d2", fontWeight: 600 }}>
+                    Notas del movimiento de salida
+                  </Typography>
+                </Stack>
+                <TextField
+                  multiline
+                  rows={4}
+                  value={documentNote}
+                  onChange={(e) => setDocumentNote(e.target.value)}
+                  placeholder="Ingrese aquí cualquier nota o observación para este movimiento"
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "8px",
+                      backgroundColor: "#ffffff",
+                      "&:hover": {
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#1976d2",
+                        },
+                      },
+                      "&.Mui-focused": {
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#1976d2",
+                          borderWidth: "2px",
+                        },
+                      },
+                    },
+                    "& .MuiInputBase-input": {
+                      fontSize: "0.95rem",
+                    },
+                  }}
+                />
+              </Stack>
+            </CardContent>
+          </Card>
           <Button
             variant="contained" 
             onClick={handleSaveSalida} 
@@ -1350,12 +1400,15 @@ import { ServiceOrder, Supplier, Yarn, YarnDispatch, YarnPurchaseEntry ,YarnPurc
               color: "white !important",
               fontWeight: "bold",
               textTransform: "uppercase",
-              padding: "10px 20px",
+              padding: "12px 30px",
               borderRadius: "8px",
-              boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.2)",
+              boxShadow: "0px 4px 12px rgba(24, 201, 63, 0.3)",
               "&:hover": {
                 backgroundColor: "#088c25 !important",
+                boxShadow: "0px 6px 16px rgba(24, 201, 63, 0.4)",
+                transform: "translateY(-1px)",
               },
+              transition: "all 0.2s ease-in-out",
             }}
           >
             Guardar Salida
