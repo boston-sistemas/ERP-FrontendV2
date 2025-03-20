@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import React, { useState, useEffect } from "react";
+import useSWR from "swr";
 import {
   TablePagination,
   IconButton,
@@ -23,7 +24,7 @@ import {
   fetchYarnPurchaseEntries,
   fetchSuppliersHil,
   fetchPurchaseOrderbyId,
-} from "../../services/movIngresoHiladoService";
+} from "@/app/(modulos)/operaciones-new/movimiento-ingreso-hilado/services/movIngresoHiladoService";
 import { fetchYarnbyId } from "../../../hilados/services/hiladoService";
 import VisibilityIcon from '@mui/icons-material/Visibility';
 
@@ -36,10 +37,12 @@ const generateYearOptions = (startYear: number) => {
   return Array.from({ length: currentYear - startYear + 1 }, (_, i) => startYear + i);
 };
 
+
+
 const MovIngresoHilado: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [hilados, setHilados] = useState<YarnPurchaseEntry[]>([]);
+  //const [hilados, setHilados] = useState<YarnPurchaseEntry[]>([]);
   const [pagina, setPagina] = useState(0);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,7 +52,7 @@ const MovIngresoHilado: React.FC = () => {
     const savedPeriod = localStorage.getItem("selectedPeriod");
     return savedPeriod ? JSON.parse(savedPeriod) : getCurrentYear();
   });
-  const [suppliers, setSuppliers] = useState([]);
+  //const [suppliers, setSuppliers] = useState([]);
   const [openPurchaseOrderDialog, setOpenPurchaseOrderDialog] = useState(false);
   const [selectedPurchaseOrder, setSelectedPurchaseOrder] = useState(null);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
@@ -62,31 +65,70 @@ const MovIngresoHilado: React.FC = () => {
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const dataSuppliers = await fetchSuppliersHil();
-        const response = await fetchYarnPurchaseEntries(
-          period,
-          100,
-          pagina * filasPorPagina,
-          includeInactive,
-          startDate || undefined,
-          endDate || undefined
-        );
-        setHilados(response.yarnPurchaseEntries);
-        setSuppliers(dataSuppliers.suppliers);
-      } catch (error) {
-        console.error("Error al cargar los datos:", error);
-        alert("Hubo un error al cargar los datos. Por favor, inténtelo de nuevo.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const {
+    data: dataPurchaseEntries,
+    error: errorPurchaseEntries,
+    isLoading: isLoadingPurchaseEntries,
+  } = useSWR(
+    [
+      "yarn-purchase-entries",
+      period,
+      filasPorPagina,
+      pagina,
+      includeInactive,
+      startDate,
+      endDate,
+    ],
+    async ([, _period, limit, page, includeAnnulled, sDate, eDate]) => {
+      const offset = page * limit;
+      const response = await fetchYarnPurchaseEntries(
+        _period,
+        limit,
+        offset,
+        includeAnnulled,
+        sDate || undefined,
+        eDate || undefined
+      );
+      return response;
+    },
+    {
+      refreshInterval: 0,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    }
+  );
 
-    fetchData();
-  }, [pagina, filasPorPagina, includeInactive, period, startDate, endDate]);
+  const {
+    data: dataSuppliers,
+    error: errorSuppliers,
+    isLoading: isLoadingSuppliers,
+  } = useSWR("suppliers-hil", async () => {
+    const suppliersResponse = await fetchSuppliersHil();
+    return suppliersResponse;
+  },
+  {
+    refreshInterval: 0,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true,
+  }
+);
+
+  const hilados = dataPurchaseEntries?.yarnPurchaseEntries || [];
+  const suppliers = dataSuppliers?.suppliers || [];
+
+  useEffect(() => {
+    if (errorPurchaseEntries) {
+      console.error("Error al cargar los movimientos de hilado:", errorPurchaseEntries);
+      alert("Hubo un error al cargar los datos de hilados. Por favor, inténtelo de nuevo.");
+    }
+  }, [errorPurchaseEntries]);
+
+  useEffect(() => {
+    if (errorSuppliers) {
+      console.error("Error al cargar los proveedores:", errorSuppliers);
+      alert("Hubo un error al cargar los proveedores. Por favor, inténtelo de nuevo.");
+    }
+  }, [errorSuppliers]);
 
   const handleSwitchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setIncludeInactive(event.target.checked);
