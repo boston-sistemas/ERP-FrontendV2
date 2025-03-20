@@ -71,6 +71,7 @@ import NoteIcon from '@mui/icons-material/Note';
   const router = useRouter();
   const searchParams = useSearchParams();
   // PROVEEDOR Y DIRECCION
+  const [isloadingIngresos, setIsloadginIngresos] = useState(true);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [selectedSupplier, setSelectedSupplier] = useState<string>("");
   const [selectedAddress, setSelectedAddress] = useState<string>("");
@@ -98,6 +99,7 @@ import NoteIcon from '@mui/icons-material/Note';
   const [openOSDetail, setOpenOSDetail] = useState(false); // Estado del diálogo de información de tejido
   const [openYarnDialog, setOpenYarnDialog] = useState(false); // Estado del diálogo de información de tejido
   const [OSDetail, setOSDetail] = useState<any>(null); // Detalles de OS
+  const [OSID, setOSID] = useState<any>(null);
   const [FabricInfo, setFabricInfo] = useState<FabricInfo[]>([]);
   const [typeFabric, setTypeFabric] = useState<FabricType[]>([]); // Tipos de fibras
   const [selectTypeFabric, setSelectedTypeFabric] = useState<string>(""); // Tipo de fibra seleccionado
@@ -132,11 +134,11 @@ import NoteIcon from '@mui/icons-material/Note';
   const loadIngresosAndOrders = async () => {
     setIsLoading(true);
     try {
-      const [ingresosResponse, ordenesServicioResponse] = await Promise.all([
-        fetchYarnPurchaseEntries(period, 50, 0, false), // Usa el período actualizado
+      const [ordenesServicioResponse] = await Promise.all([
+        //fetchYarnPurchaseEntries(period, 50, 0, false), // Usa el período actualizado
         fetchServiceOrders(period,false,false),
       ]);
-      setIngresos(ingresosResponse.yarnPurchaseEntries || []);
+      //setIngresos(ingresosResponse.yarnPurchaseEntries || []);
       setOrdenesServicio(ordenesServicioResponse.serviceOrders || []);
     } catch (error) {
       showSnackbar("Error al cargar datos. Inténtelo de nuevo.", "error");
@@ -152,7 +154,7 @@ import NoteIcon from '@mui/icons-material/Note';
   }, [period]);
 
   useEffect(() => {
-    setIngresos([]);
+    //setIngresos([]);
   }, [dataOS]);
 
   useEffect(() => {
@@ -171,7 +173,7 @@ import NoteIcon from '@mui/icons-material/Note';
   useEffect(() => {
     setCantidadRequerida(0);
     setBultosRequerido(0);
-    setIngresosSeleccionados([]);
+    //setIngresosSeleccionados([]);
   }, [selectedEntries]);
   
 
@@ -246,9 +248,13 @@ import NoteIcon from '@mui/icons-material/Note';
       if (!ordenesServicio || ordenesServicio.length === 0) {
         return;
       }
-      const response = await fetchYarnIncomeEntries(period,ordenesServicio[0].id);
+      setIsloadginIngresos(true);
+      const response = await fetchYarnIncomeEntries(period,OSID);
+      console.log(OSID)
       setIngresos(response.yarnPurchaseEntries || []);
+      console.log("---->", ingresos, ingresos.length)
       FilterYarnId();
+      setIsloadginIngresos(false);
     } catch (error) {
       console.error("Error al cargar los tipos de tejido:", error);
     }
@@ -285,8 +291,9 @@ import NoteIcon from '@mui/icons-material/Note';
         detail: serviceOrderDetails.detail || [], // Asegura que haya un array de detalles
       });
       console.log("Detalles de la orden de servicio:", serviceOrderDetails.detail);
+      setOSID(orderId);
       loadFabricInfo(serviceOrderDetails.detail); // Carga la información del tejido
-      sleepES5(120); // Espera 75ms antes de cargar la información
+      //sleepES5(120); // Espera 75ms antes de cargar la información
       setIsServiceDialogOpen(false); // Cierra el diálogo después de seleccionar
     } catch (error) {
       console.error("Error al cargar la orden de servicio:", error);
@@ -1017,91 +1024,91 @@ import NoteIcon from '@mui/icons-material/Note';
             </div>
             
             <div className="max-w-full overflow-x-auto">
-            {Array.isArray(YarnsIds) &&
-              YarnsIds.map((yarnId, index) => {
-                const yarnName = NameYarnsIds[index] || `ID: ${yarnId}`;
-                // Filtra los ingresos correspondientes a este yarnId
-                const ingresosFiltrados = ingresos.filter(
-                  (ingreso) => ingreso.detailHeavy?.[0]?.yarnId === yarnId
-                );
+            {isloadingIngresos ? (
+        <Typography variant="h6" className="text-center my-4">
+          Cargando...
+        </Typography>
+       ) : (ingresos.length === 0) ? (
+        <Typography variant="h6" className="text-center my-4">
+          No hay movimientos de ingreso disponibles
+        </Typography>
+      ) : (
+        Array.isArray(YarnsIds) &&
+        YarnsIds.map((yarnId, index) => {
+          const yarnName = NameYarnsIds[index] || `ID: ${yarnId}`;
+          const ingresosFiltrados = ingresos.filter(
+            (ingreso) => ingreso.detailHeavy?.[0]?.yarnId === yarnId
+          );
 
-                // Si no hay ingresos, no mostrar la tabla para este yarnId
-                if (ingresosFiltrados.length === 0) return null;
+          if (ingresosFiltrados.length === 0) {
+            //console.log("--->", ingresos);
+            //console.log("asdasdasdasdasdasd");
+            return null};
 
-                return (
-                  <div key={yarnId} className="mb-8">
-                    {/* Título del grupo de hilado */}
-                    <h2 className="text-lg font-bold my-4">Hilado: {yarnName}</h2>
+          return (
+            <div key={yarnId} className="mb-8">
+              <h2 className="text-lg font-bold my-4">Hilado: {yarnName}</h2>
+              <table className="w-full table-auto">
+                <thead>
+                  <tr className="bg-blue-900 text-white">
+                    <th className="px-4 py-4 font-normal">Número</th>
+                    <th className="px-4 py-4 font-normal">Peso Bruto</th>
+                    <th className="px-4 py-4 font-normal">Peso Neto</th>
+                    <th className="px-4 py-4 font-normal">Paquetes restantes</th>
+                    <th className="px-4 py-4 font-normal">Conos restantes</th>
+                    <th className="px-4 py-4 font-normal">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ingresosFiltrados
+                    .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
+                    .map((ingreso) => {
+                      const alreadySelected = selectedEntries.some(
+                        (r) => r.entryNumber === ingreso.entryNumber
+                      );
+                      const detail = ingreso.detailHeavy?.[0] || {};
 
-                    <table className="w-full table-auto">
-                      <thead>
-                        <tr className="bg-blue-900 text-white">
-                          <th className="px-4 py-4 font-normal">Número</th>
-                          <th className="px-4 py-4 font-normal">Peso Bruto</th>
-                          <th className="px-4 py-4 font-normal">Peso Neto</th>
-                          <th className="px-4 py-4 font-normal">Paquetes restantes</th>
-                          <th className="px-4 py-4 font-normal">Conos restantes</th>
-                          <th className="px-4 py-4 font-normal">Acciones</th>
+                      return (
+                        <tr key={ingreso.entryNumber} className="text-center">
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {ingreso.entryNumber}
+                            <IconButton onClick={() => handleOpenYarnEntryInfoDialog(ingreso.entryNumber)}>
+                              <VisibilityIcon style={{ color: "#1976d2" }} />
+                            </IconButton>
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">{detail.grossWeight || "--"}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">{detail.netWeight || "--"}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">{detail.packagesLeft || "--"}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">{detail.conesLeft || "--"}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {alreadySelected ? (
+                              <span className="text-gray-500">Seleccionado</span>
+                            ) : (
+                              <IconButton color="primary" onClick={() => loadIngresoDetails(ingreso)}>
+                                <Add />
+                              </IconButton>
+                            )}
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {ingresosFiltrados
-                          .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
-                          .map((ingreso) => {
-                            const alreadySelected = selectedEntries.some(
-                              (r) => r.entryNumber === ingreso.entryNumber
-                            );
-                            const detail = ingreso.detailHeavy?.[0] || {};
+                      );
+                    })}
+                </tbody>
+              </table>
 
-                            return (
-                              <tr key={ingreso.entryNumber} className="text-center">
-                                <td className="border-b border-gray-300 px-4 py-5">
-                                  {ingreso.entryNumber}
-                                  <IconButton onClick={() => handleOpenYarnEntryInfoDialog(ingreso.entryNumber)}>
-                                    <VisibilityIcon style={{ color: "#1976d2" }} />
-                                  </IconButton>
-                                </td>
-                                <td className="border-b border-gray-300 px-4 py-5">
-                                  {detail.grossWeight || "--"}
-                                </td>
-                                <td className="border-b border-gray-300 px-4 py-5">
-                                  {detail.netWeight || "--"}
-                                </td>
-                                <td className="border-b border-gray-300 px-4 py-5">
-                                  {detail.packagesLeft || "--"}
-                                </td>
-                                <td className="border-b border-gray-300 px-4 py-5">
-                                  {detail.conesLeft || "--"}
-                                </td>
-                                <td className="border-b border-gray-300 px-4 py-5">
-                                  {alreadySelected ? (
-                                    <span className="text-gray-500">Seleccionado</span>
-                                  ) : (
-                                    <IconButton color="primary" onClick={() => loadIngresoDetails(ingreso)}>
-                                      <Add />
-                                    </IconButton>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                      </tbody>
-                    </table>
-
-                    {/* Paginación para cada grupo */}
-                    <TablePagination
-                      rowsPerPageOptions={[10, 25, 50]}
-                      component="div"
-                      count={ingresosFiltrados.length}
-                      rowsPerPage={filasPorPagina}
-                      page={pagina}
-                      onPageChange={(_, newPage) => setPagina(newPage)}
-                      onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))}
-                    />
-                  </div>
-                );
-              })}
-          </div>
+              <TablePagination
+                rowsPerPageOptions={[10, 25, 50]}
+                component="div"
+                count={ingresosFiltrados.length}
+                rowsPerPage={filasPorPagina}
+                page={pagina}
+                onPageChange={(_, newPage) => setPagina(newPage)}
+                onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))}
+              />
+            </div>
+          );
+        })
+      )}
+    </div>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseIngresoDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
