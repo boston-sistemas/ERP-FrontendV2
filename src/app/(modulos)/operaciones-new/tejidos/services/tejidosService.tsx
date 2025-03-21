@@ -73,3 +73,8 @@ export const fetchTejidos = async (): Promise<FabricResponse> => {
     const resp = await instance.get<YarnResponse>("/operations/v1/yarns");
     return resp.data;
   };
+
+  export const fetchFabricById = async (fabricId: string): Promise<FabricResponse> => {
+    const resp = await instance.get<FabricResponse>(`/operations/v1/fabrics/${fabricId}`);
+    return resp.data;
+  };

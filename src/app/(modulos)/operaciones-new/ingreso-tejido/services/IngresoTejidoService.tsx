@@ -43,20 +43,31 @@ export const fetchWeavingServiceEntryById = async (
     return response.data;
 };
 
-export const createWeavingServiceEntry = async (payload: any): Promise<{ entryNumber: string }> => {
+interface CreateWeavingServiceEntryPayload {
+    supplierPoCorrelative: string;
+    supplierPoSeries: string;
+    supplierId: string;
+    fecgf: string;
+    detail: Array<{
+        itemNumber: number;
+        fabricId: string;
+        guideNetWeight: number;
+        rollCount: number;
+        generateCards: boolean;
+        serviceOrderId: string;
+    }>;
+}
+
+export const createWeavingServiceEntry = async (payload: CreateWeavingServiceEntryPayload): Promise<{ entryNumber: string }> => {
     try {
-        const response = await instance.post(
+        const response = await instance.post<{ entryNumber: string }>(
             "/operations/v1/weaving-service-entries/",
             payload
         );
-        console.log("Movimiento creado exitosamente:", response.data);
         return response.data;
     } catch (error: any) {
-        console.error("Error al crear el movimiento:", error?.response?.data || error.message);
-        console.error("Payload fallido:", JSON.stringify(payload, null, 2));
-        throw new Error(
-            error?.response?.data?.message || "Error al crear el movimiento."
-        );
+        console.error("Error al crear el ingreso de tejido:", error?.response?.data || error.message);
+        throw new Error(error?.response?.data?.message || "Error al crear el ingreso de tejido");
     }
 };
 
