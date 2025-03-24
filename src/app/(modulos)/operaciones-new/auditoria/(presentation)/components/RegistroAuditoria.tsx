@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { AuditoriaListService, AuditoriaDetailService, AuditLog, AuditLogDetail, AuditLogFilters } from '../../services/AuditoriaService';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import ClearIcon from '@mui/icons-material/Clear';
 import { 
   IconButton, 
   Dialog, 
@@ -320,216 +321,345 @@ const RegistroAuditoria = () => {
 
   return (
     <div className="w-full">
-      <Box className="mb-4">
-        <Box className="flex flex-col md:flex-row gap-3 mb-4">
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-              <DatePicker
-                label="Fecha inicio"
-                value={startDate}
-                onChange={handleStartDateChange}
-                format="DD/MM/YYYY"
-                slotProps={{
-                  textField: {
-                    size: "small",
-                    sx: { width: '160px' }
+      <Paper elevation={3} className="w-full overflow-hidden rounded-lg">
+      <div className="p-4 bg-white border-b shadow-sm">
+          <Box className="flex flex-wrap items-center gap-4">
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <div className="flex flex-wrap gap-3">
+                <DatePicker
+                  label="Fecha inicio"
+                  value={startDate}
+                  onChange={handleStartDateChange}
+                  format="DD/MM/YYYY"
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      sx: { 
+                        width: '160px',
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: 'white',
+                          '& fieldset': {
+                            borderColor: 'rgba(0, 0, 0, 0.23)',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'rgba(25, 118, 210, 0.5)',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#1976d2',
+                          },
+                        },
+                        '& .MuiInputLabel-root': {
+                          color: 'rgba(0, 0, 0, 0.7)',
+                          '&.Mui-focused': {
+                            color: '#1976d2'
+                          }
+                        },
+                        '& .MuiInputBase-input': {
+                          color: 'rgba(0, 0, 0, 0.87)',
+                        },
+                        '& .MuiSvgIcon-root': {
+                          color: 'rgba(0, 0, 0, 0.54)',
+                        }
+                      }
+                    }
+                  }}
+                />
+                <DatePicker
+                  label="Fecha fin"
+                  value={endDate}
+                  onChange={handleEndDateChange}
+                  format="DD/MM/YYYY"
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      sx: { 
+                        width: '160px',
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: 'white',
+                          '& fieldset': {
+                            borderColor: 'rgba(0, 0, 0, 0.23)',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: 'rgba(25, 118, 210, 0.5)',
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#1976d2',
+                          },
+                        },
+                        '& .MuiInputLabel-root': {
+                          color: 'rgba(0, 0, 0, 0.7)',
+                          '&.Mui-focused': {
+                            color: '#1976d2'
+                          }
+                        },
+                        '& .MuiInputBase-input': {
+                          color: 'rgba(0, 0, 0, 0.87)',
+                        },
+                        '& .MuiSvgIcon-root': {
+                          color: 'rgba(0, 0, 0, 0.54)',
+                        }
+                      }
+                    }
+                  }}
+                />
+              </div>
+            </LocalizationProvider>
+            
+            <FormControl 
+              sx={{ 
+                minWidth: 150,
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'white',
+                  '& fieldset': {
+                    borderColor: 'rgba(0, 0, 0, 0.23)',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'rgba(25, 118, 210, 0.5)',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#1976d2',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'rgba(0, 0, 0, 0.7)',
+                  '&.Mui-focused': {
+                    color: '#1976d2'
                   }
-                }}
-              />
-              <DatePicker
-                label="Fecha fin"
-                value={endDate}
-                onChange={handleEndDateChange}
-                format="DD/MM/YYYY"
-                slotProps={{
-                  textField: {
-                    size: "small",
-                    sx: { width: '160px' }
-                  }
-                }}
-              />
-            </Stack>
-          </LocalizationProvider>
-          
-          <FormControl sx={{ minWidth: 150 }} size="small">
-            <InputLabel id="method-select-label">Método</InputLabel>
-            <Select
-              labelId="method-select-label"
-              id="method-select"
-              value={selectedMethod}
-              onChange={handleMethodChange}
-              label="Método"
-              displayEmpty
-            >
-              <MenuItem value="">
-              </MenuItem>
-              {HTTP_METHODS.map((method) => (
-                <MenuItem key={method} value={method}>
-                  {method}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <TextField
-            label="ID Usuario"
-            value={userId}
-            onChange={handleUserIdChange}
-            size="small"
-            sx={{ width: '150px' }}
-            type="number"
-            inputProps={{ min: 1 }}
-          />
-          
-          {(startDate || endDate || selectedMethod || userId) && (
-            <Button 
-              variant="outlined" 
-              color="primary" 
+                },
+                '& .MuiSelect-select': {
+                  color: 'rgba(0, 0, 0, 0.87)',
+                },
+                '& .MuiSvgIcon-root': {
+                  color: 'rgba(0, 0, 0, 0.54)',
+                }
+              }} 
               size="small"
-              onClick={handleClearFilter}
             >
-              Limpiar filtros
-            </Button>
-          )}
-        </Box>
-      </Box>
+              <InputLabel id="method-select-label">Método</InputLabel>
+              <Select
+                labelId="method-select-label"
+                id="method-select"
+                value={selectedMethod}
+                onChange={handleMethodChange}
+                label="Método"
+                displayEmpty
+              >
+                <MenuItem value="">
+                </MenuItem>
+                {HTTP_METHODS.map((method) => (
+                  <MenuItem key={method} value={method}>
+                    {method}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-      <div className="overflow-x-auto shadow-md rounded-lg">
-        <table className="min-w-full table-auto border-collapse">
-          <thead>
-            <tr className="bg-blue-900 uppercase text-center text-white">
-              <th className="px-2 py-2 text-center font-normal w-[100px]">ID</th>
-              <th className="px-2 py-2 text-center font-normal w-[120px]">Usuario</th>
-              <th className="px-2 py-2 text-center font-normal w-[100px]">Método</th>
-              <th className="px-2 py-2 text-center font-normal w-[150px]">Endpoint</th>
-              <th className="px-2 py-2 text-center font-normal w-[150px]">Path Params</th>
-              <th className="px-2 py-2 text-center font-normal w-[150px]">Query Params</th>
-              <th className="px-2 py-2 text-center font-normal w-[150px]">Request Data</th>
-              <th className="px-2 py-2 text-center font-normal w-[150px]">Response Data</th>
-              <th className="px-2 py-2 text-center font-normal w-[150px]">Data Logs</th>
-              <th className="px-2 py-2 text-center font-normal w-[150px]">Fecha</th>
-            </tr>
-          </thead>
-          <tbody>
-            {auditLogs.length === 0 ? (
-              <tr>
-                <td colSpan={10} className="border-b border-gray-300 px-2 py-4 text-center text-gray-500">
-                  No hay registros para mostrar
-                </td>
+            <TextField
+              label="ID Usuario"
+              value={userId}
+              onChange={handleUserIdChange}
+              size="small"
+              sx={{ 
+                width: '150px',
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'white',
+                  '& fieldset': {
+                    borderColor: 'rgba(0, 0, 0, 0.23)',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'rgba(25, 118, 210, 0.5)',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#1976d2',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'rgba(0, 0, 0, 0.7)',
+                  '&.Mui-focused': {
+                    color: '#1976d2'
+                  }
+                },
+                '& .MuiInputBase-input': {
+                  color: 'rgba(0, 0, 0, 0.87)',
+                },
+              }}
+              type="number"
+              inputProps={{ min: 1 }}
+            />
+            
+            <div className="flex-grow"></div>
+            
+            {(startDate || endDate || selectedMethod || userId) && (
+              <Button 
+                variant="contained" 
+                color="primary" 
+                size="medium"
+                onClick={handleClearFilter}
+                sx={{
+                  backgroundColor: '#1976d2',
+                  color: 'white',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  '&:hover': {
+                    backgroundColor: '#1565c0',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+                  },
+                  transition: 'all 0.3s ease',
+                  minWidth: '130px',
+                  display: 'flex',
+                  gap: '8px',
+                  alignItems: 'center',
+                  borderRadius: '4px',
+                  paddingLeft: '16px',
+                  paddingRight: '16px'
+                }}
+                startIcon={<ClearIcon />}
+              >
+                Limpiar filtros
+              </Button>
+            )}
+          </Box>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="min-w-full table-auto border-collapse">
+            <thead>
+              <tr className="bg-blue-900 text-center text-white border-b border-blue-800">
+                <th className="px-3 py-3 text-center font-normal">ID</th>
+                <th className="px-3 py-3 text-center font-normal">Usuario</th>
+                <th className="px-3 py-3 text-center font-normal">Método</th>
+                <th className="px-3 py-3 text-center font-normal">Endpoint</th>
+                <th className="px-3 py-3 text-center font-normal">Path Params</th>
+                <th className="px-3 py-3 text-center font-normal">Query Params</th>
+                <th className="px-3 py-3 text-center font-normal">Request Data</th>
+                <th className="px-3 py-3 text-center font-normal">Response Data</th>
+                <th className="px-3 py-3 text-center font-normal">Data Logs</th>
+                <th className="px-3 py-3 text-center font-normal">Fecha</th>
               </tr>
-            ) : (
-              auditLogs.map((log) => (
-                <tr key={log.id} className="text-center text-black hover:bg-gray-50">
-                  <td className="border-b border-gray-300 px-2 py-2">{log.id}</td>
-                  <td className="border-b border-gray-300 px-2 py-2">{log.user_id || 'No especificado'}</td>
-                  <td className="border-b border-gray-300 px-2 py-2">
-                    <div className="flex flex-col items-center justify-center gap-1">
-                      <span>{log.action}</span>
-                      <Tooltip title={`Código de estado: ${log.status_code}`} arrow>
-                        <span 
-                          className={`inline-block w-[60px] py-1 px-2 rounded-full text-white text-xs font-medium ${getStatusColor(log.status_code)}`}
-                        >
-                          {log.status_code}
-                        </span>
-                      </Tooltip>
-                    </div>
+            </thead>
+            <tbody className="bg-white text-gray-800">
+              {auditLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="border-b border-gray-200 px-3 py-4 text-center text-gray-500">
+                    No hay registros para mostrar
                   </td>
-                  <td className="border-b border-gray-300 px-2 py-2">{log.endpoint_name}</td>
-                  <td className="border-b border-gray-300 px-2 py-2">
-                    <div className="flex items-center justify-center gap-2">
+                </tr>
+              ) : (
+                auditLogs.map((log) => (
+                  <tr key={log.id} className="text-center hover:bg-gray-50 border-b border-gray-200">
+                    <td className="px-3 py-3">{log.id}</td>
+                    <td className="px-3 py-3">{log.user_id || 'No especificado'}</td>
+                    <td className="px-3 py-3">
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <span>{log.action}</span>
+                        <Tooltip title={`Código de estado: ${log.status_code}`} arrow>
+                          <span 
+                            className={`inline-block w-[60px] py-1 px-2 rounded-full text-white text-xs font-medium ${getStatusColor(log.status_code)}`}
+                          >
+                            {log.status_code}
+                          </span>
+                        </Tooltip>
+                      </div>
+                    </td>
+                    <td className="px-3 py-3">{log.endpoint_name}</td>
+                    <td className="px-3 py-3">
                       <IconButton 
                         onClick={() => handleViewData('path_params', 'Path Params', log.id)}
                         size="small"
+                        color="primary"
                       >
-                        <VisibilityIcon style={{ color: "#1976d2" }} />
+                        <VisibilityIcon />
                       </IconButton>
-                    </div>
-                  </td>
-                  <td className="border-b border-gray-300 px-2 py-2">
-                    <div className="flex items-center justify-center gap-2">
+                    </td>
+                    <td className="px-3 py-3">
                       <IconButton 
                         onClick={() => handleViewData('query_params', 'Query Params', log.id)}
                         size="small"
+                        color="primary"
                       >
-                        <VisibilityIcon style={{ color: "#1976d2" }} />
+                        <VisibilityIcon />
                       </IconButton>
-                    </div>
-                  </td>
-                  <td className="border-b border-gray-300 px-2 py-2">
-                    <div className="flex items-center justify-center gap-2">
+                    </td>
+                    <td className="px-3 py-3">
                       <IconButton 
                         onClick={() => handleViewData('request_data', 'Request Data', log.id)}
                         size="small"
+                        color="primary"
                       >
-                        <VisibilityIcon style={{ color: "#1976d2" }} />
+                        <VisibilityIcon />
                       </IconButton>
-                    </div>
-                  </td>
-                  <td className="border-b border-gray-300 px-2 py-2">
-                    <div className="flex items-center justify-center gap-2">
+                    </td>
+                    <td className="px-3 py-3">
                       <IconButton 
                         onClick={() => handleViewData('response_data', 'Response Data', log.id)}
                         size="small"
+                        color="primary"
                       >
-                        <VisibilityIcon style={{ color: "#1976d2" }} />
+                        <VisibilityIcon />
                       </IconButton>
-                    </div>
-                  </td>
-                  <td className="border-b border-gray-300 px-2 py-2">
-                    <div className="flex items-center justify-center gap-2">
+                    </td>
+                    <td className="px-3 py-3">
                       <IconButton 
                         onClick={() => handleViewData('audit_data_logs', 'Data Logs', log.id)}
                         size="small"
+                        color="primary"
                       >
-                        <VisibilityIcon style={{ color: "#1976d2" }} />
+                        <VisibilityIcon />
                       </IconButton>
-                    </div>
-                  </td>
-                  <td className="border-b border-gray-300 px-2 py-2">
-                    {formatDate(log.at)}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="flex justify-center mt-4">
-        <Pagination 
-          count={totalPages} 
-          page={page} 
-          onChange={handlePageChange}
-          color="primary"
-          size="large"
-        />
-      </div>
+                    </td>
+                    <td className="px-3 py-3">
+                      {formatDate(log.at)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        
+        <div className="flex justify-center py-4 bg-white border-t border-gray-200">
+          <Pagination 
+            count={totalPages} 
+            page={page} 
+            onChange={handlePageChange}
+            color="primary"
+            size="large"
+          />
+        </div>
+      </Paper>
 
       <Dialog 
         open={openDialog} 
         onClose={handleCloseDialog}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: '#1e293b',
+            color: '#fff'
+          }
+        }}
       >
         <DialogTitle>
-          <Typography variant="h6" component="div">
+          <Typography variant="h6" component="div" className="text-white">
             {dialogTitle}
           </Typography>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent dividers>
           {loadingDetail ? (
-            <Typography className="text-center text-gray-500">
+            <Typography className="text-center text-gray-400">
               Cargando detalles...
             </Typography>
           ) : isEmptyObject(dialogData) ? (
-            <Typography className="text-center text-gray-500">
+            <Typography className="text-center text-gray-400">
               No hay datos que mostrar
             </Typography>
           ) : (
             <JsonRenderer data={dialogData} />
           )}
         </DialogContent>
-        <DialogActions>
+        <DialogActions className="bg-gray-800">
           <Button onClick={handleCloseDialog} color="primary" variant="contained">
             Cerrar
           </Button>

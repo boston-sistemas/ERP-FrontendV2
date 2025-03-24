@@ -120,6 +120,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             src={"/images/boston/logo-boston-color.png"}
             alt="Logo"
             priority
+            className="dark:invert dark:brightness-200 dark:contrast-150"
           />
         </Link>
 
@@ -233,8 +234,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                               <li key={module.path}>
                                 <Link
                                   href={module.path}
-                                  className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white ${
-                                    pathname === module.path && "text-white"
+                                  className={`group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white dark:text-gray-300 dark:hover:text-white ${
+                                    pathname === module.path && "text-white dark:text-white"
                                   }`}
                                 >
                                   {module.nombre}
