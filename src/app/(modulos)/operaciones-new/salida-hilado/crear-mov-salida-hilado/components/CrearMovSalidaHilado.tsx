@@ -121,6 +121,12 @@ import NoteIcon from '@mui/icons-material/Note';
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [documentNote, setDocumentNote] = useState<string>("");
   
+  // CACHE STATES
+  const [fabricCache, setFabricCache] = useState<Record<string, Fabric>>({});
+  const [yarnCache, setYarnCache] = useState<Record<string, Yarn>>({});
+  const [yarnEntryCache, setYarnEntryCache] = useState<Record<string, YarnPurchaseEntryResponse>>({});
+  const [serviceOrderCache, setServiceOrderCache] = useState<Record<string, any>>({});
+
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbarMessage(message);
     setSnackbarSeverity(severity);
@@ -148,34 +154,16 @@ import NoteIcon from '@mui/icons-material/Note';
   };
 
   useEffect(() => {
-    // Cargar ingresos y órdenes de servicio cuando cambie el período
-    FilterIngresosbySupplier();
-    FilterServicebySupplier();
-  }, [period]);
-
-  useEffect(() => {
-    //setIngresos([]);
-  }, [dataOS]);
-
-  useEffect(() => {
     const savedEntryNumber = localStorage.getItem("entryNumber");
     if (savedEntryNumber) {
       const parsedPayload = JSON.parse(savedEntryNumber);
-      loadIngresoDetails(parsedPayload); // Carga los detalles del ingreso guardado
-      localStorage.removeItem("entryNumber"); // Limpia el localStorage después de cargar
+      loadIngresoDetails(parsedPayload);
+      localStorage.removeItem("entryNumber");
     }
   
-    loadIngresosAndOrders();
+    // Solo cargar proveedores inicialmente
     loadSupplierData();
-    loadFabricTypes();
   }, []);
-
-  useEffect(() => {
-    setCantidadRequerida(0);
-    setBultosRequerido(0);
-    //setIngresosSeleccionados([]);
-  }, [selectedEntries]);
-  
 
   const handleRemoveEntry = (entryNumber: string) => {
     setselectedEntries((prev) => prev.filter((entry) => entry.entryNumber !== entryNumber));
@@ -245,32 +233,31 @@ import NoteIcon from '@mui/icons-material/Note';
 
   const FilterIngresosbySupplier = async () => {
     try {
-      if (!ordenesServicio || ordenesServicio.length === 0) {
-        return;
-      }
+      if (!OSID) return;
+      
       setIsloadginIngresos(true);
-      const response = await fetchYarnIncomeEntries(period,OSID);
-      console.log(OSID)
+      const response = await fetchYarnIncomeEntries(period, OSID);
       setIngresos(response.yarnPurchaseEntries || []);
-      console.log("---->", ingresos, ingresos.length)
       FilterYarnId();
       setIsloadginIngresos(false);
     } catch (error) {
-      console.error("Error al cargar los tipos de tejido:", error);
+      console.error("Error al cargar los ingresos:", error);
     }
   }
 
-  const FilterServicebySupplier = async () => {
+  const FilterServicebySupplier = async (supplierId: string) => {
     try {
-      const response = await fetchServiceOrderBySupplier(selectedSupplier,period);
+      const response = await fetchServiceOrderBySupplier(supplierId, period);
       setOrdenesServicio(response.serviceOrders || []);
     } catch (error) {
-      console.error("Error al cargar los tipos de tejido:", error);
+      console.error("Error al cargar las órdenes de servicio:", error);
     }
   }
 
   const handleProveedorChange = (event: SelectChangeEvent<string>) => {
     setSelectedSupplier(event.target.value);
+    // Cargar órdenes de servicio cuando se selecciona un proveedor
+    FilterServicebySupplier(event.target.value);
   };
 
   const handleAddressChange = (event: SelectChangeEvent<string>) => {
@@ -288,13 +275,24 @@ import NoteIcon from '@mui/icons-material/Note';
       const serviceOrderDetails = await fetchServiceOrderById(orderId);
       setDataOS({
         ...serviceOrderDetails,
-        detail: serviceOrderDetails.detail || [], // Asegura que haya un array de detalles
+        detail: serviceOrderDetails.detail || [],
       });
       console.log("Detalles de la orden de servicio:", serviceOrderDetails.detail);
       setOSID(orderId);
-      loadFabricInfo(serviceOrderDetails.detail); // Carga la información del tejido
-      //sleepES5(120); // Espera 75ms antes de cargar la información
-      setIsServiceDialogOpen(false); // Cierra el diálogo después de seleccionar
+      
+      // Cargar información del tejido solo cuando se selecciona una orden
+      const fabricPromises = serviceOrderDetails.detail.map(detail => fetchFabricSearchId(detail.fabricId));
+      const fabricInfos = await Promise.all(fabricPromises);
+      setFabricInfo(fabricInfos);
+      
+      // Limpiar estados cuando se cambia la orden de servicio
+      setCantidadRequerida(0);
+      setBultosRequerido(0);
+      setselectedEntries([]);
+      setIngresosSeleccionados([]);
+      setIngresos([]);
+      
+      setIsServiceDialogOpen(false);
     } catch (error) {
       console.error("Error al cargar la orden de servicio:", error);
       alert("No se pudo cargar la orden de servicio seleccionada. Por favor, inténtelo de nuevo.");
@@ -305,9 +303,20 @@ import NoteIcon from '@mui/icons-material/Note';
     setOpenFabricDialog(true);
     setSelectedInfoFabric(null);
     try {
+      // Verificar si existe en caché
+      if (fabricCache[fabricId]) {
+        setSelectedInfoFabric(fabricCache[fabricId]);
+        setSelectedInfoFabricRecipe(fabricCache[fabricId].recipe);
+        return;
+      }
+
       const data = await fetchFabricSearchId(fabricId);
+      // Guardar en caché
+      setFabricCache(prev => ({
+        ...prev,
+        [fabricId]: data
+      }));
       setSelectedInfoFabric(data);
-      console.log("Información del tejido:", data);
       setSelectedInfoFabricRecipe(data.recipe);
     } catch (error) {
       console.error("Error al cargar los datos del tejido:", error);
@@ -316,30 +325,69 @@ import NoteIcon from '@mui/icons-material/Note';
 
     const handleOpenOSDetails = async (orderId: string) => {
       setOpenOSDetail(true);
-      const response = await fetchServiceOrderById(orderId);
-      setOSDetail({
-        ...response,
-        detail: response.detail || [],
-      });
+      try {
+        // Verificar si existe en caché
+        if (serviceOrderCache[orderId]) {
+          setOSDetail(serviceOrderCache[orderId]);
+          return;
+        }
+
+        const response = await fetchServiceOrderById(orderId);
+        const orderData = {
+          ...response,
+          detail: response.detail || [],
+        };
+        // Guardar en caché
+        setServiceOrderCache(prev => ({
+          ...prev,
+          [orderId]: orderData
+        }));
+        setOSDetail(orderData);
+      } catch (error) {
+        console.error("Error al cargar los detalles de la orden:", error);
+      }
     };
 
     const handleOpenYarnEntryInfoDialog = async (yarnEntryNumber: string) => {
       setOpenYarnEntryInfoDialog(true);
       setYarnEntriesByEntryNumber(null);
       try {
+        // Verificar si existe en caché
+        if (yarnEntryCache[yarnEntryNumber]) {
+          setYarnEntriesByEntryNumber(yarnEntryCache[yarnEntryNumber]);
+          setYarnEntriesByEntryNumberDetail(yarnEntryCache[yarnEntryNumber].detail);
+          return;
+        }
+
         const data = await fetchYarnEntriesByEntryNumber(period, yarnEntryNumber);
+        // Guardar en caché
+        setYarnEntryCache(prev => ({
+          ...prev,
+          [yarnEntryNumber]: data
+        }));
         setYarnEntriesByEntryNumber(data);
         setYarnEntriesByEntryNumberDetail(data.detail);
       } catch (error) {
         console.error("Error al cargar los datos del hilo:", error);
-        }
+      }
     };
 
     const handleOpenYarnDialog = async (yarnId: string) => {
       setOpenYarnDialog(true);
       setSelectedInfoYarn(null);
       try {
+        // Verificar si existe en caché
+        if (yarnCache[yarnId]) {
+          setSelectedInfoYarn(yarnCache[yarnId]);
+          return;
+        }
+
         const data = await fetchYarnbyId(yarnId);
+        // Guardar en caché
+        setYarnCache(prev => ({
+          ...prev,
+          [yarnId]: data
+        }));
         setSelectedInfoYarn(data);
       } catch (error) {
         console.error("Error al cargar los datos del hilo:", error);
@@ -407,24 +455,40 @@ import NoteIcon from '@mui/icons-material/Note';
       let nuevaSeleccion: YarnPurchaseEntry[] = [...ingresosSeleccionados];
       let pesoTotalCalculado = 0;
 
-      // Filtrar y ordenar por yarnId
+      // Filtrar y ordenar por yarnId y peso por paquete (de mayor a menor)
       const ingresosOrdenados = selectedEntries
         .filter(entry => entry.yarnId === targetYarnId)
         .flatMap(entry => entry.detailHeavy)
-        .sort((a, b) => b.packagesLeft - a.packagesLeft);
+        .sort((a, b) => {
+          // Primero ordenamos por peso por paquete
+          const pesoPorPaqueteA = a.unitNetWeightForPackage || 0;
+          const pesoPorPaqueteB = b.unitNetWeightForPackage || 0;
+          if (pesoPorPaqueteB !== pesoPorPaqueteA) {
+            return pesoPorPaqueteB - pesoPorPaqueteA;
+          }
+          // Si tienen el mismo peso por paquete, ordenamos por paquetes disponibles
+          return b.packagesLeft - a.packagesLeft;
+        });
 
       // Eliminar asignaciones previas para este yarnId
       nuevaSeleccion = nuevaSeleccion.filter(ingreso => ingreso.yarnId !== targetYarnId);
 
       for (let ingreso of ingresosOrdenados) {
         if (bultosRestantes <= 0) break;
-        let pesoPorPaquete = ingreso.unitNetWeightForPackage || 0;
-        let paquetesDisponibles = ingreso.packagesLeft || 0;
+        // Se cambia las constantes let por const para dar mayor seguridad a la variable
+        const pesoPorPaquete = ingreso.unitNetWeightForPackage || 0;
+        const paquetesDisponibles = ingreso.packagesLeft || 0;
+        const conosPorPaquete = ingreso.coneCount || 0;
 
+        // Calculamos cuántos paquetes necesitamos de este ingreso
         let paquetesAsignados = Math.min(paquetesDisponibles, bultosRestantes);
-        let pesoAsignado = paquetesAsignados * pesoPorPaquete;
-        let conosNecesarios = Math.ceil(pesoAsignado / ingreso.unitNetWeightForCone);
-
+        
+        // Calculamos los conos necesarios usando la fórmula
+        const CC = conosPorPaquete * paquetesAsignados; // Cantidad total de conos
+        const CB = paquetesAsignados; // Cantidad de bultos
+        const conosNecesarios = Math.ceil(CC/CB) - ((CB * Math.ceil(CC/CB) - CC)/CB);
+        
+        const pesoAsignado = paquetesAsignados * pesoPorPaquete;
         pesoTotalCalculado += pesoAsignado;
         bultosRestantes -= paquetesAsignados;
 
@@ -432,8 +496,10 @@ import NoteIcon from '@mui/icons-material/Note';
           ...ingreso,
           AssignedWeight: pesoAsignado,
           packageCount: paquetesAsignados,
-          coneCount: conosNecesarios,
+          coneCount: Math.ceil(conosNecesarios * paquetesAsignados), // Multiplicamos por paquetes asignados para obtener el total
         });
+
+        console.log("conos asignados", conosNecesarios);
       }
 
       if (bultosRestantes > 0) {
@@ -441,6 +507,7 @@ import NoteIcon from '@mui/icons-material/Note';
         setIngresosSeleccionados(nuevaSeleccion.filter(ingreso => ingreso.yarnId !== targetYarnId));
       } else {
         setIngresosSeleccionados(nuevaSeleccion);
+        showSnackbar(`Distribución completada. Peso total: ${pesoTotalCalculado.toFixed(2)} kg`, "success");
       }
     };
 
@@ -539,19 +606,13 @@ import NoteIcon from '@mui/icons-material/Note';
   const handleCloseIngresoDialog = () => setIsIngresoDialogOpen(false);
 
   const handleOpenServiceDialog = () => 
-    {FilterServicebySupplier();
-      sleepES5(100);
+    {FilterServicebySupplier(selectedSupplier);
       setIsServiceDialogOpen(true);
     };
   
   const handleCloseOSDetail = () => setOpenOSDetail(false);
 
   const handleCloseServiceDialog = () => setIsServiceDialogOpen(false);
-
-  var sleepES5 = function(ms: number){  // Función sleep
-    var esperarHasta = new Date().getTime() + ms;
-    while(new Date().getTime() < esperarHasta) continue;
-  };
 
   return (
     <div>
@@ -1327,47 +1388,62 @@ import NoteIcon from '@mui/icons-material/Note';
               </Button>
             </Stack>
 
-            {/* Tarjetas de asignación para este YarnId */}
-            <Grid container spacing={2} justifyContent="center">
-              {ingresosSeleccionados
-                .filter(ingreso => ingreso.yarnId === yarnId)
-                .map((ingreso, index) => (
-                  <Grid item xs={12} sm={6} md={4} key={index}>
-                    <Card sx={{ borderRadius: "12px", boxShadow: "0px 4px 10px rgba(0,0,0,0.1)" }}>
-                      <CardContent>
-                        <Typography variant="h6" fontWeight="bold">
-                          Hilado: {NameYarnsIds[YarnsIds.indexOf(ingreso.yarnId)] || ingreso.yarnId}
-                        </Typography>
-                        <Typography variant="body1" color="textSecondary">
-                          Peso Asignado: <strong>{ingreso.AssignedWeight} kg</strong>
-                        </Typography>
-                        <Grid container spacing={1} sx={{ marginTop: 1 }}>
-                          <Grid item xs={6}>
-                            <TextField
-                              label="Paquetes"
-                              type="number"
-                              value={ingreso.packageCount}
-                              onChange={(e) => handleEditarIngreso(index, "packageCount", parseInt(e.target.value) || 0)}
-                              fullWidth
-                              variant="outlined"
-                            />
-                          </Grid>
-                          <Grid item xs={6}>
-                            <TextField
-                              label="Conos"
-                              type="number"
-                              value={ingreso.coneCount}
-                              onChange={(e) => handleEditarIngreso(index, "coneCount", parseInt(e.target.value) || 0)}
-                              fullWidth
-                              variant="outlined"
-                            />
-                          </Grid>
-                        </Grid>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-            </Grid>
+            {/* Tabla de asignación para este YarnId */}
+            <div className="max-w-full overflow-x-auto mt-4">
+              <table className="w-full table-auto border-collapse">
+                <thead>
+                  <tr className="bg-blue-900 uppercase text-center text-white">
+                    <th className="px-4 py-2 font-normal">Hilado</th>
+                    <th className="px-4 py-2 font-normal">Peso Asignado (kg)</th>
+                    <th className="px-4 py-2 font-normal">Paquetes</th>
+                    <th className="px-4 py-2 font-normal">Conos</th>
+                    <th className="px-4 py-2 font-normal">Número de Ingreso</th>
+                    <th className="px-4 py-2 font-normal">Grupo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ingresosSeleccionados
+                    .filter(ingreso => ingreso.yarnId === yarnId)
+                    .map((ingreso, index) => (
+                      <tr key={index} className="text-center border-b border-gray-200 hover:bg-gray-50">
+                        <td className="px-4 py-3">{NameYarnsIds[YarnsIds.indexOf(ingreso.yarnId)] || ingreso.yarnId}</td>
+                        <td className="px-4 py-3">
+                          <TextField
+                            type="number"
+                            value={ingreso.AssignedWeight}
+                            onChange={(e) => handleEditarIngreso(index, "AssignedWeight", parseFloat(e.target.value) || 0)}
+                            variant="outlined"
+                            size="small"
+                            sx={{ width: '100px' }}
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <TextField
+                            type="number"
+                            value={ingreso.packageCount}
+                            onChange={(e) => handleEditarIngreso(index, "packageCount", parseInt(e.target.value) || 0)}
+                            variant="outlined"
+                            size="small"
+                            sx={{ width: '100px' }}
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <TextField
+                            type="number"
+                            value={ingreso.coneCount}
+                            onChange={(e) => handleEditarIngreso(index, "coneCount", parseInt(e.target.value) || 0)}
+                            variant="outlined"
+                            size="small"
+                            sx={{ width: '100px' }}
+                          />
+                        </td>
+                        <td className="px-4 py-3">{ingreso.entryNumber}</td>
+                        <td className="px-4 py-3">{ingreso.groupNumber}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ))}
 
