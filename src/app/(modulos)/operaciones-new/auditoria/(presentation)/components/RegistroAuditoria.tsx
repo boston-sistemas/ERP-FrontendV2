@@ -99,13 +99,13 @@ const JsonRenderer = ({ data }: { data: any }) => {
     
     if (type !== 'object' && type !== 'array') {
       // Valores primitivos
-      let valueClass = 'text-blue-600'; // número por defecto
+      let valueClass = 'text-blue-700'; // número por defecto
       
       if (type === 'string') {
-        valueClass = 'text-green-600';
+        valueClass = 'text-green-700';
         obj = `"${obj}"`;
       } else if (type === 'boolean') {
-        valueClass = 'text-purple-600';
+        valueClass = 'text-purple-700';
       } else if (obj === null) {
         valueClass = 'text-gray-500';
         obj = 'null';
@@ -149,7 +149,7 @@ const JsonRenderer = ({ data }: { data: any }) => {
             // Renderizamos objetos
             Object.keys(obj).map((key, index) => (
               <div key={`${path}.${key}`} className="my-1">
-                <span className="text-red-600 mr-2 font-mono">"{key}"</span>
+                <span className="text-red-700 mr-2 font-mono">"{key}"</span>
                 <span className="text-gray-800 mr-2">:</span>
                 {renderJson(obj[key], indent + 1, index === Object.keys(obj).length - 1, `${path}.${key}`)}
                 {index < Object.keys(obj).length - 1 && <span className="text-gray-500">,</span>}
@@ -164,7 +164,7 @@ const JsonRenderer = ({ data }: { data: any }) => {
   };
 
   return (
-    <Paper elevation={0} className="p-4 bg-gray-50 rounded-md overflow-auto max-h-[500px]">
+    <Paper elevation={1} className="p-4 bg-white rounded-md overflow-auto max-h-[500px] border border-gray-200">
       <div className="font-mono text-sm">
         {renderJson(data)}
       </div>
@@ -636,31 +636,47 @@ const RegistroAuditoria = () => {
         fullWidth
         PaperProps={{
           sx: {
-            backgroundColor: '#1e293b',
-            color: '#fff'
+            backgroundColor: 'white',
+            color: 'rgba(0, 0, 0, 0.87)'
           }
         }}
       >
-        <DialogTitle>
-          <Typography variant="h6" component="div" className="text-white">
+        <DialogTitle sx={{ 
+          backgroundColor: '#1976d2', 
+          color: 'white',
+          padding: '16px 24px'
+        }}>
+          <Typography variant="h6" component="div">
             {dialogTitle}
           </Typography>
         </DialogTitle>
-        <DialogContent dividers>
+        <DialogContent dividers sx={{ padding: '20px' }}>
           {loadingDetail ? (
-            <Typography className="text-center text-gray-400">
+            <Typography className="text-center text-gray-600">
               Cargando detalles...
             </Typography>
           ) : isEmptyObject(dialogData) ? (
-            <Typography className="text-center text-gray-400">
+            <Typography className="text-center text-gray-600">
               No hay datos que mostrar
             </Typography>
           ) : (
             <JsonRenderer data={dialogData} />
           )}
         </DialogContent>
-        <DialogActions className="bg-gray-800">
-          <Button onClick={handleCloseDialog} color="primary" variant="contained">
+        <DialogActions sx={{ 
+          padding: '12px 24px', 
+          backgroundColor: '#f5f5f5', 
+          borderTop: '1px solid #e0e0e0' 
+        }}>
+          <Button 
+            onClick={handleCloseDialog} 
+            color="primary" 
+            variant="contained"
+            sx={{
+              textTransform: 'none',
+              fontWeight: 500
+            }}
+          >
             Cerrar
           </Button>
         </DialogActions>

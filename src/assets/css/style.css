@@ -436,8 +436,35 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 /* Mejora para dropdowns en modo oscuro */
-.dark .dark\:bg-boxdark {
+.dark .MuiMenu-paper,
+.dark .MuiPopover-paper,
+.dark .select-dropdown,
+.dark [role="listbox"] {
     background-color: hsl(var(--custom-boxdark)) !important;
+    border: 1px solid hsl(var(--custom-strokedark)) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Estilo para backdrop de diálogos en modo oscuro */
+.dark .MuiBackdrop-root {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Estilos para el menú desplegable en modo claro */
+.MuiMenu-paper,
+.MuiPopover-paper,
+.select-dropdown,
+[role="listbox"] {
+    background-color: white !important;
+    border: 1px solid hsl(214.3 31.8% 91.4%) !important;
+    border-radius: 0.375rem !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Backdrop para dropdowns en modo claro */
+.MuiBackdrop-root,
+.select-backdrop {
+    background-color: rgba(0, 0, 0, 0.3) !important;
 }
 
 /* Estilos específicos para diálogos en modo oscuro */
@@ -537,13 +564,6 @@ input[type="search"]::-webkit-search-cancel-button {
     color: white !important;
 }
 
-.dark .MuiMenu-paper,
-.dark .MuiPopover-paper {
-    background-color: hsl(var(--custom-boxdark)) !important;
-    border: 1px solid hsl(var(--custom-strokedark)) !important;
-}
-
-/* Mejoras para menús desplegables en modo oscuro */
 .dark .MuiList-root {
     background-color: hsl(var(--custom-boxdark)) !important;
     padding: 0.5rem 0 !important;
@@ -627,12 +647,6 @@ input[type="search"]::-webkit-search-cancel-button {
 
 .dark .MuiDialogActions-root .MuiButton-root.MuiButton-outlined:hover {
     background-color: hsla(var(--custom-meta-4), 0.5) !important;
-}
-
-/* Estilo para backdrop de diálogos */
-.dark .MuiBackdrop-root {
-    background-color: rgba(0, 0, 0, 0.7) !important;
-    backdrop-filter: blur(2px) !important;
 }
 
 /* Mejoras específicas para checkboxes y radios */
@@ -1002,6 +1016,323 @@ input[type="search"]::-webkit-search-cancel-button {
 .dark button[aria-label*="deshabilitar"] {
     background-color: hsl(0 70% 50%) !important;
     color: white !important;
+}
+
+/* Estilos base para tablas (modo claro) */
+table {
+    background-color: white !important;
+    border-radius: 0.375rem !important;
+    overflow: hidden !important;
+    border: 1px solid hsl(214.3 31.8% 91.4%) !important;
+}
+
+thead tr {
+    background-color: hsl(220 70% 50%) !important;
+    color: white !important;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+thead th {
+    padding: 0.75rem 1rem !important;
+    text-align: center;
+}
+
+tbody td {
+    padding: 0.75rem 1rem !important;
+    border-bottom: 1px solid hsl(214.3 31.8% 91.4%) !important;
+}
+
+tbody tr:last-child td {
+    border-bottom: none !important;
+}
+
+/* Filas alternadas en modo claro */
+tbody tr:nth-child(odd) {
+    background-color: hsl(210 40% 96.1%) !important;
+}
+
+tbody tr:nth-child(even) {
+    background-color: white !important;
+}
+
+tbody tr:hover {
+    background-color: hsl(214.3 31.8% 91.4%) !important;
+}
+
+/* Contenedor de tablas en modo claro */
+.table-container,
+.data-table-container {
+    background-color: white !important;
+    border-radius: 0.5rem !important;
+    padding: 1rem !important;
+    border: 1px solid hsl(214.3 31.8% 91.4%) !important;
+}
+
+/* Botones en modo claro */
+button.btn-primary,
+button.btn-crear,
+button.crear {
+    background-color: hsl(220 70% 50%) !important;
+    color: white !important;
+}
+
+button.btn-primary:hover,
+button.btn-crear:hover,
+button.crear:hover {
+    background-color: hsl(220 70% 45%) !important;
+}
+
+button.btn-edit,
+button.btn-editar,
+button.editar {
+    background-color: hsl(215 60% 50%) !important;
+    color: white !important;
+}
+
+button.btn-edit:hover,
+button.btn-editar:hover,
+button.editar:hover {
+    background-color: hsl(215 60% 45%) !important;
+}
+
+button.btn-danger,
+button.btn-deshabilitar,
+button.deshabilitar {
+    background-color: hsl(0 70% 50%) !important;
+    color: white !important;
+}
+
+button.btn-danger:hover,
+button.btn-deshabilitar:hover,
+button.deshabilitar:hover {
+    background-color: hsl(0 70% 45%) !important;
+}
+
+/* Inputs y búsqueda en modo claro */
+input[type="search"],
+.search-input,
+.buscar-input {
+    background-color: white !important;
+    border: 1px solid hsl(214.3 31.8% 91.4%) !important;
+    color: hsl(222.2 84% 4.9%) !important;
+    border-radius: 0.375rem !important;
+    padding: 0.5rem 1rem !important;
+}
+
+input[type="search"]::placeholder,
+.search-input::placeholder,
+.buscar-input::placeholder {
+    color: hsl(215.4 16.3% 46.9%) !important;
+}
+
+/* Estados en modo claro */
+.estado-activo {
+    color: hsl(142.1 76.2% 36.3%) !important;
+    font-weight: 500 !important;
+}
+
+.estado-inactivo {
+    color: hsl(0 84.2% 60.2%) !important;
+    font-weight: 500 !important;
+}
+
+/* Iconos en modo claro */
+.eye-icon,
+.action-icon,
+.view-icon {
+    color: hsl(222.2 84% 4.9%) !important;
+}
+
+/* Encabezados de sección en modo claro */
+.section-header,
+.panel-header {
+    color: hsl(222.2 84% 4.9%) !important;
+    font-weight: 600 !important;
+    font-size: 1.5rem !important;
+    margin-bottom: 1rem !important;
+}
+
+/* Estilos específicos para la tabla de Fibras en modo claro */
+.fibras-table,
+.fibras-container table,
+div[id*="fibras"] table {
+    background-color: white !important;
+    border-radius: 0.375rem !important;
+    overflow: hidden !important;
+    border: 1px solid hsl(214.3 31.8% 91.4%) !important;
+    width: 100% !important;
+}
+
+.fibras-table th,
+.fibras-container table th,
+div[id*="fibras"] table th {
+    background-color: hsl(220 70% 50%) !important;
+    color: white !important;
+    text-transform: uppercase !important;
+    font-weight: 600 !important;
+    padding: 0.75rem 1rem !important;
+    text-align: center !important;
+}
+
+.fibras-table td,
+.fibras-container table td,
+div[id*="fibras"] table td {
+    padding: 0.75rem 1rem !important;
+    border-bottom: 1px solid hsl(214.3 31.8% 91.4%) !important;
+}
+
+.fibras-table tbody tr:nth-child(odd),
+.fibras-container table tbody tr:nth-child(odd),
+div[id*="fibras"] table tbody tr:nth-child(odd) {
+    background-color: hsl(210 40% 96.1%) !important;
+}
+
+.fibras-table tbody tr:hover,
+.fibras-container table tbody tr:hover,
+div[id*="fibras"] table tbody tr:hover {
+    background-color: hsl(214.3 31.8% 91.4%) !important;
+}
+
+/* Estilos para los botones específicos de Fibras en modo claro */
+button:has(> span:contains("CREAR")),
+button[aria-label*="crear"] {
+    background-color: hsl(220 70% 50%) !important;
+    color: white !important;
+}
+
+button:has(> span:contains("EDITAR")),
+button[aria-label*="editar"] {
+    background-color: hsl(215 60% 50%) !important;
+    color: white !important;
+}
+
+button:has(> span:contains("DESHABILITAR")),
+button[aria-label*="deshabilitar"] {
+    background-color: hsl(0 70% 50%) !important;
+    color: white !important;
+}
+
+/* Estilos para el contenedor principal en modo claro */
+.tablas-panel-contenedor {
+    background-color: white !important;
+    border-radius: 0.5rem !important;
+    padding: 1.5rem !important;
+    border: 1px solid hsl(214.3 31.8% 91.4%) !important;
+    margin-top: 1rem !important;
+}
+
+/* Estilos para controles de tabla en modo claro */
+.table-controls,
+.table-filters,
+.table-search {
+    margin-bottom: 1rem !important;
+    display: flex !important;
+    gap: 0.5rem !important;
+    align-items: center !important;
+}
+
+/* Estilos para switch y etiquetas en modo claro */
+.switch-label,
+.filter-label {
+    color: hsl(222.2 84% 4.9%) !important;
+    font-weight: 500 !important;
+}
+
+/* Estilos para la columna de estado en modo claro */
+td.estado-column {
+    text-align: center !important;
+}
+
+.estado-column .activo {
+    color: hsl(142.1 76.2% 36.3%) !important;
+    font-weight: 500 !important;
+}
+
+/* Contenedor de acciones en modo claro */
+.accion-container {
+    display: flex !important;
+    gap: 0.5rem !important;
+    justify-content: center !important;
+}
+
+/* Headers con iconos en modo claro */
+th svg,
+th .icon {
+    margin-right: 0.25rem !important;
+    vertical-align: middle !important;
+}
+
+/* Estilos para encabezados de tabla en modo claro */
+thead th,
+th {
+    color: white !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+}
+
+.fibras-table th,
+.fibras-container table th,
+div[id*="fibras"] table th,
+table th {
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+}
+
+/* Estilos para seleccionables/dropdowns en modo claro */
+select,
+.select-input,
+[role="listbox"],
+.MuiSelect-select {
+    background-color: white !important;
+    border: 1px solid hsl(214.3 31.8% 91.4%) !important;
+    color: hsl(222.2 84% 4.9%) !important;
+    border-radius: 0.375rem !important;
+    padding: 0.5rem 1rem !important;
+}
+
+/* Estilos para el menú desplegable en modo claro */
+.MuiMenu-paper,
+.MuiPopover-paper,
+.select-dropdown,
+[role="listbox"] {
+    background-color: white !important;
+    border: 1px solid hsl(214.3 31.8% 91.4%) !important;
+    border-radius: 0.375rem !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.MuiList-root,
+.select-options {
+    background-color: white !important;
+    padding: 0.5rem 0 !important;
+}
+
+.MuiMenuItem-root,
+.select-option {
+    color: hsl(222.2 84% 4.9%) !important;
+    padding: 0.75rem 1rem !important;
+}
+
+.MuiMenuItem-root:hover,
+.select-option:hover {
+    background-color: hsl(210 40% 96.1%) !important;
+}
+
+.MuiMenuItem-root.Mui-selected,
+.select-option.selected {
+    background-color: hsl(214.3 31.8% 91.4%) !important;
+}
+
+.MuiMenuItem-root.Mui-selected:hover,
+.select-option.selected:hover {
+    background-color: hsl(214.3 31.8% 88%) !important;
+}
+
+/* Backdrop para dropdowns en modo claro */
+.MuiBackdrop-root,
+.select-backdrop {
+    background-color: rgba(0, 0, 0, 0.3) !important;
 }
 
 
