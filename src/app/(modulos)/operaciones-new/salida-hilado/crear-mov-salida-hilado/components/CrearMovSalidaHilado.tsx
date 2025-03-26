@@ -71,6 +71,7 @@ import NoteIcon from '@mui/icons-material/Note';
   const router = useRouter();
   const searchParams = useSearchParams();
   // PROVEEDOR Y DIRECCION
+  const [isloadingIngresos, setIsloadginIngresos] = useState(true);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [selectedSupplier, setSelectedSupplier] = useState<string>("");
   const [selectedAddress, setSelectedAddress] = useState<string>("");
@@ -98,6 +99,7 @@ import NoteIcon from '@mui/icons-material/Note';
   const [openOSDetail, setOpenOSDetail] = useState(false); // Estado del diálogo de información de tejido
   const [openYarnDialog, setOpenYarnDialog] = useState(false); // Estado del diálogo de información de tejido
   const [OSDetail, setOSDetail] = useState<any>(null); // Detalles de OS
+  const [OSID, setOSID] = useState<any>(null);
   const [FabricInfo, setFabricInfo] = useState<FabricInfo[]>([]);
   const [typeFabric, setTypeFabric] = useState<FabricType[]>([]); // Tipos de fibras
   const [selectTypeFabric, setSelectedTypeFabric] = useState<string>(""); // Tipo de fibra seleccionado
@@ -119,6 +121,20 @@ import NoteIcon from '@mui/icons-material/Note';
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [documentNote, setDocumentNote] = useState<string>("");
   
+  // CACHE STATES
+  const [fabricCache, setFabricCache] = useState<Record<string, Fabric>>({});
+  const [yarnCache, setYarnCache] = useState<Record<string, Yarn>>({});
+  const [yarnEntryCache, setYarnEntryCache] = useState<Record<string, YarnPurchaseEntryResponse>>({});
+  const [serviceOrderCache, setServiceOrderCache] = useState<Record<string, any>>({});
+
+  // Agregar después de las declaraciones de estado existentes
+  const [calculationMessages, setCalculationMessages] = useState<Record<string, string>>({});
+  const [cantidadesRequeridas, setCantidadesRequeridas] = useState<Record<string, number>>({});
+  const [bultosRequeridos, setBultosRequeridos] = useState<Record<string, number>>({});
+
+  const [paginaAsignaciones, setPaginaAsignaciones] = useState(0);
+  const [filasPorPaginaAsignaciones, setFilasPorPaginaAsignaciones] = useState(10);
+
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbarMessage(message);
     setSnackbarSeverity(severity);
@@ -132,11 +148,11 @@ import NoteIcon from '@mui/icons-material/Note';
   const loadIngresosAndOrders = async () => {
     setIsLoading(true);
     try {
-      const [ingresosResponse, ordenesServicioResponse] = await Promise.all([
-        fetchYarnPurchaseEntries(period, 50, 0, false), // Usa el período actualizado
+      const [ordenesServicioResponse] = await Promise.all([
+        //fetchYarnPurchaseEntries(period, 50, 0, false), // Usa el período actualizado
         fetchServiceOrders(period,false,false),
       ]);
-      setIngresos(ingresosResponse.yarnPurchaseEntries || []);
+      //setIngresos(ingresosResponse.yarnPurchaseEntries || []);
       setOrdenesServicio(ordenesServicioResponse.serviceOrders || []);
     } catch (error) {
       showSnackbar("Error al cargar datos. Inténtelo de nuevo.", "error");
@@ -146,34 +162,16 @@ import NoteIcon from '@mui/icons-material/Note';
   };
 
   useEffect(() => {
-    // Cargar ingresos y órdenes de servicio cuando cambie el período
-    FilterIngresosbySupplier();
-    FilterServicebySupplier();
-  }, [period]);
-
-  useEffect(() => {
-    setIngresos([]);
-  }, [dataOS]);
-
-  useEffect(() => {
     const savedEntryNumber = localStorage.getItem("entryNumber");
     if (savedEntryNumber) {
       const parsedPayload = JSON.parse(savedEntryNumber);
-      loadIngresoDetails(parsedPayload); // Carga los detalles del ingreso guardado
-      localStorage.removeItem("entryNumber"); // Limpia el localStorage después de cargar
+      loadIngresoDetails(parsedPayload);
+      localStorage.removeItem("entryNumber");
     }
   
-    loadIngresosAndOrders();
+    // Solo cargar proveedores inicialmente
     loadSupplierData();
-    loadFabricTypes();
   }, []);
-
-  useEffect(() => {
-    setCantidadRequerida(0);
-    setBultosRequerido(0);
-    setIngresosSeleccionados([]);
-  }, [selectedEntries]);
-  
 
   const handleRemoveEntry = (entryNumber: string) => {
     setselectedEntries((prev) => prev.filter((entry) => entry.entryNumber !== entryNumber));
@@ -243,28 +241,31 @@ import NoteIcon from '@mui/icons-material/Note';
 
   const FilterIngresosbySupplier = async () => {
     try {
-      if (!ordenesServicio || ordenesServicio.length === 0) {
-        return;
-      }
-      const response = await fetchYarnIncomeEntries(period,ordenesServicio[0].id);
+      if (!OSID) return;
+      
+      setIsloadginIngresos(true);
+      const response = await fetchYarnIncomeEntries(period, OSID);
       setIngresos(response.yarnPurchaseEntries || []);
       FilterYarnId();
+      setIsloadginIngresos(false);
     } catch (error) {
-      console.error("Error al cargar los tipos de tejido:", error);
+      console.error("Error al cargar los ingresos:", error);
     }
   }
 
-  const FilterServicebySupplier = async () => {
+  const FilterServicebySupplier = async (supplierId: string) => {
     try {
-      const response = await fetchServiceOrderBySupplier(selectedSupplier,period);
+      const response = await fetchServiceOrderBySupplier(supplierId, period);
       setOrdenesServicio(response.serviceOrders || []);
     } catch (error) {
-      console.error("Error al cargar los tipos de tejido:", error);
+      console.error("Error al cargar las órdenes de servicio:", error);
     }
   }
 
   const handleProveedorChange = (event: SelectChangeEvent<string>) => {
     setSelectedSupplier(event.target.value);
+    // Cargar órdenes de servicio cuando se selecciona un proveedor
+    FilterServicebySupplier(event.target.value);
   };
 
   const handleAddressChange = (event: SelectChangeEvent<string>) => {
@@ -282,12 +283,24 @@ import NoteIcon from '@mui/icons-material/Note';
       const serviceOrderDetails = await fetchServiceOrderById(orderId);
       setDataOS({
         ...serviceOrderDetails,
-        detail: serviceOrderDetails.detail || [], // Asegura que haya un array de detalles
+        detail: serviceOrderDetails.detail || [],
       });
       console.log("Detalles de la orden de servicio:", serviceOrderDetails.detail);
-      loadFabricInfo(serviceOrderDetails.detail); // Carga la información del tejido
-      sleepES5(120); // Espera 75ms antes de cargar la información
-      setIsServiceDialogOpen(false); // Cierra el diálogo después de seleccionar
+      setOSID(orderId);
+      
+      // Cargar información del tejido solo cuando se selecciona una orden
+      const fabricPromises = serviceOrderDetails.detail.map(detail => fetchFabricSearchId(detail.fabricId));
+      const fabricInfos = await Promise.all(fabricPromises);
+      setFabricInfo(fabricInfos);
+      
+      // Limpiar estados cuando se cambia la orden de servicio
+      setCantidadRequerida(0);
+      setBultosRequerido(0);
+      setselectedEntries([]);
+      setIngresosSeleccionados([]);
+      setIngresos([]);
+      
+      setIsServiceDialogOpen(false);
     } catch (error) {
       console.error("Error al cargar la orden de servicio:", error);
       alert("No se pudo cargar la orden de servicio seleccionada. Por favor, inténtelo de nuevo.");
@@ -298,9 +311,20 @@ import NoteIcon from '@mui/icons-material/Note';
     setOpenFabricDialog(true);
     setSelectedInfoFabric(null);
     try {
+      // Verificar si existe en caché
+      if (fabricCache[fabricId]) {
+        setSelectedInfoFabric(fabricCache[fabricId]);
+        setSelectedInfoFabricRecipe(fabricCache[fabricId].recipe);
+        return;
+      }
+
       const data = await fetchFabricSearchId(fabricId);
+      // Guardar en caché
+      setFabricCache(prev => ({
+        ...prev,
+        [fabricId]: data
+      }));
       setSelectedInfoFabric(data);
-      console.log("Información del tejido:", data);
       setSelectedInfoFabricRecipe(data.recipe);
     } catch (error) {
       console.error("Error al cargar los datos del tejido:", error);
@@ -309,30 +333,69 @@ import NoteIcon from '@mui/icons-material/Note';
 
     const handleOpenOSDetails = async (orderId: string) => {
       setOpenOSDetail(true);
-      const response = await fetchServiceOrderById(orderId);
-      setOSDetail({
-        ...response,
-        detail: response.detail || [],
-      });
+      try {
+        // Verificar si existe en caché
+        if (serviceOrderCache[orderId]) {
+          setOSDetail(serviceOrderCache[orderId]);
+          return;
+        }
+
+        const response = await fetchServiceOrderById(orderId);
+        const orderData = {
+          ...response,
+          detail: response.detail || [],
+        };
+        // Guardar en caché
+        setServiceOrderCache(prev => ({
+          ...prev,
+          [orderId]: orderData
+        }));
+        setOSDetail(orderData);
+      } catch (error) {
+        console.error("Error al cargar los detalles de la orden:", error);
+      }
     };
 
     const handleOpenYarnEntryInfoDialog = async (yarnEntryNumber: string) => {
       setOpenYarnEntryInfoDialog(true);
       setYarnEntriesByEntryNumber(null);
       try {
+        // Verificar si existe en caché
+        if (yarnEntryCache[yarnEntryNumber]) {
+          setYarnEntriesByEntryNumber(yarnEntryCache[yarnEntryNumber]);
+          setYarnEntriesByEntryNumberDetail(yarnEntryCache[yarnEntryNumber].detail);
+          return;
+        }
+
         const data = await fetchYarnEntriesByEntryNumber(period, yarnEntryNumber);
+        // Guardar en caché
+        setYarnEntryCache(prev => ({
+          ...prev,
+          [yarnEntryNumber]: data
+        }));
         setYarnEntriesByEntryNumber(data);
         setYarnEntriesByEntryNumberDetail(data.detail);
       } catch (error) {
         console.error("Error al cargar los datos del hilo:", error);
-        }
+      }
     };
 
     const handleOpenYarnDialog = async (yarnId: string) => {
       setOpenYarnDialog(true);
       setSelectedInfoYarn(null);
       try {
+        // Verificar si existe en caché
+        if (yarnCache[yarnId]) {
+          setSelectedInfoYarn(yarnCache[yarnId]);
+          return;
+        }
+
         const data = await fetchYarnbyId(yarnId);
+        // Guardar en caché
+        setYarnCache(prev => ({
+          ...prev,
+          [yarnId]: data
+        }));
         setSelectedInfoYarn(data);
       } catch (error) {
         console.error("Error al cargar los datos del hilo:", error);
@@ -362,10 +425,18 @@ import NoteIcon from '@mui/icons-material/Note';
     }
 
     const handleDistribuir = (targetYarnId: string) => {
-      let pesoRestante = cantidadRequerida;
-      let nuevaSeleccion: YarnPurchaseEntry[] = [...ingresosSeleccionados];
+      let pesoRestante = cantidadesRequeridas[targetYarnId] || 0;
+      if (pesoRestante <= 0) {
+        showSnackbar("Por favor ingrese una cantidad requerida válida.", "error");
+        return;
+      }
 
-      // Filtrar entradas por yarnId y ordenar
+      let nuevaSeleccion: YarnPurchaseEntry[] = [...ingresosSeleccionados];
+      let pesoTotalCalculado = 0;
+      let conosTotales = 0;
+      let bultosTotales = 0;
+
+      // Filtrar entradas por yarnId y ordenar por peso neto (de mayor a menor)
       const ingresosOrdenados = selectedEntries
         .filter(entry => entry.yarnId === targetYarnId)
         .flatMap(entry => entry.detailHeavy)
@@ -376,63 +447,158 @@ import NoteIcon from '@mui/icons-material/Note';
 
       for (let ingreso of ingresosOrdenados) {
         if (pesoRestante <= 0) break;
-        let asignado = Math.min(pesoRestante, ingreso.netWeight);
-        pesoRestante -= asignado;
 
-        nuevaSeleccion.push({
-          ...ingreso,
-          AssignedWeight: asignado,
-          packageCount: ingreso.packageCount,
-          coneCount: ingreso.coneCount,
-        });
+        // Calcular cuántos bultos podemos usar de este ingreso
+        const pesoPorBulto = ingreso.unitNetWeightForPackage || 0;
+        const bultosDisponibles = ingreso.packagesLeft || 0;
+        const conosDisponibles = ingreso.conesLeft || 0;
+        const pesoDisponible = ingreso.netWeight || 0;
+
+        if (pesoPorBulto <= 0 || bultosDisponibles <= 0) continue;
+
+        // Calcular la proporción de conos por peso
+        const conosPorKilo = conosDisponibles / pesoDisponible;
+
+        // Calcular la fracción de bulto necesaria
+        const pesoAAsignar = Math.min(pesoRestante, ingreso.netWeight);
+        const fraccionBulto = pesoAAsignar / pesoPorBulto;
+        const bultosNecesarios = Math.min(Math.ceil(fraccionBulto), bultosDisponibles);
+
+        if (bultosNecesarios > 0) {
+          // Si es una fracción de bulto, calculamos proporcionalmente
+          const pesoAsignado = Math.min(pesoAAsignar, bultosNecesarios * pesoPorBulto);
+          
+          // Calculamos los conos necesarios basados en la proporción de peso
+          const conosNecesarios = Math.max(1, Math.round(pesoAsignado * conosPorKilo));
+
+          pesoTotalCalculado += pesoAsignado;
+          conosTotales += conosNecesarios;
+          bultosTotales += bultosNecesarios;
+
+          nuevaSeleccion.push({
+            ...ingreso,
+            AssignedWeight: pesoAsignado,
+            packageCount: bultosNecesarios,
+            coneCount: conosNecesarios,
+          });
+
+          pesoRestante -= pesoAsignado;
+        }
       }
 
       if (pesoRestante > 0) {
         showSnackbar("Error: No hay suficiente peso disponible.", "error");
         setIngresosSeleccionados(nuevaSeleccion.filter(ingreso => ingreso.yarnId !== targetYarnId));
+        setCalculationMessages(prev => ({
+          ...prev,
+          [targetYarnId]: null
+        }));
       } else {
+        const diferenciaPeso = Math.abs(pesoTotalCalculado - cantidadesRequeridas[targetYarnId]);
+        const mensajeAproximacion = diferenciaPeso > 0.01 
+          ? `\nNota: El peso total calculado (${pesoTotalCalculado.toFixed(2)} kg) difiere ligeramente del requerido (${cantidadesRequeridas[targetYarnId]} kg).`
+          : "";
+
+        const mensaje = `Distribución completada exitosamente:
+        - Peso total: ${pesoTotalCalculado.toFixed(2)} kg
+        - Bultos totales: ${bultosTotales}
+        - Conos totales: ${conosTotales} (${(conosTotales/bultosTotales).toFixed(2)} conos por bulto)${mensajeAproximacion}
+        
+        Puede ajustar manualmente los valores si lo necesita.`;
+
+        setCalculationMessages(prev => ({
+          ...prev,
+          [targetYarnId]: mensaje
+        }));
         setIngresosSeleccionados(nuevaSeleccion);
       }
     };
 
     const handleDistribuirBultos = (targetYarnId: string) => {
-      let bultosRestantes = bultosRequerido;
+      let bultosRestantes = bultosRequeridos[targetYarnId] || 0;
+      if (bultosRestantes <= 0) {
+        showSnackbar("Por favor ingrese una cantidad de bultos válida.", "error");
+        return;
+      }
+
       let nuevaSeleccion: YarnPurchaseEntry[] = [...ingresosSeleccionados];
       let pesoTotalCalculado = 0;
+      let conosTotales = 0;
+      let bultosTotales = 0;
 
-      // Filtrar y ordenar por yarnId
+      // Filtrar y ordenar por yarnId y peso por paquete (de mayor a menor)
       const ingresosOrdenados = selectedEntries
         .filter(entry => entry.yarnId === targetYarnId)
         .flatMap(entry => entry.detailHeavy)
-        .sort((a, b) => b.packagesLeft - a.packagesLeft);
+        .sort((a, b) => {
+          // Primero ordenamos por peso por paquete
+          const pesoPorPaqueteA = a.unitNetWeightForPackage || 0;
+          const pesoPorPaqueteB = b.unitNetWeightForPackage || 0;
+          if (pesoPorPaqueteB !== pesoPorPaqueteA) {
+            return pesoPorPaqueteB - pesoPorPaqueteA;
+          }
+          // Si tienen el mismo peso por paquete, ordenamos por paquetes disponibles
+          return b.packagesLeft - a.packagesLeft;
+        });
 
       // Eliminar asignaciones previas para este yarnId
       nuevaSeleccion = nuevaSeleccion.filter(ingreso => ingreso.yarnId !== targetYarnId);
 
       for (let ingreso of ingresosOrdenados) {
         if (bultosRestantes <= 0) break;
-        let pesoPorPaquete = ingreso.unitNetWeightForPackage || 0;
-        let paquetesDisponibles = ingreso.packagesLeft || 0;
 
-        let paquetesAsignados = Math.min(paquetesDisponibles, bultosRestantes);
-        let pesoAsignado = paquetesAsignados * pesoPorPaquete;
-        let conosNecesarios = Math.ceil(pesoAsignado / ingreso.unitNetWeightForCone);
+        const pesoPorBulto = ingreso.unitNetWeightForPackage || 0;
+        const bultosDisponibles = ingreso.packagesLeft || 0;
+        const conosDisponibles = ingreso.conesLeft || 0;
+        
+        // Calculamos la proporción de conos por paquete
+        const conosPorPaquete = conosDisponibles / bultosDisponibles;
 
-        pesoTotalCalculado += pesoAsignado;
-        bultosRestantes -= paquetesAsignados;
+        if (pesoPorBulto <= 0 || bultosDisponibles <= 0) continue;
 
-        nuevaSeleccion.push({
-          ...ingreso,
-          AssignedWeight: pesoAsignado,
-          packageCount: paquetesAsignados,
-          coneCount: conosNecesarios,
-        });
+        // Calculamos cuántos bultos completos podemos usar de este ingreso
+        const bultosNecesarios = Math.min(bultosDisponibles, bultosRestantes);
+
+        if (bultosNecesarios > 0) {
+          const pesoAsignado = bultosNecesarios * pesoPorBulto;
+          
+          // Calculamos los conos necesarios basados en la proporción de conos por paquete
+          const conosNecesarios = Math.round(bultosNecesarios * conosPorPaquete);
+
+          pesoTotalCalculado += pesoAsignado;
+          conosTotales += conosNecesarios;
+          bultosTotales += bultosNecesarios;
+
+          nuevaSeleccion.push({
+            ...ingreso,
+            AssignedWeight: pesoAsignado,
+            packageCount: bultosNecesarios,
+            coneCount: conosNecesarios,
+          });
+
+          bultosRestantes -= bultosNecesarios;
+        }
       }
 
       if (bultosRestantes > 0) {
         showSnackbar("Error: No hay suficientes bultos disponibles.", "error");
         setIngresosSeleccionados(nuevaSeleccion.filter(ingreso => ingreso.yarnId !== targetYarnId));
+        setCalculationMessages(prev => ({
+          ...prev,
+          [targetYarnId]: null
+        }));
       } else {
+        const mensaje = `Distribución por bultos completada exitosamente:
+        - Peso total: ${pesoTotalCalculado.toFixed(2)} kg
+        - Bultos totales: ${bultosTotales}
+        - Conos totales: ${conosTotales} (${(conosTotales/bultosTotales).toFixed(2)} conos por bulto)
+        
+        Los valores son exactos ya que se están usando bultos completos.`;
+
+        setCalculationMessages(prev => ({
+          ...prev,
+          [targetYarnId]: mensaje
+        }));
         setIngresosSeleccionados(nuevaSeleccion);
       }
     };
@@ -532,8 +698,7 @@ import NoteIcon from '@mui/icons-material/Note';
   const handleCloseIngresoDialog = () => setIsIngresoDialogOpen(false);
 
   const handleOpenServiceDialog = () => 
-    {FilterServicebySupplier();
-      sleepES5(100);
+    {FilterServicebySupplier(selectedSupplier);
       setIsServiceDialogOpen(true);
     };
   
@@ -541,9 +706,13 @@ import NoteIcon from '@mui/icons-material/Note';
 
   const handleCloseServiceDialog = () => setIsServiceDialogOpen(false);
 
-  var sleepES5 = function(ms: number){  // Función sleep
-    var esperarHasta = new Date().getTime() + ms;
-    while(new Date().getTime() < esperarHasta) continue;
+  const handleChangePaginaAsignaciones = (event: unknown, newPage: number) => {
+    setPaginaAsignaciones(newPage);
+  };
+
+  const handleChangeFilasPorPaginaAsignaciones = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setFilasPorPaginaAsignaciones(parseInt(event.target.value, 10));
+    setPaginaAsignaciones(0);
   };
 
   return (
@@ -1017,91 +1186,95 @@ import NoteIcon from '@mui/icons-material/Note';
             </div>
             
             <div className="max-w-full overflow-x-auto">
-            {Array.isArray(YarnsIds) &&
-              YarnsIds.map((yarnId, index) => {
-                const yarnName = NameYarnsIds[index] || `ID: ${yarnId}`;
-                // Filtra los ingresos correspondientes a este yarnId
-                const ingresosFiltrados = ingresos.filter(
-                  (ingreso) => ingreso.detailHeavy?.[0]?.yarnId === yarnId
-                );
+            {isloadingIngresos ? (
+        <Typography variant="h6" className="text-center my-4">
+          Cargando...
+        </Typography>
+       ) : (ingresos.length === 0) ? (
+        <Typography variant="h6" className="text-center my-4">
+          No hay movimientos de ingreso disponibles
+        </Typography>
+      ) : (
+        Array.isArray(YarnsIds) &&
+        YarnsIds.map((yarnId, index) => {
+          const yarnName = NameYarnsIds[index] || `ID: ${yarnId}`;
+          const ingresosFiltrados = ingresos.filter(
+            (ingreso) => ingreso.detailHeavy?.[0]?.yarnId === yarnId
+          );
 
-                // Si no hay ingresos, no mostrar la tabla para este yarnId
-                if (ingresosFiltrados.length === 0) return null;
+          if (ingresosFiltrados.length === 0) {
+            //console.log("--->", ingresos);
+            //console.log("asdasdasdasdasdasd");
+            return null};
 
-                return (
-                  <div key={yarnId} className="mb-8">
-                    {/* Título del grupo de hilado */}
-                    <h2 className="text-lg font-bold my-4">Hilado: {yarnName}</h2>
+          return (
+            <div key={yarnId} className="mb-8">
+              <h2 className="text-lg font-bold my-4">Hilado: {yarnName}</h2>
+              <table className="w-full table-auto">
+                <thead>
+                  <tr className="bg-blue-900 text-white">
+                    <th className="px-4 py-4 font-normal">Número</th>
+                    <th className="px-4 py-4 font-normal">Peso Bruto</th>
+                    <th className="px-4 py-4 font-normal">Peso Neto</th>
+                    <th className="px-4 py-4 font-normal">Paquetes restantes</th>
+                    <th className="px-4 py-4 font-normal">Conos restantes</th>
+                    <th className="px-4 py-4 font-normal">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ingresosFiltrados
+                    .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
+                    .map((ingreso) => {
+                      const alreadySelected = selectedEntries.some(
+                        (r) => r.entryNumber === ingreso.entryNumber
+                      );
+                      const detail = ingreso.detailHeavy?.[0] || {};
 
-                    <table className="w-full table-auto">
-                      <thead>
-                        <tr className="bg-blue-900 text-white">
-                          <th className="px-4 py-4 font-normal">Número</th>
-                          <th className="px-4 py-4 font-normal">Peso Bruto</th>
-                          <th className="px-4 py-4 font-normal">Peso Neto</th>
-                          <th className="px-4 py-4 font-normal">Paquetes restantes</th>
-                          <th className="px-4 py-4 font-normal">Conos restantes</th>
-                          <th className="px-4 py-4 font-normal">Acciones</th>
+                      return (
+                        <tr key={ingreso.entryNumber} className="text-center">
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {ingreso.entryNumber}
+                            <IconButton onClick={() => handleOpenYarnEntryInfoDialog(ingreso.entryNumber)}>
+                              <VisibilityIcon style={{ color: "#1976d2" }} />
+                            </IconButton>
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {ingreso.detailHeavy?.reduce((sum, item) => sum + (item.grossWeightLeft || 0), 0) || "--"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {ingreso.detailHeavy?.reduce((sum, item) => sum + (item.netWeightLeft || 0), 0) || "--"}
+                          </td>
+                          <td className="border-b border-gray-300 px-4 py-5">{ingreso.detailHeavy?.reduce((sum, item) => sum + (item.packagesLeft || 0), 0) || "--"}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">{ingreso.detailHeavy?.reduce((sum, item) => sum + (item.conesLeft || 0), 0) || "--"}</td>
+                          <td className="border-b border-gray-300 px-4 py-5">
+                            {alreadySelected ? (
+                              <span className="text-gray-500">Seleccionado</span>
+                            ) : (
+                              <IconButton color="primary" onClick={() => loadIngresoDetails(ingreso)}>
+                                <Add />
+                              </IconButton>
+                            )}
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {ingresosFiltrados
-                          .slice(pagina * filasPorPagina, pagina * filasPorPagina + filasPorPagina)
-                          .map((ingreso) => {
-                            const alreadySelected = selectedEntries.some(
-                              (r) => r.entryNumber === ingreso.entryNumber
-                            );
-                            const detail = ingreso.detailHeavy?.[0] || {};
+                      );
+                    })}
+                </tbody>
+              </table>
 
-                            return (
-                              <tr key={ingreso.entryNumber} className="text-center">
-                                <td className="border-b border-gray-300 px-4 py-5">
-                                  {ingreso.entryNumber}
-                                  <IconButton onClick={() => handleOpenYarnEntryInfoDialog(ingreso.entryNumber)}>
-                                    <VisibilityIcon style={{ color: "#1976d2" }} />
-                                  </IconButton>
-                                </td>
-                                <td className="border-b border-gray-300 px-4 py-5">
-                                  {detail.grossWeight || "--"}
-                                </td>
-                                <td className="border-b border-gray-300 px-4 py-5">
-                                  {detail.netWeight || "--"}
-                                </td>
-                                <td className="border-b border-gray-300 px-4 py-5">
-                                  {detail.packagesLeft || "--"}
-                                </td>
-                                <td className="border-b border-gray-300 px-4 py-5">
-                                  {detail.conesLeft || "--"}
-                                </td>
-                                <td className="border-b border-gray-300 px-4 py-5">
-                                  {alreadySelected ? (
-                                    <span className="text-gray-500">Seleccionado</span>
-                                  ) : (
-                                    <IconButton color="primary" onClick={() => loadIngresoDetails(ingreso)}>
-                                      <Add />
-                                    </IconButton>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                      </tbody>
-                    </table>
-
-                    {/* Paginación para cada grupo */}
-                    <TablePagination
-                      rowsPerPageOptions={[10, 25, 50]}
-                      component="div"
-                      count={ingresosFiltrados.length}
-                      rowsPerPage={filasPorPagina}
-                      page={pagina}
-                      onPageChange={(_, newPage) => setPagina(newPage)}
-                      onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))}
-                    />
-                  </div>
-                );
-              })}
-          </div>
+              <TablePagination
+                rowsPerPageOptions={[10, 25, 50]}
+                component="div"
+                count={ingresosFiltrados.length}
+                rowsPerPage={filasPorPagina}
+                page={pagina}
+                onPageChange={(_, newPage) => setPagina(newPage)}
+                onRowsPerPageChange={(e) => setFilasPorPagina(parseInt(e.target.value, 10))}
+              />
+            </div>
+          );
+        })
+      )}
+    </div>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseIngresoDialog} style={{ backgroundColor: "#d32f2f", color: "#fff" }}>
@@ -1232,7 +1405,6 @@ import NoteIcon from '@mui/icons-material/Note';
                 </thead>
                 <tbody>
                   {entries.map((ingreso) => {
-                    const detail = ingreso.detailHeavy?.[0] || {};
                     return (
                       <tr key={ingreso.entryNumber} className="text-center text-black border-b border-gray-300">
                         <td className="border border-gray-300 px-4 py-2">
@@ -1241,10 +1413,18 @@ import NoteIcon from '@mui/icons-material/Note';
                             <VisibilityIcon style={{ color: "#1976d2" }} />
                           </IconButton>
                         </td>
-                        <td className="border border-gray-300 px-4 py-2">{detail.grossWeight || "--"}</td>
-                        <td className="border border-gray-300 px-4 py-2">{detail.netWeight || "--"}</td>
-                        <td className="border border-gray-300 px-4 py-2">{detail.packagesLeft || "--"}</td>
-                        <td className="border border-gray-300 px-4 py-2">{detail.conesLeft || "--"}</td>
+                        <td className="border border-gray-300 px-4 py-2">
+                          {ingreso.detailHeavy?.reduce((sum, item) => sum + (item.grossWeightLeft || 0), 0) || "--"}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2">
+                          {ingreso.detailHeavy?.reduce((sum, item) => sum + (item.netWeightLeft || 0), 0) || "--"}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2">
+                          {ingreso.detailHeavy?.reduce((sum, item) => sum + (item.packagesLeft || 0), 0) || "--"}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2">
+                          {ingreso.detailHeavy?.reduce((sum, item) => sum + (item.conesLeft || 0), 0) || "--"}
+                        </td>
                         <td className="border border-gray-300 px-4 py-2">
                           <IconButton color="error" onClick={() => handleRemoveEntry(ingreso.entryNumber)}>
                             <DeleteForever />
@@ -1262,8 +1442,11 @@ import NoteIcon from '@mui/icons-material/Note';
               <TextField
                 label="Cantidad Requerida (kg)"
                 type="number"
-                value={cantidadRequerida}
-                onChange={(e) => setCantidadRequerida(parseFloat(e.target.value) || 0)}
+                value={cantidadesRequeridas[yarnId] || ""}
+                onChange={(e) => setCantidadesRequeridas(prev => ({
+                  ...prev,
+                  [yarnId]: parseFloat(e.target.value) || 0
+                }))}
                 variant="outlined"
                 sx={{
                   width: "20%",
@@ -1292,8 +1475,11 @@ import NoteIcon from '@mui/icons-material/Note';
               <TextField
                 label="Cantidad de Bultos"
                 type="number"
-                value={bultosRequerido}
-                onChange={(e) => setBultosRequerido(parseFloat(e.target.value) || 0)}
+                value={bultosRequeridos[yarnId] || ""}
+                onChange={(e) => setBultosRequeridos(prev => ({
+                  ...prev,
+                  [yarnId]: parseFloat(e.target.value) || 0
+                }))}
                 variant="outlined"
                 sx={{
                   width: "20%",
@@ -1320,52 +1506,102 @@ import NoteIcon from '@mui/icons-material/Note';
               </Button>
             </Stack>
 
-            {/* Tarjetas de asignación para este YarnId */}
-            <Grid container spacing={2} justifyContent="center">
-              {ingresosSeleccionados
-                .filter(ingreso => ingreso.yarnId === yarnId)
-                .map((ingreso, index) => (
-                  <Grid item xs={12} sm={6} md={4} key={index}>
-                    <Card sx={{ borderRadius: "12px", boxShadow: "0px 4px 10px rgba(0,0,0,0.1)" }}>
-                      <CardContent>
-                        <Typography variant="h6" fontWeight="bold">
-                          Hilado: {NameYarnsIds[YarnsIds.indexOf(ingreso.yarnId)] || ingreso.yarnId}
-                        </Typography>
-                        <Typography variant="body1" color="textSecondary">
-                          Peso Asignado: <strong>{ingreso.AssignedWeight} kg</strong>
-                        </Typography>
-                        <Grid container spacing={1} sx={{ marginTop: 1 }}>
-                          <Grid item xs={6}>
-                            <TextField
-                              label="Paquetes"
-                              type="number"
-                              value={ingreso.packageCount}
-                              onChange={(e) => handleEditarIngreso(index, "packageCount", parseInt(e.target.value) || 0)}
-                              fullWidth
-                              variant="outlined"
-                            />
-                          </Grid>
-                          <Grid item xs={6}>
-                            <TextField
-                              label="Conos"
-                              type="number"
-                              value={ingreso.coneCount}
-                              onChange={(e) => handleEditarIngreso(index, "coneCount", parseInt(e.target.value) || 0)}
-                              fullWidth
-                              variant="outlined"
-                            />
-                          </Grid>
-                        </Grid>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-            </Grid>
+            {/* Tabla de asignación para este YarnId */}
+            <div className="max-w-full overflow-x-auto mt-4">
+              <table className="w-full table-auto border-collapse">
+                <thead>
+                  <tr className="bg-blue-900 uppercase text-center text-white">
+                    <th className="px-4 py-2 font-normal">Hilado</th>
+                    <th className="px-4 py-2 font-normal">Peso Asignado (kg)</th>
+                    <th className="px-4 py-2 font-normal">Paquetes</th>
+                    <th className="px-4 py-2 font-normal">Conos</th>
+                    <th className="px-4 py-2 font-normal">Número de Ingreso</th>
+                    <th className="px-4 py-2 font-normal">Grupo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ingresosSeleccionados
+                    .filter(ingreso => ingreso.yarnId === yarnId)
+                    .slice(
+                      paginaAsignaciones * filasPorPaginaAsignaciones,
+                      paginaAsignaciones * filasPorPaginaAsignaciones + filasPorPaginaAsignaciones
+                    )
+                    .map((ingreso, index) => (
+                      <tr key={index} className="text-center border-b border-gray-200 hover:bg-gray-50">
+                        <td className="px-4 py-3">{NameYarnsIds[YarnsIds.indexOf(ingreso.yarnId)] || ingreso.yarnId}</td>
+                        <td className="px-4 py-3">
+                          <TextField
+                            type="number"
+                            value={ingreso.AssignedWeight}
+                            onChange={(e) => handleEditarIngreso(index, "AssignedWeight", parseFloat(e.target.value) || 0)}
+                            variant="outlined"
+                            size="small"
+                            sx={{ width: '100px' }}
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <TextField
+                            type="number"
+                            value={ingreso.packageCount}
+                            onChange={(e) => handleEditarIngreso(index, "packageCount", parseInt(e.target.value) || 0)}
+                            variant="outlined"
+                            size="small"
+                            sx={{ width: '100px' }}
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <TextField
+                            type="number"
+                            value={ingreso.coneCount}
+                            onChange={(e) => handleEditarIngreso(index, "coneCount", parseInt(e.target.value) || 0)}
+                            variant="outlined"
+                            size="small"
+                            sx={{ width: '100px' }}
+                          />
+                        </td>
+                        <td className="px-4 py-3">{ingreso.entryNumber}</td>
+                        <td className="px-4 py-3">{ingreso.groupNumber}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+              <TablePagination
+                rowsPerPageOptions={[10, 25, 50]}
+                component="div"
+                count={ingresosSeleccionados.filter(ingreso => ingreso.yarnId === yarnId).length}
+                rowsPerPage={filasPorPaginaAsignaciones}
+                page={paginaAsignaciones}
+                onPageChange={handleChangePaginaAsignaciones}
+                onRowsPerPageChange={handleChangeFilasPorPaginaAsignaciones}
+                labelRowsPerPage="Filas por página"
+                labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+              />
+            </div>
+
+            {/* Mensaje de resultados del cálculo */}
+            {calculationMessages[yarnId] && (
+              <Alert 
+                severity="info" 
+                onClose={() => setCalculationMessages(prev => ({
+                  ...prev,
+                  [yarnId]: null
+                }))}
+                sx={{ 
+                  mt: 2,
+                  whiteSpace: 'pre-line',
+                  '& .MuiAlert-message': {
+                    width: '100%'
+                  }
+                }}
+              >
+                {calculationMessages[yarnId]}
+              </Alert>
+            )}
           </div>
         ))}
 
       {/* Campo para notas del documento */}
-      {ingresosSeleccionados.length > 0 && dataOS && (
+      {selectedEntries.length > 0 && ingresosSeleccionados.length > 0 && dataOS && (
         <Stack spacing={2} alignItems="center" marginTop={4}>
           <Card 
             sx={{ 
