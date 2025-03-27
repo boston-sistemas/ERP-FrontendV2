@@ -37,6 +37,9 @@ const DetallesMovIngresoHilado: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
   const [isAnulable, setIsAnulable] = useState(false);
+  const [currentPage, setCurrentPage] = useState<Record<number, number>>({});
+  const [yarnDescriptions, setYarnDescriptions] = useState<Record<string, any>>({});
+  const itemsPerPage = 10;
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedData, setEditedData] = useState<YarnPurchaseEntry | null>(null);
@@ -214,6 +217,48 @@ const DetallesMovIngresoHilado: React.FC = () => {
     setSelectedYarn(null);
   };
 
+  const handlePageChange = (rowIndex: number, newPage: number) => {
+    setCurrentPage(prev => ({
+      ...prev,
+      [rowIndex]: newPage
+    }));
+  };
+
+  const sortDetailHeavy = (detailHeavy: any[]) => {
+    return [...detailHeavy].sort((a, b) => a.groupNumber - b.groupNumber);
+  };
+
+  const getCurrentPageData = (detailHeavy: any[], rowIndex: number) => {
+    const sortedData = sortDetailHeavy(detailHeavy);
+    const page = currentPage[rowIndex] || 0;
+    const startIndex = page * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return sortedData.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = (detailHeavy: any[]) => {
+    return Math.ceil(detailHeavy.length / itemsPerPage);
+  };
+
+  useEffect(() => {
+    const loadYarnDescriptions = async () => {
+      if (detalle) {
+        const descriptions: Record<string, any> = {};
+        for (const item of detalle.detail) {
+          try {
+            const yarnData = await fetchYarnbyId(item.yarnId);
+            descriptions[item.yarnId] = yarnData;
+          } catch (error) {
+            console.error(`Error fetching yarn description for ${item.yarnId}:`, error);
+          }
+        }
+        setYarnDescriptions(descriptions);
+      }
+    };
+
+    loadYarnDescriptions();
+  }, [detalle]);
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -318,7 +363,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
             <tr>
               {[
                 "Item",
-                "Código",
+                "Nombre del hilado",
                 "N° Bultos",
                 "N° Conos",
                 "Lote Mecsa",
@@ -344,10 +389,16 @@ const DetallesMovIngresoHilado: React.FC = () => {
                   <tr className="text-center text-black">
                     <td className="border-b border-gray-300 px-4 py-5">{item.itemNumber}</td>
                     <td className="border-b border-gray-300 px-4 py-5">
-                      {item.yarnId}
-                      <IconButton onClick={() => handleOpenYarnDialog(item.yarnId)}>
-                        <VisibilityIcon style={{ color: "#1976d2" }} />
-                      </IconButton>
+                      <Tooltip title={item.yarnId} arrow>
+                        <div className="flex items-center justify-center">
+                          <span className="mr-2">
+                            {yarnDescriptions[item.yarnId]?.description || item.yarnId}
+                          </span>
+                          <IconButton onClick={() => handleOpenYarnDialog(item.yarnId)}>
+                            <VisibilityIcon style={{ color: "#1976d2" }} />
+                          </IconButton>
+                        </div>
+                      </Tooltip>
                     </td>
                     <td className="border-b border-gray-300 px-4 py-5">{item.guidePackageCount}</td>
                     <td className="border-b border-gray-300 px-4 py-5">{item.guideConeCount}</td>
@@ -378,7 +429,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {item.detailHeavy.map((group, groupIndex) => (
+                              {getCurrentPageData(item.detailHeavy, index).map((group, groupIndex) => (
                                 <tr key={groupIndex} className="text-center text-gray-800">
                                   <td className="border-b border-gray-300 px-4 py-2">{group.groupNumber}</td>
                                   <td className="border-b border-gray-300 px-4 py-2">{group.packageCount}</td>
@@ -396,6 +447,29 @@ const DetallesMovIngresoHilado: React.FC = () => {
                               ))}
                             </tbody>
                           </table>
+                          {item.detailHeavy.length > itemsPerPage && (
+                            <div className="flex justify-center items-center mt-4 space-x-2">
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => handlePageChange(index, (currentPage[index] || 0) - 1)}
+                                disabled={(currentPage[index] || 0) === 0}
+                              >
+                                Anterior
+                              </Button>
+                              <Typography variant="body2" className="mx-2">
+                                Página {(currentPage[index] || 0) + 1} de {getTotalPages(item.detailHeavy)}
+                              </Typography>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => handlePageChange(index, (currentPage[index] || 0) + 1)}
+                                disabled={(currentPage[index] || 0) >= getTotalPages(item.detailHeavy) - 1}
+                              >
+                                Siguiente
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </Collapse>
                     </td>

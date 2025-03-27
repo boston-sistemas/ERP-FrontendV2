@@ -58,6 +58,7 @@ const CrearMovIngresoHilado: React.FC = () => {
   const [details, setDetails] = useState<
     {
       yarnId: string;
+      yarnDescription?: string;
       guideNetWeight: number;
       guideGrossWeight: number;
       guidePackageCount: number;
@@ -114,6 +115,7 @@ const CrearMovIngresoHilado: React.FC = () => {
 
     const initialDetails = orden.detail.map((detalle) => ({
       yarnId: detalle.yarn.id,
+      yarnDescription: detalle.yarn.description,
       guideNetWeight: 0,
       guideGrossWeight: 0,
       guidePackageCount: 0,
@@ -330,6 +332,28 @@ const CrearMovIngresoHilado: React.FC = () => {
     return matchesSearch && matchesDate;
   });
 
+  const handleAddDetail = async (yarnId: string) => {
+    try {
+      const yarnData = await fetchYarnbyId(yarnId);
+      setDetails((prevDetails) => [
+        ...prevDetails,
+        {
+          yarnId,
+          yarnDescription: yarnData.description,
+          guideNetWeight: 0,
+          guideGrossWeight: 0,
+          guidePackageCount: 0,
+          guideConeCount: 0,
+          detailHeavy: [],
+          isWeighted: false,
+          isActive: true,
+        },
+      ]);
+    } catch (error) {
+      console.error("Error fetching yarn data:", error);
+    }
+  };
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
       <div className="bg-white dark:bg-gray-800 border border-gray-300 rounded-lg shadow-lg p-8 w-full max-w-4xl">
@@ -410,7 +434,7 @@ const CrearMovIngresoHilado: React.FC = () => {
                   className="font-semibold mb-2"
                   style={{ color: "#000" }}
                 >
-                  Hilado: {detail.yarnId}
+                  Hilado: {detail.yarnDescription || detail.yarnId}
                   <IconButton onClick={() => handleOpenYarnDialog(detail.yarnId)}>
                     <Visibility style={{ color: "#1976d2" }} />
                   </IconButton>

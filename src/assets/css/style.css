@@ -440,9 +440,9 @@ input[type="search"]::-webkit-search-cancel-button {
 .dark .MuiPopover-paper,
 .dark .select-dropdown,
 .dark [role="listbox"] {
-    background-color: hsl(var(--custom-boxdark)) !important;
+    background-color: hsl(217 33% 18%) !important;
     border: 1px solid hsl(var(--custom-strokedark)) !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* Estilo para backdrop de diálogos en modo oscuro */
@@ -565,7 +565,7 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .dark .MuiList-root {
-    background-color: hsl(var(--custom-boxdark)) !important;
+    background-color: hsl(217 33% 18%) !important;
     padding: 0.5rem 0 !important;
 }
 
@@ -575,15 +575,15 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .dark .MuiMenuItem-root:hover {
-    background-color: hsl(var(--custom-meta-4)) !important;
+    background-color: hsl(215 30% 25%) !important;
 }
 
 .dark .MuiMenuItem-root.Mui-selected {
-    background-color: hsl(var(--custom-meta-4), 0.7) !important;
+    background-color: hsl(215 60% 30%) !important;
 }
 
 .dark .MuiMenuItem-root.Mui-selected:hover {
-    background-color: hsl(var(--custom-meta-4), 0.8) !important;
+    background-color: hsl(215 60% 35%) !important;
 }
 
 /* Mejoras para campos de formulario en diálogos */
@@ -1333,6 +1333,241 @@ select,
 .MuiBackdrop-root,
 .select-backdrop {
     background-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Estilos para el desplegable de la tabla */
+.MuiCollapse-root {
+    background-color: white !important;
+    border: 1px solid hsl(214.3 31.8% 91.4%) !important;
+    border-top: none !important;
+    margin: 0 1rem !important;
+}
+
+/* Contenedor interno del desplegable */
+.MuiCollapse-root > div {
+    background-color: white !important;
+    padding: 1rem !important;
+    border-radius: 0 0 0.375rem 0.375rem !important;
+}
+
+/* Tabla dentro del desplegable */
+.MuiCollapse-root table {
+    background-color: white !important;
+    border: 1px solid hsl(214.3 31.8% 91.4%) !important;
+    border-radius: 0.375rem !important;
+    overflow: hidden !important;
+}
+
+/* Encabezados de la tabla desplegable */
+.MuiCollapse-root thead tr {
+    background-color: hsl(220 70% 50%) !important;
+    color: white !important;
+}
+
+.MuiCollapse-root th {
+    color: white !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    padding: 0.75rem 1rem !important;
+    text-align: center !important;
+}
+
+/* Filas de la tabla desplegable */
+.MuiCollapse-root tbody tr {
+    background-color: white !important;
+}
+
+.MuiCollapse-root tbody tr:nth-child(odd) {
+    background-color: hsl(210 40% 96.1%) !important;
+}
+
+.MuiCollapse-root tbody td {
+    padding: 0.75rem 1rem !important;
+    border-bottom: 1px solid hsl(214.3 31.8% 91.4%) !important;
+}
+
+/* Modo oscuro */
+.dark .MuiCollapse-root {
+    background-color: hsl(217 33% 18%) !important;
+    border-color: hsl(var(--custom-strokedark)) !important;
+}
+
+.dark .MuiCollapse-root > div {
+    background-color: hsl(217 33% 18%) !important;
+}
+
+.dark .MuiCollapse-root table {
+    background-color: hsl(217 33% 18%) !important;
+    border-color: hsl(var(--custom-strokedark)) !important;
+}
+
+.dark .MuiCollapse-root thead tr {
+    background-color: hsl(215 60% 30%) !important;
+}
+
+.dark .MuiCollapse-root tbody tr {
+    background-color: hsl(217 33% 18%) !important;
+}
+
+.dark .MuiCollapse-root tbody tr:nth-child(odd) {
+    background-color: hsla(var(--custom-meta-4), 0.3) !important;
+}
+
+.dark .MuiCollapse-root tbody td {
+    border-color: hsl(var(--custom-strokedark)) !important;
+}
+
+/* Estilos para el contenedor de detalles en modo claro */
+.rounded-md.border.p-5.bg-gray-50 {
+    background-color: white !important;
+    border: 1px solid hsl(214.3 31.8% 91.4%) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Estilos para los textos en el contenedor de detalles */
+.rounded-md.border.p-5.bg-gray-50 .MuiTypography-root {
+    color: hsl(222.2 84% 4.9%) !important;
+}
+
+.rounded-md.border.p-5.bg-gray-50 strong {
+    font-weight: 600 !important;
+    color: hsl(222.2 84% 4.9%) !important;
+}
+
+/* Modo oscuro para el contenedor de detalles */
+.dark .rounded-md.border.p-5.bg-gray-50 {
+    background-color: hsl(217 33% 18%) !important;
+    border-color: hsl(var(--custom-strokedark)) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.12) !important;
+}
+
+.dark .rounded-md.border.p-5.bg-gray-50 .MuiTypography-root {
+    color: white !important;
+}
+
+.dark .rounded-md.border.p-5.bg-gray-50 strong {
+    color: white !important;
+}
+
+/* Estilos para textos en formularios */
+.dark h2.text-xl,
+.dark .MuiTypography-subtitle1,
+.dark .MuiTypography-body2,
+.dark .font-semibold {
+    color: white !important;
+}
+
+.dark .text-black,
+.dark [style*="color: #000"] {
+    color: white !important;
+}
+
+/* Específicamente para el título y subtítulos del formulario */
+.dark .bg-white.dark\:bg-gray-800 h2,
+.dark .bg-white.dark\:bg-gray-800 .MuiTypography-subtitle1,
+.dark .bg-white.dark\:bg-gray-800 .MuiTypography-body2,
+.dark .bg-white.dark\:bg-gray-800 .font-semibold {
+    color: white !important;
+}
+
+/* Estilos para desplegables en modo oscuro */
+.dark .MuiSelect-select,
+.dark .MuiSelect-root,
+.dark select,
+.dark [role="listbox"],
+.dark .select-dropdown {
+    background-color: hsl(217 33% 18%) !important;
+    border-color: hsl(var(--custom-strokedark)) !important;
+    color: white !important;
+}
+
+.dark .MuiMenu-paper,
+.dark .MuiPopover-paper,
+.dark .select-dropdown,
+.dark [role="listbox"] {
+    background-color: hsl(217 33% 18%) !important;
+    border: 1px solid hsl(var(--custom-strokedark)) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dark .MuiMenuItem-root,
+.dark .select-option {
+    color: white !important;
+}
+
+.dark .MuiMenuItem-root:hover,
+.dark .select-option:hover {
+    background-color: hsl(215 30% 25%) !important;
+}
+
+.dark .MuiMenuItem-root.Mui-selected,
+.dark .select-option.selected {
+    background-color: hsl(215 60% 30%) !important;
+}
+
+.dark .MuiMenuItem-root.Mui-selected:hover,
+.dark .select-option.selected:hover {
+    background-color: hsl(215 60% 35%) !important;
+}
+
+/* Mejoras para el dropdown de Material-UI en modo oscuro */
+.dark .MuiPaper-root[role="presentation"] {
+    background-color: hsl(217 33% 18%) !important;
+    border: 1px solid hsl(var(--custom-strokedark)) !important;
+    color: white !important;
+}
+
+.dark .MuiList-root {
+    background-color: hsl(217 33% 18%) !important;
+    color: white !important;
+}
+
+/* Estilos para el ícono del desplegable */
+.dark .MuiSelect-icon {
+    color: white !important;
+}
+
+/* Estilos para el fondo del desplegable cuando está abierto */
+.dark .MuiBackdrop-root {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Estilos para la paginación en modo oscuro */
+.dark .MuiPagination-root .MuiPaginationItem-root {
+    color: white !important;
+}
+
+.dark .MuiPagination-root .MuiPaginationItem-root.Mui-selected {
+    background-color: hsl(220 70% 50%) !important;
+    color: white !important;
+}
+
+.dark .MuiPagination-root .MuiPaginationItem-root:hover {
+    background-color: hsla(var(--custom-meta-4), 0.5) !important;
+}
+
+.dark .MuiPagination-root .MuiPaginationItem-root.Mui-disabled {
+    color: hsla(var(--foreground), 0.5) !important;
+}
+
+/* Estilos específicos para los números de página en modo oscuro */
+.dark [aria-label*="pagination"] button,
+.dark [role="navigation"] button,
+.dark .pagination-numbers button {
+    color: white !important;
+}
+
+.dark [aria-label*="pagination"] button.Mui-selected,
+.dark [role="navigation"] button.Mui-selected,
+.dark .pagination-numbers button.Mui-selected {
+    background-color: hsl(220 70% 50%) !important;
+    color: white !important;
+}
+
+.dark [aria-label*="pagination"] button:hover,
+.dark [role="navigation"] button:hover,
+.dark .pagination-numbers button:hover {
+    background-color: hsla(var(--custom-meta-4), 0.5) !important;
 }
 
 
