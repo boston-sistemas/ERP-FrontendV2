@@ -674,7 +674,11 @@ const RegistroAuditoria = () => {
             variant="contained"
             sx={{
               textTransform: 'none',
-              fontWeight: 500
+              fontWeight: 500,
+              backgroundColor: '#1976d2',
+              '&:hover': {
+                backgroundColor: '#1976d2'
+              }
             }}
           >
             Cerrar
