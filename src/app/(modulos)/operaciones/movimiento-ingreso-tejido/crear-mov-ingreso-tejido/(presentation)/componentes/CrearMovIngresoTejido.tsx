@@ -32,7 +32,7 @@ import { fetchFabricById } from "@/app/(modulos)/operaciones/tejidos/services/te
 import { fetchSuppliersT } from "../../../services/IngresoTejidoService";
 import { ServiceOrder, Supplier } from "@/app/(modulos)/operaciones/models/models";
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { createWeavingServiceEntry } from "@/app/(modulos)/operaciones/ingreso-tejido/services/IngresoTejidoService";
+import { createWeavingServiceEntry } from "@/app/(modulos)/operaciones/movimiento-ingreso-tejido/services/IngresoTejidoService";
 
 interface DetailEntry {
   itemNumber: number;
