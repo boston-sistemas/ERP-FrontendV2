@@ -38,7 +38,7 @@ export const fetchWeavingServiceEntryById = async (
     period: number
 ): Promise<WeavingServiceEntry> => {
     const response = await instance.get<WeavingServiceEntry>(
-        `/operations/v1/weaving-service-entries/${entryNumber}?period=${period}`
+        `/operations/v1/weaving-service-entries/${entryNumber}?period=${period}&includeFabricDescription=true`
     );
     return response.data;
 };

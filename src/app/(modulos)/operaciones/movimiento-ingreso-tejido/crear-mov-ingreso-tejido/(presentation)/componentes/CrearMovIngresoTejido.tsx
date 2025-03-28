@@ -221,7 +221,7 @@ const CrearIngresoTejido: React.FC = () => {
 
   // Agregar función para manejar la cancelación
   const handleCancel = () => {
-    router.push("/operaciones/ingreso-tejido");
+    router.push("/operaciones/movimiento-ingreso-tejido");
   };
 
   // Agregar función para manejar la creación
@@ -268,7 +268,7 @@ const CrearIngresoTejido: React.FC = () => {
       
       // Redireccionar después de crear exitosamente
       setTimeout(() => {
-        router.push("/operaciones/ingreso-tejido");
+        router.push("/operaciones/movimiento-ingreso-tejido");
       }, 2000);
 
     } catch (error) {
