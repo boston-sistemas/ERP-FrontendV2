@@ -117,7 +117,7 @@ const DetallesMovIngresoTejido: React.FC = () => {
   const handleEdit = () => {
     if (isEditable && detalle) {
       router.push(
-        `/operaciones/ingreso-tejido/editar-mov-ingreso-tejido/${detalle.entryNumber}`
+        `/operaciones/movimiento-ingreso-tejido/editar-mov-ingreso-tejido/${detalle.entryNumber}`
       );
     }
   };
@@ -270,7 +270,7 @@ const DetallesMovIngresoTejido: React.FC = () => {
                 >
                   <td className="border-b border-gray-300 px-4 py-5">{item.itemNumber}</td>
                   <td className="border-b border-gray-300 px-4 py-5">
-                    {item.fabridId}
+                    {item.fabricDescription}
                     <IconButton onClick={() => handleOpenFabricDetails(item.fabridId)}>
                       <Visibility color="primary"/>
                     </IconButton>
@@ -337,7 +337,7 @@ const DetallesMovIngresoTejido: React.FC = () => {
         <Button
           variant="contained"
           style={{ backgroundColor: "#0288d1", color: "#fff" }}
-          onClick={() => router.push("/operaciones/ingreso-tejido")}
+          onClick={() => router.push("/operaciones/movimiento-ingreso-tejido")}
         >
           Regresar a Movimientos
         </Button>

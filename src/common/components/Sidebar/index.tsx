@@ -80,7 +80,7 @@ const sidebarItems: SidebarSection[] = [
       },
       {
         nombre: "Ingreso de tejido por O/S",
-        path: "/operaciones/ingreso-tejido",
+        path: "/operaciones/movimiento-ingreso-tejido",
       }
     ]
   },
@@ -94,7 +94,7 @@ const sidebarItems: SidebarSection[] = [
     items: [
       {
         nombre: "Salida de hilado a servicio de Tejeduría",
-        path: "/operaciones/salida-hilado",
+        path: "/operaciones/movimiento-salida-hilado",
       }
     ]
   },
