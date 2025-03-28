@@ -180,7 +180,7 @@ const OrdenesServicio: React.FC = () => {
       setOpenDialog(false);
 
       // Redirigir a detalles
-      router.push(`/operaciones-new/ordenes-servicio/detalles/${resp.id}`);
+      router.push(`/operaciones/ordenes-servicio/detalles/${resp.id}`);
 
       // Mostrar snackbar de éxito
       setSnackbarMessage("Orden de servicio creada con éxito.");
@@ -210,7 +210,7 @@ const OrdenesServicio: React.FC = () => {
   );
 
   const handleDetailsClick = (orderId: string) => {
-    router.push(`/operaciones-new/ordenes-servicio/detalles/${orderId}`);
+    router.push(`/operaciones/ordenes-servicio/detalles/${orderId}`);
   };
 
   // Actualizar handlers de paginación

@@ -148,7 +148,7 @@ const Fibras: React.FC = () => {
   // 3) Crear y editar fibras
   // ---------------------------------------------------------------------------
   const handleCrearFibra = () => {
-    router.push("/operaciones-new/fibras/crear-fibra");
+    router.push("/operaciones/fibras/crear-fibra");
   };
 
   // Al hacer clic en Editar

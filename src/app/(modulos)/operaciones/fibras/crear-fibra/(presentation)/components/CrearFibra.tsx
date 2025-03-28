@@ -114,7 +114,7 @@ const CrearFibra: React.FC = () => {
 
         // Redirigir tras breve pausa
         setTimeout(() => {
-          router.push("/operaciones-new/fibras");
+          router.push("/operaciones/fibras");
         }, 1000);
       } catch (error: any) {
         // Manejo de error unificado
@@ -133,7 +133,7 @@ const CrearFibra: React.FC = () => {
   };
 
   const handleVolver = () => {
-    router.push("/operaciones-new/fibras");
+    router.push("/operaciones/fibras");
   };
 
   return (

@@ -135,7 +135,7 @@ const CrearTejido: React.FC = () => {
       setSnackbarMessage("Tejido creado exitosamente.");
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
-      router.push("/operaciones-new/tejidos");
+      router.push("/operaciones/tejidos");
     } catch (err) {
       console.error("Error al crear tejido:", err);
       setSnackbarMessage("Error al crear el tejido.");
@@ -267,7 +267,7 @@ const CrearTejido: React.FC = () => {
             <Button
               variant="contained"
               style={{ backgroundColor: "#d32f2f", color: "#fff" }}
-              onClick={() => router.push("/operaciones-new/tejidos")}
+              onClick={() => router.push("/operaciones/tejidos")}
             >
               Cancelar
             </Button>

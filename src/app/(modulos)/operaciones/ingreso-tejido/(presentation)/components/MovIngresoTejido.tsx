@@ -79,11 +79,11 @@ const MovIngresoTejido: React.FC = () => {
     }, [pagina, showDeleted, period, startDate, endDate]);
   
     const handleCreateEntry = () => {
-      router.push("/operaciones-new/ingreso-tejido/crear-mov-ingreso-tejido");
+      router.push("/operaciones/ingreso-tejido/crear-mov-ingreso-tejido");
     };
   
     const handleViewDetails = (entryNumber: string, period: number) => {
-      router.push(`/operaciones-new/ingreso-tejido/detalles-mov-ingreso-tejido/${entryNumber}?period=${period}`);
+      router.push(`/operaciones/ingreso-tejido/detalles-mov-ingreso-tejido/${entryNumber}?period=${period}`);
     };
   
     const filteredEntries = entries.filter((entry) =>
@@ -170,7 +170,7 @@ const MovIngresoTejido: React.FC = () => {
                 startIcon={<Add />}
                 variant="contained"
                 style={{ backgroundColor: "#1976d2", color: "#fff", marginLeft: 'auto' }}
-                onClick={() => router.push('/operaciones-new/ingreso-tejido/crear-mov-ingreso-tejido')}
+                onClick={() => router.push('/operaciones/ingreso-tejido/crear-mov-ingreso-tejido')}
               >
                 CREAR
               </Button>

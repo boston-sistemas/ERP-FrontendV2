@@ -27,12 +27,12 @@ import { useRouter } from "next/navigation";
 import {
   fetchServiceOrders,
   fetchServiceOrderById,
-} from "@/app/(modulos)/operaciones-new/ordenes-servicio/services/ordenesServicioService";
-import { fetchFabricById } from "@/app/(modulos)/operaciones-new/tejidos/services/tejidosService";
+} from "@/app/(modulos)/operaciones/ordenes-servicio/services/ordenesServicioService";
+import { fetchFabricById } from "@/app/(modulos)/operaciones/tejidos/services/tejidosService";
 import { fetchSuppliersT } from "../../../services/IngresoTejidoService";
-import { ServiceOrder, Supplier } from "@/app/(modulos)/operaciones-new/models/models";
+import { ServiceOrder, Supplier } from "@/app/(modulos)/operaciones/models/models";
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { createWeavingServiceEntry } from "@/app/(modulos)/operaciones-new/ingreso-tejido/services/IngresoTejidoService";
+import { createWeavingServiceEntry } from "@/app/(modulos)/operaciones/ingreso-tejido/services/IngresoTejidoService";
 
 interface DetailEntry {
   itemNumber: number;
@@ -221,7 +221,7 @@ const CrearIngresoTejido: React.FC = () => {
 
   // Agregar función para manejar la cancelación
   const handleCancel = () => {
-    router.push("/operaciones-new/ingreso-tejido");
+    router.push("/operaciones/ingreso-tejido");
   };
 
   // Agregar función para manejar la creación
@@ -268,7 +268,7 @@ const CrearIngresoTejido: React.FC = () => {
       
       // Redireccionar después de crear exitosamente
       setTimeout(() => {
-        router.push("/operaciones-new/ingreso-tejido");
+        router.push("/operaciones/ingreso-tejido");
       }, 2000);
 
     } catch (error) {

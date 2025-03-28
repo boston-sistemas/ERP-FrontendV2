@@ -205,7 +205,7 @@ const Hilados: React.FC = () => {
   };
 
   const handleCrearHilado = () => {
-    router.push("/operaciones-new/hilados/crear-hilado");
+    router.push("/operaciones/hilados/crear-hilado");
   };
 
   // ────────────────────────────────────────────────────────────────────────────

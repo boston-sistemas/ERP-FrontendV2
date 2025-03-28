@@ -346,7 +346,7 @@ const DetallesOrdenServicio: React.FC = () => {
 
   // ================== Volver ==================
   const handleGoBack = () => {
-    router.push("/operaciones-new/ordenes-servicio");
+    router.push("/operaciones/ordenes-servicio");
   };
 
   // ================== Responsive ==================

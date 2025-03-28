@@ -682,7 +682,7 @@ import NoteIcon from '@mui/icons-material/Note';
         setselectedEntries([]);
         setIngresosSeleccionados([]);
         setDataOS(null);
-        router.push(`/operaciones-new/salida-hilado/detalles-mov-salida-hilado/${response.exitNumber}`);
+        router.push(`/operaciones/salida-hilado/detalles-mov-salida-hilado/${response.exitNumber}`);
       } catch (error) {
         console.error("Error al guardar el movimiento de salida:", error);
         showSnackbar("Hubo un error al intentar guardar el movimiento de salida.", "error");
@@ -1689,7 +1689,7 @@ import NoteIcon from '@mui/icons-material/Note';
       <div className="mt-4 mb-4">
         <Button
           variant="outlined"
-          onClick={() => router.push("/operaciones-new/salida-hilado")}
+          onClick={() => router.push("/operaciones/salida-hilado")}
           sx={{
             borderColor: "#64748b",
             color: "#64748b",

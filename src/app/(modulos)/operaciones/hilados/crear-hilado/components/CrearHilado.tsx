@@ -243,7 +243,7 @@ const CrearHilado: React.FC = () => {
       setDescription("");
       setSelectedRecipes([]);
 
-      router.push("/operaciones-new/hilados");
+      router.push("/operaciones/hilados");
     } catch (error: any) {
       console.error("Error al crear hilado:", error);
       setSnackbarMessage(error.message || "Error al crear hilado");
@@ -253,7 +253,7 @@ const CrearHilado: React.FC = () => {
   };
 
   const handleCancel = () => {
-    router.push("/operaciones-new/hilados");
+    router.push("/operaciones/hilados");
   };
 
   // ---------------------------------------------------------------------------

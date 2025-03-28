@@ -286,7 +286,7 @@ const CrearMovIngresoHilado: React.FC = () => {
         setOpenSnackbar(true);
   
         // Redirigir al componente principal
-        router.push("/operaciones-new/movimiento-ingreso-hilado");
+        router.push("/operaciones/movimiento-ingreso-hilado");
       }
     } catch (error: any) {
       console.error("Error al crear el movimiento:", error);
@@ -296,7 +296,7 @@ const CrearMovIngresoHilado: React.FC = () => {
   };    
 
   const handleCancel = () => {
-    router.push("/operaciones-new/movimiento-ingreso-hilado");
+    router.push("/operaciones/movimiento-ingreso-hilado");
   };
 
   const handleCloseSnackbar = () => {

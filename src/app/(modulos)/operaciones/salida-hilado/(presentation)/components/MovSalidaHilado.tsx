@@ -70,13 +70,13 @@ const MovSalidaHilado: React.FC = () => {
 
   const handleCreateMovSalidaHilado = () => {
     localStorage.removeItem("entryNumber");
-    router.push("/operaciones-new/salida-hilado/crear-mov-salida-hilado");
+    router.push("/operaciones/salida-hilado/crear-mov-salida-hilado");
   };
 
   const handleDetailsClick = (exitNumber: string, period: number) => {
     // En este caso, como query param
     router.push(
-      `/operaciones-new/salida-hilado/detalles-mov-salida-hilado/${exitNumber}?period=${period}`
+      `/operaciones/salida-hilado/detalles-mov-salida-hilado/${exitNumber}?period=${period}`
     );
   };
 

@@ -1193,7 +1193,7 @@ const DetallesMovSalidaHilado: React.FC = () => {
       <div className="mt-4 mb-4">
         <Button
           variant="outlined"
-          onClick={() => router.push("/operaciones-new/salida-hilado")}
+          onClick={() => router.push("/operaciones/salida-hilado")}
           sx={{
             borderColor: "#64748b",
             color: "#64748b",

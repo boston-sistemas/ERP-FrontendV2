@@ -125,7 +125,7 @@ const Tejidos: React.FC = () => {
               startIcon={<Add />}
               variant="contained"
               style={{ backgroundColor: "#1976d2", color: "#fff" }}
-              onClick={() => router.push("/operaciones-new/tejidos/crear-tejido")}
+              onClick={() => router.push("/operaciones/tejidos/crear-tejido")}
             >
               CREAR
             </Button>

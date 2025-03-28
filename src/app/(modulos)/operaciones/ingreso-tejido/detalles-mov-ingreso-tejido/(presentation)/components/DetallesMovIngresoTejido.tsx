@@ -32,9 +32,9 @@ import {
   fetchSuppliersT,
   fetchSuppliersTintoreria
 } from "../../../services/IngresoTejidoService";
-import { fetchServiceOrderById } from "@/app/(modulos)/operaciones-new/ordenes-servicio/services/ordenesServicioService";
-import { fetchSuppliersHil } from "@/app/(modulos)/operaciones-new/movimiento-ingreso-hilado/services/movIngresoHiladoService";
-import { WeavingServiceEntry, DetailCard, Fabric, Supplier } from "@/app/(modulos)/operaciones-new/models/models";
+import { fetchServiceOrderById } from "@/app/(modulos)/operaciones/ordenes-servicio/services/ordenesServicioService";
+import { fetchSuppliersHil } from "@/app/(modulos)/operaciones/movimiento-ingreso-hilado/services/movIngresoHiladoService";
+import { WeavingServiceEntry, DetailCard, Fabric, Supplier } from "@/app/(modulos)/operaciones/models/models";
 
 const ERROR_COLOR = "#d32f2f"; // Example color for error
 
@@ -117,7 +117,7 @@ const DetallesMovIngresoTejido: React.FC = () => {
   const handleEdit = () => {
     if (isEditable && detalle) {
       router.push(
-        `/operaciones-new/ingreso-tejido/editar-mov-ingreso-tejido/${detalle.entryNumber}`
+        `/operaciones/ingreso-tejido/editar-mov-ingreso-tejido/${detalle.entryNumber}`
       );
     }
   };
@@ -337,7 +337,7 @@ const DetallesMovIngresoTejido: React.FC = () => {
         <Button
           variant="contained"
           style={{ backgroundColor: "#0288d1", color: "#fff" }}
-          onClick={() => router.push("/operaciones-new/ingreso-tejido")}
+          onClick={() => router.push("/operaciones/ingreso-tejido")}
         >
           Regresar a Movimientos
         </Button>

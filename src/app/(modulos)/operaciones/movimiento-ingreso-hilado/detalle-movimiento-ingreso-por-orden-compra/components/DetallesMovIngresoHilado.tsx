@@ -78,7 +78,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
       
       localStorage.setItem("entryNumber", JSON.stringify(payload));
       router.push(
-        `/operaciones-new/salida-hilado/crear-mov-salida-hilado`);
+        `/operaciones/salida-hilado/crear-mov-salida-hilado`);
     }
   };
     
@@ -486,7 +486,7 @@ const DetallesMovIngresoHilado: React.FC = () => {
         <Button
           variant="contained"
           style={{ backgroundColor: "#0288d1", color: "#fff" }}
-          onClick={() => router.push("/operaciones-new/movimiento-ingreso-hilado")}
+          onClick={() => router.push("/operaciones/movimiento-ingreso-hilado")}
         >
           Regresar a Movimientos
         </Button>

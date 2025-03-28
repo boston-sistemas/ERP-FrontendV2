@@ -139,12 +139,12 @@ const MovIngresoHilado: React.FC = () => {
   };
 
   const handleCreateMovIngresoHilado = () => {
-    router.push("/operaciones-new/movimiento-ingreso-hilado/crear-movimiento-ingreso-hilado");
+    router.push("/operaciones/movimiento-ingreso-hilado/crear-movimiento-ingreso-hilado");
   };
 
   const handleDetailsClick = (entryNumber: string) => {
     localStorage.setItem("selectedPeriod", JSON.stringify(period)); // Guarda el periodo en localStorage
-    router.push(`/operaciones-new/movimiento-ingreso-hilado/detalle-movimiento-ingreso-por-orden-compra/${entryNumber}`); // Redirige al componente de detalles
+    router.push(`/operaciones/movimiento-ingreso-hilado/detalle-movimiento-ingreso-por-orden-compra/${entryNumber}`); // Redirige al componente de detalles
   };
 
   const fetchOCbyId = async (purchaseOrderNumber: string) => {
