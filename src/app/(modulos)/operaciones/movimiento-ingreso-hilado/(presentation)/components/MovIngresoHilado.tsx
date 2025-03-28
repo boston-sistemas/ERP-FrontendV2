@@ -27,6 +27,19 @@ import {
 } from "@/app/(modulos)/operaciones/movimiento-ingreso-hilado/services/movIngresoHiladoService";
 import { fetchYarnbyId } from "../../../hilados/services/hiladoService";
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+} from 'recharts';
 
 const PRIMARY_COLOR = "#1976d2";
 const ERROR_COLOR = "#d32f2f";
@@ -37,7 +50,7 @@ const generateYearOptions = (startYear: number) => {
   return Array.from({ length: currentYear - startYear + 1 }, (_, i) => startYear + i);
 };
 
-
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 const MovIngresoHilado: React.FC = () => {
   const router = useRouter();
@@ -64,6 +77,17 @@ const MovIngresoHilado: React.FC = () => {
   const [showDateFilters, setShowDateFilters] = useState(false);
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  // Nuevos estados para los datos de los gráficos
+  const [estadisticasGenerales, setEstadisticasGenerales] = useState({
+    totalIngresos: 0,
+    ingresosPendientes: 0,
+    ingresosAnulados: 0
+  });
+
+  // Agregar el estado para la paginación de la leyenda si no existe
+  const [currentPage, setCurrentPage] = useState(0);
+  const ITEMS_PER_PAGE = 4;
 
   const {
     data: dataPurchaseEntries,
@@ -201,6 +225,96 @@ const MovIngresoHilado: React.FC = () => {
     )
   );
 
+  // Función para procesar datos para los gráficos
+  const procesarDatosEstadisticas = () => {
+    if (!hilados.length) return;
+
+    const estadisticas = {
+      totalIngresos: hilados.length,
+      ingresosPendientes: hilados.filter(h => h.promecStatus.statusId === 'P').length,
+      ingresosAnulados: hilados.filter(h => h.promecStatus.statusId !== 'P').length
+    };
+
+    setEstadisticasGenerales(estadisticas);
+  };
+
+  // Procesar datos cuando cambian los hilados
+  useEffect(() => {
+    procesarDatosEstadisticas();
+  }, [hilados]);
+
+  // Datos para el gráfico circular
+  const dataPie = [
+    { name: 'Pendientes', value: estadisticasGenerales.ingresosPendientes },
+    { name: 'Anulados', value: estadisticasGenerales.ingresosAnulados },
+  ];
+
+  // Agregar esta función para procesar datos de proveedores
+  const procesarDatosProveedores = () => {
+    if (!hilados.length || !suppliers.length) return [];
+
+    const proveedorCount = hilados.reduce((acc, hilado) => {
+      acc[hilado.supplierCode] = (acc[hilado.supplierCode] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(proveedorCount).map(([code, count]) => ({
+      name: suppliers.find(s => s.code === code)?.name || code,
+      value: count
+    })).sort((a, b) => b.value - a.value); // Ordenar de mayor a menor
+  };
+
+  // Agregar el componente CustomLegend
+  const CustomLegend = ({ payload }) => {
+    const totalPages = Math.ceil(payload.length / ITEMS_PER_PAGE);
+    const startIndex = currentPage * ITEMS_PER_PAGE;
+    const visibleItems = payload.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    // Calcular el total para los porcentajes
+    const total = payload.reduce((sum, entry) => sum + entry.payload.value, 0);
+
+    return (
+      <div className="flex flex-col items-center w-full">
+        <div className="flex flex-col items-start w-full mb-2">
+          {visibleItems.map((entry, index) => (
+            <div key={`legend-item-${index}`} className="flex items-center gap-2 text-sm">
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: entry.color }}
+              />
+              <span>
+                {entry.value.length > 25 
+                  ? `${entry.value.substring(0, 25)}...` 
+                  : entry.value} ({((entry.payload.value / total) * 100).toFixed(0)}%)
+              </span>
+            </div>
+          ))}
+        </div>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-4 mt-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+              disabled={currentPage === 0}
+              className={`p-1 rounded ${currentPage === 0 ? 'text-gray-400' : 'text-blue-600 hover:text-blue-800'}`}
+            >
+              ←
+            </button>
+            <span className="text-sm">
+              {currentPage + 1} / {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+              disabled={currentPage === totalPages - 1}
+              className={`p-1 rounded ${currentPage === totalPages - 1 ? 'text-gray-400' : 'text-blue-600 hover:text-blue-800'}`}
+            >
+              →
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-5">
       <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
@@ -282,6 +396,114 @@ const MovIngresoHilado: React.FC = () => {
               />
             </div>
           </Menu>
+
+          {/* Sección de gráficos modificada */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            {/* Gráfico de Estados - Con leyenda normal */}
+            <div className="bg-white p-4 rounded-lg shadow flex-1">
+              <h3 className="text-lg font-semibold mb-4">Estado de Ingresos</h3>
+              <div className="w-full" style={{ height: '280px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={dataPie}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                    >
+                      {dataPie.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value, name) => [`${value} ingresos`, name]}
+                    />
+                    <Legend 
+                      verticalAlign="bottom"
+                      height={24}
+                      layout="horizontal"
+                      align="center"
+                      wrapperStyle={{
+                        paddingTop: '5px',
+                        width: '100%'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Gráfico de Proveedores - Con leyenda paginada */}
+            <div className="bg-white p-4 rounded-lg shadow flex-1">
+              <h3 className="text-lg font-semibold mb-4">Ingresos por Proveedor</h3>
+              <div className="w-full" style={{ minHeight: '400px', height: 'auto' }}>
+                <ResponsiveContainer width="100%" aspect={1}>
+                  <PieChart>
+                    <Pie
+                      data={procesarDatosProveedores()}
+                      cx="50%"
+                      cy="40%"
+                      labelLine={false}
+                      outerRadius={90}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                      isAnimationActive={false}
+                    >
+                      {procesarDatosProveedores().map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value, name) => [`${value} ingresos`, name]}
+                    />
+                    <Legend 
+                      content={<CustomLegend />}
+                      verticalAlign="bottom"
+                      align="center"
+                      wrapperStyle={{
+                        paddingTop: '10px',
+                        width: '100%'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Panel de Resumen */}
+            <div className="bg-white p-4 rounded-lg shadow h-[300px]">
+              <h3 className="text-lg font-semibold mb-4">Resumen General</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-blue-50 rounded">
+                  <span>Total de Ingresos:</span>
+                  <span className="font-bold">{estadisticasGenerales.totalIngresos}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded">
+                  <span>Ingresos Pendientes:</span>
+                  <span className="font-bold">{estadisticasGenerales.ingresosPendientes}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-red-50 rounded">
+                  <span>Ingresos Anulados:</span>
+                  <span className="font-bold">{estadisticasGenerales.ingresosAnulados}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-green-50 rounded">
+                  <span>Total Proveedores:</span>
+                  <span className="font-bold">{procesarDatosProveedores().length}</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Tabla de Movimientos ----------------------------------------------------------------*/}
           <div className="max-w-full overflow-x-auto">
