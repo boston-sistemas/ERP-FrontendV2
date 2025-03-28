@@ -137,7 +137,7 @@ const Usuarios: React.FC = () => {
             <thead>
               <tr className="bg-blue-900 uppercase text-center dark:bg-meta-4">
                 <th className="px-4 py-4"></th>
-                {["Nombre", "Correo", "Roles", "Estado", " ", "Editar"].map((column, index) => (
+                {["Nombre", "Correo", "Roles", "Estado", "Deshabilitar", "Editar"].map((column, index) => (
                   <th key={index} className="px-4 py-4 text-center font-normal text-white dark:text-zinc-100">
                     {column}
                   </th>
