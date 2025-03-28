@@ -24,7 +24,7 @@ import {
   fetchYarnPurchaseEntries,
   fetchSuppliersHil,
   fetchPurchaseOrderbyId,
-} from "@/app/(modulos)/operaciones-new/movimiento-ingreso-hilado/services/movIngresoHiladoService";
+} from "@/app/(modulos)/operaciones/movimiento-ingreso-hilado/services/movIngresoHiladoService";
 import { fetchYarnbyId } from "../../../hilados/services/hiladoService";
 import VisibilityIcon from '@mui/icons-material/Visibility';
 
