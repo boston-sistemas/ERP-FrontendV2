@@ -20,7 +20,7 @@ import {
   Alert,
   Tooltip,
 } from "@mui/material";
-import { Visibility, Add, FilterList } from "@mui/icons-material";
+import { Visibility, Add, FilterList, Notes } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import {
   fetchDyeingServiceDispatches,
@@ -51,6 +51,8 @@ const SalidaTejido: React.FC = () => {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+  const [openNotesDialog, setOpenNotesDialog] = useState(false);
+  const [selectedNote, setSelectedNote] = useState("");
 
   // Fetch de datos usando SWR
   const {
@@ -101,6 +103,16 @@ const SalidaTejido: React.FC = () => {
     setSnackbarMessage(message);
     setSnackbarSeverity(severity);
     setOpenSnackbar(true);
+  };
+
+  const handleOpenNotes = (note: string) => {
+    setSelectedNote(note);
+    setOpenNotesDialog(true);
+  };
+
+  const handleCloseNotes = () => {
+    setOpenNotesDialog(false);
+    setSelectedNote("");
   };
 
   // Función helper para obtener la dirección del proveedor
@@ -271,9 +283,10 @@ const SalidaTejido: React.FC = () => {
                     <td className="border-b border-[#eee] px-4 py-5">
                       <IconButton
                         color="primary"
-                        onClick={() => handleDetailsClick(salida.dispatchNumber)}
+                        onClick={() => handleOpenNotes(salida.documentNote)}
+                        title="Ver notas"
                       >
-                        <Visibility />
+                        <Notes />
                       </IconButton>
                     </td>
                     <td className="border-b border-[#eee] px-4 py-5">
@@ -331,6 +344,43 @@ const SalidaTejido: React.FC = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
+
+      <Dialog
+        open={openNotesDialog}
+        onClose={handleCloseNotes}
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            width: '100%',
+            maxWidth: '600px',
+          },
+        }}
+      >
+        <DialogContent>
+          <Typography variant="h6" component="h2" gutterBottom>
+            Notas del Documento
+          </Typography>
+          <Typography
+            style={{
+              whiteSpace: 'pre-line',
+              backgroundColor: '#f5f5f5',
+              padding: '16px',
+              borderRadius: '4px'
+            }}
+          >
+            {selectedNote || "No hay notas disponibles"}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseNotes}
+            variant="contained"
+            style={{ backgroundColor: ERROR_COLOR, color: "#fff" }}
+          >
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

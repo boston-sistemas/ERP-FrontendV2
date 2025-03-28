@@ -95,6 +95,10 @@ const sidebarItems: SidebarSection[] = [
       {
         nombre: "Salida de hilado a servicio de Tejeduría",
         path: "/operaciones/movimiento-salida-hilado",
+      },
+      {
+        nombre: "Salida de tejido a servicio de Tintoreria",
+        path: "/operaciones/movimiento-salida-tejido",
       }
     ]
   },
