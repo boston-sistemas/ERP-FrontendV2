@@ -39,7 +39,7 @@ const sidebarItems: SidebarSection[] = [
     items: [
       {
         nombre: "Fibras",
-        path: "/operaciones-new/fibras",
+        path: "/operaciones/fibras",
         icon: (
           <svg className="fill-current" width="20" height="20" viewBox="0 -960 960 960">
             <path d="M554-120q-54 0-91-37t-37-89q0-76 61.5-137.5T641-460q-3-36-18-54.5T582-533q-30 0-65 25t-83 82q-78 93-114.5 121T241-277q-51 0-86-38t-35-92q0-54 23.5-110.5T223-653q19-26 28-44t9-29q0-7-2.5-10.5T250-740q-10 0-25 12.5T190-689l-70-71q32-39 65-59.5t65-20.5q46 0 78 32t32 80q0 29-15 64t-50 84q-38 54-56.5 95T220-413q0 17 5.5 26.5T241-377q10 0 17.5-5.5T286-409q13-14 31-34.5t44-50.5q63-75 114-107t107-32q67 0 110 45t49 123h99v100h-99q-8 112-58.5 178.5T554-120Zm2-100q32 0 54-36.5T640-358q-46 11-80 43.5T526-250q0 14 8 22t22 8Z"/>
@@ -48,7 +48,7 @@ const sidebarItems: SidebarSection[] = [
       },
       {
         nombre: "Hilados",
-        path: "/operaciones-new/hilados",
+        path: "/operaciones/hilados",
         icon: (
           <svg className="fill-current" width="20" height="20" viewBox="0 0 256 256">
             <path d="M232,216H183.39A103.95,103.95,0,1,0,128,232l104,0a8,8,0,1,0,0-16ZM128,40a87.51,87.51,0,0,1,43.93,11.77,222.06,222.06,0,0,0-27.88,15.09,222.23,222.23,0,0,0-45-22A87.52,87.52,0,0,1,128,40ZM78.56,55.24a206,206,0,0,1,51.11,21.57A225.76,225.76,0,0,0,110.1,93.36,181.54,181.54,0,0,0,57.73,75.09,88.67,88.67,0,0,1,78.56,55.24ZM48.72,89.82a165.82,165.82,0,0,1,49.67,15.51A228,228,0,0,0,82.76,124.5,142.65,142.65,0,0,0,41.28,113,87.5,87.5,0,0,1,48.72,89.82ZM40,129a126.07,126.07,0,0,1,33.63,9,222.36,222.36,0,0,0-19.07,38.45A87.51,87.51,0,0,1,40,129Zm26.42,61.81A209.36,209.36,0,0,1,187,62.74a89,89,0,0,1,16.22,19.57A183.89,183.89,0,0,0,87,205.82,88.56,88.56,0,0,1,66.43,190.81ZM125.66,216A87.66,87.66,0,0,1,101.83,212,167.84,167.84,0,0,1,210.28,96.79a87.35,87.35,0,0,1,5.38,23.55A144.59,144.59,0,0,0,125.66,216Zm89.82-78.44a88.19,88.19,0,0,1-72.67,77.22A128.64,128.64,0,0,1,215.48,137.53Z"/>
@@ -57,7 +57,7 @@ const sidebarItems: SidebarSection[] = [
       },
       {
         nombre: "Tejidos",
-        path: "/operaciones-new/tejidos",
+        path: "/operaciones/tejidos",
         icon: (
           <svg className="fill-current" width="20" height="20" viewBox="0 -960 960 960">
             <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h133v-133H200v133Zm213 0h134v-133H413v133Zm214 0h133v-133H627v133ZM200-413h133v-134H200v134Zm213 0h134v-134H413v134Zm214 0h133v-134H627v134ZM200-627h133v-133H200v133Zm213 0h134v-133H413v133Zm214 0h133v-133H627v133Z"/>
@@ -76,11 +76,11 @@ const sidebarItems: SidebarSection[] = [
     items: [
       {
         nombre: "Ingreso de hilado por O/C",
-        path: "/operaciones-new/movimiento-ingreso-hilado",
+        path: "/operaciones/movimiento-ingreso-hilado",
       },
       {
         nombre: "Ingreso de tejido por O/S",
-        path: "/operaciones-new/ingreso-tejido",
+        path: "/operaciones/ingreso-tejido",
       }
     ]
   },
@@ -94,7 +94,7 @@ const sidebarItems: SidebarSection[] = [
     items: [
       {
         nombre: "Salida de hilado a servicio de Tejeduría",
-        path: "/operaciones-new/salida-hilado",
+        path: "/operaciones/salida-hilado",
       }
     ]
   },
@@ -108,7 +108,7 @@ const sidebarItems: SidebarSection[] = [
     items: [
       {
         nombre: "Órdenes de servicio",
-        path: "/operaciones-new/ordenes-servicio",
+        path: "/operaciones/ordenes-servicio",
         icon: (
           <svg className="fill-current" width="20" height="20" viewBox="0 0 256 256">
             <path d="M213.66,66.34l-40-40A8,8,0,0,0,168,24H88A16,16,0,0,0,72,40V56H56A16,16,0,0,0,40,72V216a16,16,0,0,0,16,16H168a16,16,0,0,0,16-16V200h16a16,16,0,0,0,16-16V72A8,8,0,0,0,213.66,66.34ZM168,216H56V72h76.69L168,107.31v84.53c0,.06,0,.11,0,.16s0,.1,0,.16V216Zm32-32H184V104a8,8,0,0,0-2.34-5.66l-40-40A8,8,0,0,0,136,56H88V40h76.69L200,75.31Zm-56-32a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h48A8,8,0,0,1,144,152Zm0,32a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h48A8,8,0,0,1,144,184Z"/>
@@ -117,7 +117,7 @@ const sidebarItems: SidebarSection[] = [
       },
       {
         nombre: "Registro de Auditoría",
-        path: "/operaciones-new/auditoria",
+        path: "/operaciones/auditoria",
         icon: (
           <svg className="fill-current" width="20" height="20" viewBox="0 0 256 256">
             <path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Zm-45.54-48.85a36.05,36.05,0,1,0-11.31,11.31l11.19,11.2a8,8,0,0,0,11.32-11.32ZM104,148a20,20,0,1,1,20,20A20,20,0,0,1,104,148Z"/>
