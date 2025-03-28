@@ -865,12 +865,27 @@ const DetallesMovSalidaHilado: React.FC = () => {
                                     <TableCell sx={{ padding: "16px", textAlign: "center" }}>
                                       <IconButton
                                         onClick={() => {
-                                          setSelectedEntries(prev => {
-                                            const next = new Set(prev);
-                                            next.delete(d.entryNumber);
-                                            return next;
-                                          });
-                                          setEditDetail(prev => prev.filter(item => item.entryNumber !== d.entryNumber));
+                                          const indexToRemove = editDetail.indexOf(d);
+                                          if (indexToRemove !== -1) {
+                                            // Solo eliminamos el detalle específico usando su índice
+                                            setEditDetail(prev => {
+                                              const next = [...prev];
+                                              next.splice(indexToRemove, 1);
+                                              return next;
+                                            });
+                                            
+                                            // Si no quedan más detalles con ese número de ingreso, lo removemos del conjunto
+                                            const remainingWithSameEntry = editDetail.filter((item, idx) => 
+                                              idx !== indexToRemove && item.entryNumber === d.entryNumber
+                                            );
+                                            if (remainingWithSameEntry.length === 0) {
+                                              setSelectedEntries(prev => {
+                                                const next = new Set(prev);
+                                                next.delete(d.entryNumber);
+                                                return next;
+                                              });
+                                            }
+                                          }
                                         }}
                                         size="small"
                                         sx={{
